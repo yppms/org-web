@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Invoice } from '@/lib/types';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import kindyStudentApi, { ApiError } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { Invoice } from "@/lib/types";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import kindyStudentApi, { ApiError } from "@/lib/api";
 
 export default function InvoicesSection() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -19,7 +19,7 @@ export default function InvoicesSection() {
         if (err instanceof ApiError) {
           setError(err.message);
         } else {
-          setError('Gagal memuat data tagihan');
+          setError("Gagal memuat data tagihan");
         }
       } finally {
         setIsLoading(false);
@@ -31,21 +31,31 @@ export default function InvoicesSection() {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      issued: { class: 'bg-warning text-white border-0 text-xs rounded-full', text: 'Terbit' },
-      paid: { class: 'bg-success text-white border-0 text-xs rounded-full', text: 'Lunas' },
-      partial: { class: 'bg-error text-white border-0 text-xs rounded-full', text: 'Sebagian' },
-      overdue: { class: 'bg-error text-white border-0 text-xs rounded-full', text: 'Terlambat' },
+      issued: {
+        class: "bg-warning text-white border-0 text-xs rounded-full",
+        text: "Terbit",
+      },
+      paid: {
+        class: "bg-success text-white border-0 text-xs rounded-full",
+        text: "Lunas",
+      },
+      partial: {
+        class: "bg-error text-white border-0 text-xs rounded-full",
+        text: "Sebagian",
+      },
+      overdue: {
+        class: "bg-error text-white border-0 text-xs rounded-full",
+        text: "Terlambat",
+      },
     };
 
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { 
-      class: 'bg-base-content text-white border-0 text-xs rounded-full', 
-      text: status 
+    const statusInfo = statusMap[status as keyof typeof statusMap] || {
+      class: "bg-base-content text-white border-0 text-xs rounded-full",
+      text: status,
     };
 
     return (
-      <span className={`badge ${statusInfo.class}`}>
-        {statusInfo.text}
-      </span>
+      <span className={`badge ${statusInfo.class}`}>{statusInfo.text}</span>
     );
   };
 
@@ -90,62 +100,100 @@ export default function InvoicesSection() {
             {invoices
               .sort((a, b) => b.no - a.no) // Sort by invoice number in descending order (highest first)
               .map((invoice) => (
-              <div key={invoice.id} className="card bg-base-100 border-2">
-                <div className="card-body p-0">
-                  {/* Header */}
-                  <div className="flex justify-between items-center px-4 py-3 bg-base-200/30 border-b-2 border-base-300/50 text-xs">
-                    <span className="font-medium text-base-content/60">{invoice.no}</span>
-                    <span className="font-medium text-base-content/60">{formatDate(invoice.startDate)}</span>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="space-y-2 px-4 py-3">
-                    <div className="font-bold text-base">{invoice.name}</div>
-                    <div className="space-y-1 text-xs">
-                      {invoice.discount > 0 ? (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="text-base-content/60">Jumlah</span>
-                            <span className="font-medium">{formatCurrency(invoice.amountFull)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-base-content/60">Diskon</span>
-                            <span className="font-medium text-success">{formatCurrency(invoice.discount)}</span>
-                          </div>
+                <div key={invoice.id} className="card bg-base-100 border-2">
+                  <div className="card-body p-0">
+                    {/* Header */}
+                    <div className="flex justify-between items-center px-4 py-3 bg-base-200/30 border-b-2 border-base-300/50 text-xs">
+                      <span className="font-medium text-base-content/60">
+                        {invoice.no}
+                      </span>
+                      <span className="font-medium text-base-content/60">
+                        {formatDate(invoice.startDate)}
+                      </span>
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-2 px-4 py-3">
+                      <div className="font-bold text-base">{invoice.name}</div>
+                      <div className="space-y-1 text-xs">
+                        {invoice.discount > 0 ? (
+                          <>
+                            <div className="flex justify-between items-center">
+                              <span className="text-base-content/60">
+                                Jumlah
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrency(invoice.amountFull)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-base-content/60">
+                                Diskon
+                              </span>
+                              <span className="font-medium text-orange-500">
+                                {formatCurrency(invoice.discount)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-base-content/60">
+                                Total
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrency(invoice.amount)}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
                           <div className="flex justify-between items-center">
                             <span className="text-base-content/60">Total</span>
-                            <span className="font-medium">{formatCurrency(invoice.amount)}</span>
+                            <span className="font-medium">
+                              {formatCurrency(invoice.amount)}
+                            </span>
                           </div>
-                        </>
-                      ) : (
+                        )}
                         <div className="flex justify-between items-center">
-                          <span className="text-base-content/60">Total</span>
-                          <span className="font-medium">{formatCurrency(invoice.amount)}</span>
+                          <span className="text-base-content/60">Terbayar</span>
+                          <span className="font-semibold text-success">
+                            {formatCurrency(invoice.paid)}
+                          </span>
                         </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <span className="text-base-content/60">Belum Terbayar</span>
-                        <span className={`font-bold ${invoice.outstanding > 0 ? 'text-error' : 'text-success'}`}>
-                          {formatCurrency(invoice.outstanding)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-base-content/60">Jatuh Tempo</span>
-                        <span className="font-medium">{formatDate(invoice.dueDate)}</span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-base-content/60">
+                            Belum Terbayar
+                          </span>
+                          <span
+                            className={`font-bold ${
+                              invoice.outstanding > 0
+                                ? "text-error"
+                                : "text-error"
+                            }`}
+                          >
+                            {formatCurrency(invoice.outstanding)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-base-content/60">
+                            Jatuh Tempo
+                          </span>
+                          <span className="font-medium">
+                            {formatDate(invoice.dueDate)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Footer */}
-                  <div className="flex justify-between items-center gap-2 px-4 py-3 bg-base-200/30 border-t-2 border-base-300/50">
-                    <span className="text-xs text-base-content/50">#{invoice.id.toString().toUpperCase()}</span>
-                    <div className="flex gap-2">
-                      {getStatusBadge(invoice.status)}
+
+                    {/* Footer */}
+                    <div className="flex justify-between items-center gap-2 px-4 py-3 bg-base-200/30 border-t-2 border-base-300/50">
+                      <span className="text-xs text-base-content/50">
+                        #{invoice.id.toString().toUpperCase()}
+                      </span>
+                      <div className="flex gap-2">
+                        {getStatusBadge(invoice.status)}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

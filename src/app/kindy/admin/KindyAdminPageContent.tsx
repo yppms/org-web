@@ -17,9 +17,9 @@ export default function KindyAdminPageContent() {
         // Step 1: Server ping check
         await orgApi.ping();
         
-        // Try to access WhatsApp tasks to check if already authenticated
+        // Try to access userto check if already authenticated
         try {
-          await kindyAdminApi.getWhatsAppTasks();
+          await kindyAdminApi.getAllStudents();
           setIsAuthenticated(true);
         } catch (authErr) {
           // Not authenticated yet

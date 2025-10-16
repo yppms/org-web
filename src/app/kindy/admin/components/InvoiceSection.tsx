@@ -280,7 +280,7 @@ export default function InvoiceSection() {
           </div>
         ) : filteredInvoices.length === 0 ? (
           <div className="text-center py-12 text-base-content/60">
-            No invoices found matching "{searchQuery}"
+            No invoices found matching &quot;{searchQuery}&quot;
           </div>
         ) : (
           sortedDates.map((date) => {

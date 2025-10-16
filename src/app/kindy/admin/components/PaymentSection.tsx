@@ -259,7 +259,7 @@ export default function PaymentSection() {
           </div>
         ) : filteredPayments.length === 0 ? (
           <div className="text-center py-12 text-base-content/60">
-            No payments found matching "{searchQuery}"
+            No payments found matching &quot;{searchQuery}&quot;
           </div>
         ) : (
           sortedDates.map((date) => {

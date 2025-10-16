@@ -17,19 +17,19 @@ interface SectionConfig {
   endpoint: string;
 }
 
+const allSections: SectionConfig[] = [
+  { key: "payment", endpoint: "/kindy/admin/payment" },
+  { key: "invoice", endpoint: "/kindy/admin/invoice" },
+  { key: "saving", endpoint: "/kindy/admin/student/saving" },
+  { key: "infaq", endpoint: "/kindy/admin/student/infaq" },
+  { key: "stamp", endpoint: "/kindy/admin/wa" },
+  { key: "openas", endpoint: "/kindy/admin/student" },
+];
+
 export default function KindyAdminDashboard() {
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [accessibleSections, setAccessibleSections] = useState<Section[]>([]);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
-
-  const allSections: SectionConfig[] = [
-    { key: "payment", endpoint: "/kindy/admin/payment" },
-    { key: "invoice", endpoint: "/kindy/admin/invoice" },
-    { key: "saving", endpoint: "/kindy/admin/student/saving" },
-    { key: "infaq", endpoint: "/kindy/admin/student/infaq" },
-    { key: "stamp", endpoint: "/kindy/admin/wa" },
-    { key: "openas", endpoint: "/kindy/admin/student" },
-  ];
 
   useEffect(() => {
     const checkAllAccess = async () => {
@@ -75,7 +75,7 @@ export default function KindyAdminDashboard() {
         <div className="text-center">
           <p className="text-lg font-semibold text-base-content/70">No Access</p>
           <p className="mt-2 text-sm text-base-content/60">
-            You don't have permission to access any sections
+            You don&apos;t have permission to access any sections
           </p>
         </div>
       </div>

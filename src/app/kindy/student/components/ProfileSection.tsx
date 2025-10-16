@@ -362,7 +362,7 @@ export default function ProfileSection({
                     {insuranceInfo.benefit.map((benefit, index) => (
                       <div
                         key={index}
-                        className="flex items-start gap-2 p-2 bg-green-50/30 rounded text-xs border border-green-100"
+                        className="flex items-start gap-2 p-2 rounded text-xs"
                       >
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
                         <span className="text-base-content/80 leading-relaxed">

@@ -651,40 +651,40 @@ export default function Dashboard() {
 
                 <div className="tabs tabs-lifted -mb-px justify-evenly">
                   <button
-                    className={`tab tab-lifted font-medium text-sm ${
+                    className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "invoices"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.base-300)]"
-                        : ""
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("invoices")}
                   >
                     Tagihan
                   </button>
                   <button
-                    className={`tab tab-lifted font-medium text-sm ${
+                    className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "payment"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.base-300)]"
-                        : ""
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("payment")}
                   >
                     Pembayaran
                   </button>
                   <button
-                    className={`tab tab-lifted font-medium text-sm ${
+                    className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "saving"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.base-300)]"
-                        : ""
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("saving")}
                   >
                     Tabungan
                   </button>
                   <button
-                    className={`tab tab-lifted font-medium text-sm ${
+                    className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "infaq"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.base-300)]"
-                        : ""
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("infaq")}
                   >

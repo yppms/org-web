@@ -48,13 +48,17 @@ export default function InfaqSection() {
       );
     }
 
-    // Filter out students without contributions when sorting by amount or last contribution
-    if (sortBy === "totalInfaq" || sortBy === "lastContribution") {
-      filtered = filtered.filter((student) => student.totalInfaq > 0);
-    }
-
     // Apply sorting
     return [...filtered].sort((a, b) => {
+      // When sorting by amount or contribution date, students without contributions go to the end
+      if (sortBy === "totalInfaq" || sortBy === "lastContribution") {
+        // If one has no contributions and the other does, prioritize the one with contributions
+        if (a.totalInfaq === 0 && b.totalInfaq > 0) return 1;
+        if (a.totalInfaq > 0 && b.totalInfaq === 0) return -1;
+        // If both have no contributions, they stay in their current order
+        if (a.totalInfaq === 0 && b.totalInfaq === 0) return 0;
+      }
+
       let comparison = 0;
 
       switch (sortBy) {

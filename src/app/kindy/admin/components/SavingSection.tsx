@@ -48,13 +48,17 @@ export default function SavingSection() {
       );
     }
 
-    // Filter out students without transactions when sorting by amount or last transaction
-    if (sortBy === "totalSaving" || sortBy === "lastTransaction") {
-      filtered = filtered.filter((student) => student.totalSaving > 0);
-    }
-
     // Apply sorting
     return [...filtered].sort((a, b) => {
+      // When sorting by amount or transaction date, students without transactions go to the end
+      if (sortBy === "totalSaving" || sortBy === "lastTransaction") {
+        // If one has no transactions and the other does, prioritize the one with transactions
+        if (a.totalSaving === 0 && b.totalSaving > 0) return 1;
+        if (a.totalSaving > 0 && b.totalSaving === 0) return -1;
+        // If both have no transactions, they stay in their current order
+        if (a.totalSaving === 0 && b.totalSaving === 0) return 0;
+      }
+
       let comparison = 0;
 
       switch (sortBy) {

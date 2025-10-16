@@ -639,8 +639,14 @@ export default function Dashboard() {
               <div className="card-body p-0">
                 <div className="border-b border-base-300 px-6 py-4">
                   <h3 className="font-semibold text-base-content">
-                    Aktivitas Terbaru
+                  Aktivitas Terbaru
                   </h3>
+                  <div className="alert mt-2 border border-base-300 bg-base-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-xs">Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam. Cek berkala.</span>
+                  </div>
                 </div>
 
                 <div className="tabs tabs-lifted -mb-px justify-evenly">

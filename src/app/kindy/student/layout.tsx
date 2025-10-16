@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Kindy Student - Miftahussalam',
-  description: 'Student portal for Miftahussalam Islamic Kindy - View your contributions and manage your account',
+  title: 'Student Portal - Miftahussalam Islamic Kindy',
+  description: "Access student records: invoices, payment confirmation, savings, infaqs, announcements, and many more"
 }
 
 export default function KindyStudentLayout({

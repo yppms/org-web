@@ -116,8 +116,102 @@ export const kindyAdminApi = {
       body: JSON.stringify({ key }),
     }),
 
-  // WhatsApp Task endpoints
+  // Student endpoints
+  getAllStudents: () => apiCall('/kindy/admin/student'),
+
+  // Student Saving endpoints
+  getAllSavings: () => apiCall('/kindy/admin/student/saving'),
+
+  // Student Infaq endpoints
+  getAllInfaq: () => apiCall('/kindy/admin/student/infaq'),
+
+  // Check endpoint access (for authorization)
+  checkEndpointAccess: async (endpoint: string): Promise<boolean> => {
+    try {
+      const url = `${API_BASE}${endpoint}`;
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // If response is ok (200-299), user has access
+      if (response.ok) {
+        return true;
+      }
+      
+      // If 401/403, user doesn't have access (silently return false)
+      if (response.status === 401 || response.status === 403) {
+        return false;
+      }
+      
+      // For other errors, assume no access
+      return false;
+    } catch (error) {
+      // Network errors or other issues - assume no access
+      return false;
+    }
+  },
+
+  // WhatsApp Task endpoints (Stamp)
   getWhatsAppTasks: () => apiCall('/kindy/admin/wa'),
+
+  // Invoice endpoints
+  getInvoices: () => apiCall('/kindy/admin/invoice'),
+  addInvoice: (data: {
+    student_id: string;
+    name: string;
+    amount: number;
+    discount: number;
+    start_date: string;
+    due_date: string;
+  }) =>
+    apiCall('/kindy/admin/invoice', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateInvoice: (id: string, data: {
+    name: string;
+    amount: number;
+    discount: number;
+    start_date: string;
+    end_date: string;
+  }) =>
+    apiCall(`/kindy/admin/invoice/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteInvoice: (id: string) =>
+    apiCall(`/kindy/admin/invoice/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Payment endpoints
+  getPayments: () => apiCall('/kindy/admin/payment'),
+  addPayment: (data: {
+    student_id: string;
+    amount: number;
+    date: string;
+    reference: string;
+  }) =>
+    apiCall('/kindy/admin/payment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updatePayment: (id: string, data: {
+    amount: number;
+    date: string;
+    reference: string;
+  }) =>
+    apiCall(`/kindy/admin/payment/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deletePayment: (id: string) =>
+    apiCall(`/kindy/admin/payment/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // Org API endpoints

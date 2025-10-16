@@ -22,7 +22,7 @@ export default function KindyStudentPageContent() {
 
         if (!stamp) {
           try {
-            await kindyStudentApi.getProfile();
+            const profile = await kindyStudentApi.getProfile();
             setIsAuthenticated(true);
             return;
           } catch (profileErr) {
@@ -35,13 +35,13 @@ export default function KindyStudentPageContent() {
         try {
           await kindyStudentApi.login(stamp);
           setIsAuthenticated(true);
-          
+
           // Strip out the stamp parameter from URL after successful authentication
           const url = new URL(window.location.href);
           url.searchParams.delete("stamp");
           router.replace(url.pathname + url.search);
         } catch (loginErr) {
-          setError("access is limited, you should chat admin.");
+          setError("access is limited, you should contact admin.");
           setIsAuthenticated(false);
         }
       } catch (serverErr) {

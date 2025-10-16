@@ -8,6 +8,9 @@ export interface KindyStudent {
   finEnt: string | null;
   finNum: string | null;
   finName: string | null;
+  nisn: string | null;
+  gender: 'MALE' | 'FEMALE' | null;
+  insuranceNum: number | null;
   createdAt: string;
   updatedAt: string;
   KindyEnrollment: KindyEnrollment[];

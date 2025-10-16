@@ -218,6 +218,42 @@ export default function ProfileSection({
             <div className="px-4 py-3">
               {profile.KindyEnrollment[0] ? (
                 <div className="space-y-2">
+                  {/* NISN */}
+                  {profile.nisn && (
+                    <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+                        <span className="text-sm">🆔</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-base-content/60">
+                          NISN
+                        </p>
+                        <p className="text-sm font-bold text-primary">
+                          {profile.nisn}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gender */}
+                  {profile.gender && (
+                    <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+                        <span className="text-sm">
+                          {profile.gender === "MALE" ? "👦" : "👧"}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-base-content/60">
+                          Jenis Kelamin
+                        </p>
+                        <p className="text-sm font-bold text-primary">
+                          {profile.gender === "MALE" ? "LAKI LAKI" : "PEREMPUAN"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Class Information */}
                   <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
                     <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
@@ -260,7 +296,8 @@ export default function ProfileSection({
           </div>
         </div>
 
-        {/* Insurance Information Card */}
+        {/* Insurance Information Card - Only show if insurance number exists */}
+        {(!isLoadingInsurance && insuranceInfo && insuranceInfo.num) && (
         <div className="card bg-gradient-to-br bg-base-100 from-blue-500/5 to-blue-600/10 shadow-sm border border-blue-500/20">
           <div className="card-body p-4">
             <div className="flex items-center justify-between mb-4">
@@ -268,17 +305,10 @@ export default function ProfileSection({
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 Asuransi
               </h3>
-              <div className="text-2xl">⚔️</div>
+              <div className="text-2xl">🛡️</div>
             </div>
 
-            {isLoadingInsurance ? (
-              <div className="text-center py-4">
-                <div className="loading loading-spinner loading-md text-blue-500"></div>
-                <p className="text-sm text-base-content/60 mt-2">
-                  Memuat informasi asuransi...
-                </p>
-              </div>
-            ) : insuranceInfo ? (
+            {insuranceInfo && (
               <div className="space-y-4">
                 {/* Insurance Provider */}
                 <div className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100">
@@ -306,7 +336,7 @@ export default function ProfileSection({
                 {/* Policy Information */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center py-2 px-3 bg-base-200/30 rounded">
-                    <span className="text-sm">
+                    <span className="text-sm font-medium text-base-content">
                       Tertanggung:
                     </span>
                     <span className="text-sm">
@@ -343,16 +373,10 @@ export default function ProfileSection({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="text-4xl mb-3">🛡️</div>
-                <p className="text-base-content/70 text-sm">
-                  Informasi asuransi tidak tersedia
-                </p>
-              </div>
             )}
           </div>
         </div>
+        )}
 
         {/* Full Day Program */}
         <div className="card bg-base-100 shadow-sm border border-base-300">
@@ -387,7 +411,7 @@ export default function ProfileSection({
           <div className="card-body p-0">
             <div className="border-b border-base-300 px-6 py-4">
               <h3 className="font-semibold text-base-content">
-                Skema Pembayaran
+                Skema Biaya
               </h3>
             </div>
 
@@ -468,7 +492,7 @@ export default function ProfileSection({
 
             <div className="p-6">
               <p className="text-xs text-base-content/60 mb-4 leading-relaxed">
-                Rekening penerimaan digunakan untuk transaksi penarikan tabungan
+                Rekening penerimaan digunakan untuk penarikan tabungan
                 atau refund. Kami akan selalu melakukan verifikasi sebelum
                 melakukan transfer. Anda dapat mengubah rekening kapan saja.
               </p>

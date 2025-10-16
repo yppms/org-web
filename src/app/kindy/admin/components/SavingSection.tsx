@@ -17,7 +17,7 @@ export default function SavingSection() {
   const [savings, setSavings] = useState<StudentSaving[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"no" | "name" | "totalSaving" | "lastTransaction">("totalSaving");
+  const [sortBy, setSortBy] = useState<"no" | "name" | "totalSaving" | "lastTransaction">("lastTransaction");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const fetchSavings = async () => {

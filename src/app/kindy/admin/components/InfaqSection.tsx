@@ -17,7 +17,7 @@ export default function InfaqSection() {
   const [infaqData, setInfaqData] = useState<StudentInfaq[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"no" | "name" | "totalInfaq" | "lastContribution">("totalInfaq");
+  const [sortBy, setSortBy] = useState<"no" | "name" | "totalInfaq" | "lastContribution">("lastContribution");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const fetchInfaq = async () => {

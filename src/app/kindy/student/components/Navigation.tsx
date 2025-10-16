@@ -53,7 +53,7 @@ export default function Navigation({
       <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[425px]">
         <div className="px-4 py-2 safe-area-bottom">
           <div className="flex justify-center">
-            <div className="flex bg-base-100 rounded-2xl p-1 gap-1">
+            <div className="flex bg-base-100 rounded-2xl p-1 gap-1 border-2">
               {mainItems.map((item) => (
                 <button
                   key={item.key}

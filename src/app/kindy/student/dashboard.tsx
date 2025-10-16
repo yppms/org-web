@@ -216,7 +216,7 @@ export default function Dashboard() {
     return `Rp${formatted}`;
   };
 
-  // Handle currency input change
+  // Handle currency input change for payment
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
 
@@ -225,6 +225,17 @@ export default function Dashboard() {
 
     // Store the numeric value
     setPaymentAmount(numericValue);
+  };
+
+  // Handle currency input change for withdraw
+  const handleWithdrawAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Remove Rp prefix and dots for storage
+    const numericValue = inputValue.replace(/[Rp.]/g, "");
+
+    // Store the numeric value
+    setWithdrawAmount(numericValue);
   };
 
   // File validation and preview handling
@@ -1165,13 +1176,11 @@ export default function Dashboard() {
                     </span>
                   </label>
                   <input
-                    type="number"
-                    className="input"
-                    placeholder="Masukkan jumlah"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    max={stats?.saving || 0}
-                    min="1"
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="contoh: 50000"
+                    value={formatRupiah(withdrawAmount)}
+                    onChange={handleWithdrawAmountChange}
                   />
                 </div>
 
@@ -1245,7 +1254,7 @@ export default function Dashboard() {
       <dialog id="global_error_modal" className="modal">
         <div className="modal-box w-full max-w-sm mx-2">
           <div className="text-center py-8">
-            <h3 className="text-md mb-4">Terjadi kesalahan. Ulangi berkala.</h3>
+            <h3 className="text-md mb-4">Terjadi kesalahan</h3>
             <p className="text-md mb-4">
               <strong>{globalError}</strong>
             </p>

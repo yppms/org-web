@@ -40,24 +40,20 @@ export default function SavingsSection({
   const getStatusBadge = (status: string, type: string) => {
     if (status === "SUCCESS") {
       return (
-        <span
-          className={`badge border-0 text-white text-xs rounded-full ${
-            type === "SAVE" ? "bg-success" : "bg-info"
-          }`}
-        >
-          Berhasil
+        <span className="text-xs font-semibold text-success">
+          ✓ Sukses
         </span>
       );
     } else if (status === "REQUEST") {
       return (
-        <span className="badge bg-warning text-white border-0 text-xs rounded-full">
-          Request
+        <span className="text-xs font-semibold text-warning">
+          ⏳ Request
         </span>
       );
     } else {
       return (
-        <span className="badge bg-error text-white border-0 text-xs rounded-full">
-          Gagal
+        <span className="text-xs font-semibold text-error">
+          ✗ Gagal
         </span>
       );
     }
@@ -123,18 +119,21 @@ export default function SavingsSection({
                       </div>
 
                       {/* Content */}
-                      <div className="space-y-2 px-4 py-3">
+                      <div className="space-y-3 px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-base">
                             {saving.type === 'SAVE' ? `nabung-${formatDate(saving.date)}` : 'tarik'}
                           </span>
                           <span>{getTypeIcon(saving.type)}</span>
                         </div>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-base-content/60">Jumlah</span>
-                          <span className="font-medium">
-                            {formatCurrency(saving.amount)}
-                          </span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-base-content/60 font-medium">Jumlah</span>
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-success/30 to-green-600/30 rounded-lg blur-md"></div>
+                            <span className="relative text-xs font-extrabold text-white bg-gradient-to-br from-success via-green-600 to-green-700 px-2 py-2 rounded-md">
+                              {formatCurrency(saving.amount)}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -143,7 +142,7 @@ export default function SavingsSection({
                         <span className="text-xs text-base-content/50">
                           #{saving.id.toString().toUpperCase()}
                         </span>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           {saving.reference && (
                             <span className="text-xs font-medium px-2 py-1 rounded-full  italic text-base-content">
                               {saving.reference}

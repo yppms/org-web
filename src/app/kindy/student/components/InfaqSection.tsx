@@ -89,18 +89,21 @@ export default function InfaqSection() {
                     </div>
 
                     {/* Content */}
-                    <div className="space-y-2 px-4 py-3">
+                    <div className="space-y-3 px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-base">
                           infaq-{formatDate(item.date)}
                         </span>
                         <span className="text-lg">🤲</span>
                       </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-base-content/60">Jumlah</span>
-                        <span className="font-medium">
-                          {formatCurrency(item.amount)}
-                        </span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-base-content/60 font-medium">Jumlah</span>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 to-purple-700/30 rounded-lg blur-md"></div>
+                          <span className="relative text-xs font-extrabold text-white bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 px-2 py-2 rounded-md">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -109,14 +112,14 @@ export default function InfaqSection() {
                       <span className="text-xs text-base-content/50">
                         #{item.id.toString().toUpperCase()}
                       </span>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         {item.reference && (
                           <span className="text-xs font-medium px-2 py-1 rounded-full italic text-base-content">
                             {item.reference}
                           </span>
                         )}
-                        <span className="badge bg-success text-white border-0 text-xs rounded-full">
-                          Berhasil
+                        <span className="text-xs font-semibold text-success">
+                          ✓ Sukses
                         </span>
                       </div>
                     </div>

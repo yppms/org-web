@@ -32,30 +32,37 @@ export default function InvoicesSection() {
   const getStatusBadge = (status: string) => {
     const statusMap = {
       issued: {
-        class: "bg-warning text-white border-0 text-xs rounded-full",
+        icon: "⏳",
         text: "Terbit",
+        color: "text-warning",
       },
       paid: {
-        class: "bg-success text-white border-0 text-xs rounded-full",
+        icon: "✓",
         text: "Lunas",
+        color: "text-success",
       },
       partial: {
-        class: "bg-error text-white border-0 text-xs rounded-full",
+        icon: "◐",
         text: "Sebagian",
+        color: "text-orange-500",
       },
       overdue: {
-        class: "bg-error text-white border-0 text-xs rounded-full",
+        icon: "⚠",
         text: "Terlambat",
+        color: "text-error",
       },
     };
 
     const statusInfo = statusMap[status as keyof typeof statusMap] || {
-      class: "bg-base-content text-white border-0 text-xs rounded-full",
+      icon: "•",
       text: status,
+      color: "text-base-content",
     };
 
     return (
-      <span className={`badge ${statusInfo.class}`}>{statusInfo.text}</span>
+      <span className={`text-xs font-semibold ${statusInfo.color}`}>
+        {statusInfo.icon} {statusInfo.text}
+      </span>
     );
   };
 
@@ -113,9 +120,9 @@ export default function InvoicesSection() {
                     </div>
 
                     {/* Content */}
-                    <div className="space-y-2 px-4 py-3">
+                    <div className="space-y-3 px-4 py-3">
                       <div className="font-bold text-base">{invoice.name}</div>
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-2 text-xs">
                         {invoice.discount > 0 ? (
                           <>
                             <div className="flex justify-between items-center">
@@ -135,18 +142,18 @@ export default function InvoicesSection() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-base-content/60">
+                              <span className="text-base-content/60 font-medium">
                                 Total
                               </span>
-                              <span className="font-medium">
+                              <span className="font-bold underline decoration-2 underline-offset-4">
                                 {formatCurrency(invoice.amount)}
                               </span>
                             </div>
                           </>
                         ) : (
                           <div className="flex justify-between items-center">
-                            <span className="text-base-content/60">Total</span>
-                            <span className="font-medium">
+                            <span className="text-base-content/60 font-medium">Total</span>
+                            <span className="font-bold underline decoration-2 underline-offset-4">
                               {formatCurrency(invoice.amount)}
                             </span>
                           </div>
@@ -187,7 +194,7 @@ export default function InvoicesSection() {
                       <span className="text-xs text-base-content/50">
                         #{invoice.id.toString().toUpperCase()}
                       </span>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         {getStatusBadge(invoice.status)}
                       </div>
                     </div>

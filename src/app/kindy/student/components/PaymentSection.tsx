@@ -77,26 +77,31 @@ export default function PaymentSection() {
                   </div>
                   
                   {/* Content */}
-                  <div className="space-y-2 px-4 py-3">
+                  <div className="space-y-3 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-base">pembayaran-{payment.no}</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-base-content/60">Jumlah</span>
-                      <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-base-content/60 font-medium">Jumlah</span>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-success/30 to-green-600/30 rounded-lg blur-md"></div>
+                        <span className="relative text-xs font-extrabold text-white bg-gradient-to-br from-success via-green-600 to-green-700 px-2 py-2 rounded-md">
+                         {formatCurrency(payment.amount)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
                   {/* Footer */}
                   <div className="flex justify-between items-center gap-2 px-4 py-3 bg-base-200/30 border-t-2 border-base-300/50">
                     <span className="text-xs text-base-content/50">#{payment.id.toString().toUpperCase()}</span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       {payment.reference && (
                         <span className="text-xs font-medium px-2 py-1 rounded-full  italic text-base-content">
                           {payment.reference}
                         </span>
                       )}
-                      <span className="badge bg-success text-white border-0 text-xs rounded-full">Sukses</span>
+                      <span className="text-xs font-semibold text-success">✓ Sukses</span>
                     </div>
                   </div>
                 </div>

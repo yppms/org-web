@@ -335,19 +335,19 @@ export default function ProfileSection({
 
                 {/* Policy Information */}
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center py-2 px-3 bg-base-200/30 rounded">
-                    <span className="text-sm font-medium text-base-content">
+                  <div className="py-2 px-3 bg-base-200/30 rounded">
+                    <span className="text-sm font-medium text-base-content block mb-1">
                       Tertanggung:
                     </span>
-                    <span className="text-sm">
+                    <span className="text-base-content/80">
                       {insuranceInfo.beneficiary}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 px-3 bg-base-200/30 rounded">
-                    <span className="text-sm font-medium text-base-content">
-                      No. Polis:
+                  <div className="py-2 px-3 bg-base-200/30 rounded">
+                    <span className="text-sm font-medium text-base-content block mb-1">
+                      Polis:
                     </span>
-                    <span className="text-sm text-base-content">
+                    <span className="text-base-content/80">
                       {insuranceInfo.num}
                     </span>
                   </div>
@@ -355,14 +355,14 @@ export default function ProfileSection({
 
                 {/* Benefits */}
                 <div>
-                  <p className="font-medium text-base-content mb-2 text-sm">
+                  <p className="font-medium text-base-content text-sm py-2 px-3">
                     Manfaat:
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {insuranceInfo.benefit.map((benefit, index) => (
                       <div
                         key={index}
-                        className="flex items-start gap-2 p-2 rounded text-xs"
+                        className="flex items-start gap-2 p-2 px-3 rounded text-xs"
                       >
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
                         <span className="text-base-content/80 leading-relaxed">

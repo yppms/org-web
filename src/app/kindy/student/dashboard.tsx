@@ -842,7 +842,7 @@ export default function Dashboard() {
           <div className="py-4">
             <div className="text-center mb-4">
               <div className="text-4xl mb-3">🏦</div>
-              <p className="text-base-content/70 mb-3">
+              <p className="text-sm text-base-content/50 mb-3">
                 Untuk menarik tabungan, mohon isi rekening penerimaan terlebih
                 dahulu.
               </p>

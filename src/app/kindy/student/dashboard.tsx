@@ -905,14 +905,14 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <h3 className="font-bold text-lg text-center mb-2">
+              <h3 className="font-bold text-lg text-center">
                 Konfirmasi Pembayaran
               </h3>
 
               <div className="py-4">
                 {/* Radio Choice */}
                 <div className="mb-6">
-                  <div className="text-4xl mb-4 text-center">📄</div>
+                  <div className="text-3xl mb-4 text-center">📄</div>
                   <p className="text-base-content/70 mb-4 text-center">
                     Apakah Anda memiliki screenshot atau dokumen transfer?
                   </p>
@@ -950,12 +950,9 @@ export default function Dashboard() {
                 {paymentChoice === "receipt" && (
                   <div className="space-y-4">
                     <div>
-                      <h3 className="font-bold text-md">
-                        Upload:
-                      </h3>
                       <label className="label">
                         <span className="label-text text-sm font-medium py-2">
-                          Pilih file screenshot atau dokumen transfer *
+                          Upload file screenshot atau dokumen transfer *
                         </span>
                       </label>
                       <input
@@ -965,7 +962,7 @@ export default function Dashboard() {
                         accept="image/*,.pdf"
                       />
                       <div className="label">
-                        <span className="label-text-alt text-sm text-base-content/60 py-2">
+                        <span className="label-text-alt text-xs text-base-content/60 py-2">
                           Format: JPG, PNG, PDF (max 5MB)
                         </span>
                       </div>
@@ -1005,13 +1002,10 @@ export default function Dashboard() {
 
                 {/* Payment Form Section - Show when "Tidak Ada" is selected */}
                 {paymentChoice === "no_receipt" && (
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-md">
-                      Lengkapi informasi berikut:
-                    </h3>
+                  <div className="space-y-2">
                     <div>
                       <label className="label">
-                        <span className="label-text text-sm font-medium py-2">
+                        <span className="label-text text-sm font-medium py-1">
                           Tanggal pembayaran *
                         </span>
                       </label>
@@ -1026,7 +1020,7 @@ export default function Dashboard() {
 
                     <div>
                       <label className="label">
-                        <span className="label-text text-sm font-medium py-2">
+                        <span className="label-text text-sm font-medium py-1">
                           Jumlah pembayaran *
                         </span>
                       </label>
@@ -1041,7 +1035,7 @@ export default function Dashboard() {
 
                     <div>
                       <label className="label">
-                        <span className="label-text text-sm font-medium py-2">
+                        <span className="label-text text-sm font-medium py-1">
                           Nama Bank / E-Wallet pengirim *
                         </span>
                       </label>
@@ -1056,7 +1050,7 @@ export default function Dashboard() {
 
                     <div>
                       <label className="label">
-                        <span className="label-text text-sm font-medium py-2">
+                        <span className="label-text text-sm font-medium py-1">
                           Atas nama / nomor rekening pengirim *
                         </span>
                       </label>

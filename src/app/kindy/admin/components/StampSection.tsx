@@ -149,7 +149,6 @@ export default function StampSection() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-base truncate">{task.name}</h3>
-                    <p className="text-sm text-base-content/60">#{task.id}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {isSent(task.id) && (

@@ -35,7 +35,7 @@ export default function PaymentSection() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'date'>('createdAt');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'date'>('date');
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchStudents = async () => {
@@ -147,7 +147,13 @@ export default function PaymentSection() {
         dateValue = payment.date;
       }
       
-      const date = new Date(dateValue).toISOString().split('T')[0];
+      // Use local date instead of UTC date for grouping
+      const dateObj = new Date(dateValue);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const date = `${year}-${month}-${day}`;
+      
       if (!groups[date]) {
         groups[date] = [];
       }

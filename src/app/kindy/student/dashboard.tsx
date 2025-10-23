@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState<
     "invoices" | "payment" | "saving" | "infaq"
   >("invoices");
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -67,7 +68,6 @@ export default function Dashboard() {
       fee.KindyRecurringFee.name.toLowerCase().includes("full day")
     ) || false;
 
-  // Global error handler
   const showGlobalError = (error: any) => {
     let errorMessage = "Terjadi kesalahan. Mohon ulangi berkala.";
     if (error instanceof ApiError) {
@@ -523,13 +523,13 @@ export default function Dashboard() {
                 <div className="text-center space-y-4">
                   <div>
                     <p className="text-md font-medium text-base-content/60 mb-1">
-                      Total Tagihan
+                      Tagihan saat ini
                     </p>
                     <div
                       className="text-2xl font-bold text-decoration-line"
                       suppressHydrationWarning
                     >
-                      {formatCurrency(stats.outstanding)}
+                      {formatCurrency(Math.max(0, stats.outstanding))}
                     </div>
                     {stats.outstanding > 0 ? (
                       <div className="flex items-center justify-center gap-2 mt-2">
@@ -540,10 +540,37 @@ export default function Dashboard() {
                       </div>
                     ) : (
                       <p className="text-sm text-success font-medium mt-2">
-                        <strong>Lunas! </strong>Terima Kasih 🤩
+                        <strong>Lunas! Terima Kasih 🤩</strong>
                       </p>
                     )}
                   </div>
+
+                    {/* Totals summary (no title): total invoice, total payment, and outstanding with inverted sign */}
+                    <div className="w-full mt-4 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-base-content/60 font-medium">
+                          Semua Tagihan (<strong>{stats.count_invoice ?? 0}</strong>)
+                        </span>
+                        <span className="text-base-content/60 font-medium">{formatCurrency(stats.total_invoice)}</span>
+                      </div>
+
+                      <div className="flex justify-between mt-1">
+                        <span className="text-base-content/60 font-medium">
+                          Semua Pembayaran (<strong>{stats.count_payment ?? 0}</strong>)
+                        </span>
+                        <span className="text-base-content/60 font-medium">{formatCurrency(stats.total_payment)}</span>
+                      </div>
+
+                      <hr className="my-2 border-t border-base-300" />
+
+                      <div className="flex justify-end">
+                        {/* Inverted sign: show '+' when outstanding is negative, '-' when outstanding is zero or positive */}
+                        <span className="text-sm font-bold">
+                          {stats.outstanding < 0 ? "+" : "-"}
+                          {formatCurrency(Math.abs(stats.outstanding))}
+                        </span>
+                      </div>
+                    </div>
 
                   <div className="card bg-base-100 border-2 py-4 px-1">
                     {orgFinInfo ? (
@@ -664,7 +691,7 @@ export default function Dashboard() {
                   <button
                     className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "invoices"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
                         : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("invoices")}
@@ -674,7 +701,7 @@ export default function Dashboard() {
                   <button
                     className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "payment"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
                         : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("payment")}
@@ -684,7 +711,7 @@ export default function Dashboard() {
                   <button
                     className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "saving"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
                         : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("saving")}
@@ -694,7 +721,7 @@ export default function Dashboard() {
                   <button
                     className={`tab tab-lifted font-medium text-sm transition-all ${
                       currentTab === "infaq"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] [--tab-border-color:theme(colors.primary)] text-primary font-bold"
+                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
                         : "text-base-content/60 hover:text-base-content"
                     }`}
                     onClick={() => setCurrentTab("infaq")}
@@ -969,12 +996,11 @@ export default function Dashboard() {
 
                       {/* File preview for images */}
                       {paymentFile && (
-                        <div className="mt-4">
-                          <div className="text-sm font-medium mb-2">File:</div>
+                        <div className="mt-2">
                           <div className="bg-base-200 rounded-lg p-3">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm">
-                                {paymentFile.name}
+                              <span className="text-xs">
+                                File: {paymentFile.name}
                               </span>
                             </div>
                             {paymentFilePreview ? (
@@ -983,9 +1009,9 @@ export default function Dashboard() {
                                   src={paymentFilePreview}
                                   alt="Preview dokumen"
                                   width={300}
-                                  height={200}
-                                  className="max-w-full h-auto rounded border object-contain"
-                                  style={{ maxHeight: "200px" }}
+                                  height={300}
+                                  className="max-w-full h-auto rounded object-contain"
+                                  style={{ maxHeight: "100px" }}
                                 />
                               </>
                             ) : paymentFile.type === "application/pdf" ? (

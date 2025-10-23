@@ -160,7 +160,7 @@ export default function InvoicesSection() {
                         )}
                         <div className="flex justify-between items-center">
                           <span className="text-base-content/60">Terbayar</span>
-                          <span className="font-semibold text-success">
+                          <span className="font-semibold">
                             {formatCurrency(invoice.paid)}
                           </span>
                         </div>

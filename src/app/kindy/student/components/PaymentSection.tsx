@@ -84,8 +84,7 @@ export default function PaymentSection() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-base-content/60 font-medium">Jumlah</span>
                       <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-success/30 to-green-600/30 rounded-lg blur-md"></div>
-                        <span className="relative text-xs font-extrabold text-white bg-gradient-to-br from-success via-green-600 to-green-700 px-2 py-2 rounded-md">
+                        <span className="relative text-xs font-extrabold text-white bg-gradient-to-br from-success via-green-500 to-green-600 px-2 py-2 rounded-sm">
                          {formatCurrency(payment.amount)}
                         </span>
                       </div>

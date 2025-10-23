@@ -63,7 +63,10 @@ export interface KindyStudentRecurringFee {
 
 export interface StudentStats {
   outstanding: number;
-  credit: number;
+  total_invoice: number;
+  count_invoice: number;
+  total_payment: number;
+  count_payment: number;
   saving: number;
   infaq: number;
 }

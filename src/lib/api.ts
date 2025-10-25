@@ -34,10 +34,38 @@ export async function apiCall<T = any>(
 
   try {
     const response = await fetch(url, defaultOptions);
-    const data = await response.json();
+    
+    // Check if response is ok (status 200-299)
+    if (!response.ok) {
+      // Try to parse error message from response
+      let errorMessage = 'Network error occurred';
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If JSON parse fails, use generic message
+        errorMessage = `Server error: ${response.status}`;
+      }
+      throw new ApiError(errorMessage, response.status);
+    }
+
+    // Try to parse JSON response
+    let data: ApiResponse<T>;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      // If JSON parsing fails but response was ok, treat as success
+      console.warn('Response was successful but JSON parsing failed:', parseError);
+      return {
+        status: 'success',
+        message: 'Operation completed successfully'
+      };
+    }
     
     if (data.status === 'error') {
-      throw new ApiError(data.message, response.status);
+      throw new ApiError(data.message || 'An error occurred', response.status);
     }
     
     return data;
@@ -45,7 +73,11 @@ export async function apiCall<T = any>(
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError('Network error occurred');
+    // Handle network errors or other unexpected errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new ApiError('Network connection error. Please check your internet connection.');
+    }
+    throw new ApiError('An unexpected error occurred. Please try again.');
   }
 }
 
@@ -124,6 +156,9 @@ export const kindyAdminApi = {
 
   // Student Infaq endpoints
   getAllInfaq: () => apiCall('/kindy/admin/student/infaq'),
+
+  // Student Outstanding endpoints
+  getAllOutstanding: () => apiCall('/kindy/admin/student/outstanding'),
 
   // Check endpoint access (for authorization)
   checkEndpointAccess: async (endpoint: string): Promise<boolean> => {

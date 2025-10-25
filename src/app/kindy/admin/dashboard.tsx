@@ -9,8 +9,9 @@ import StampSection from "./components/StampSection";
 import OpenAsSection from "./components/OpenAsSection";
 import SavingSection from "./components/SavingSection";
 import InfaqSection from "./components/InfaqSection";
+import OutstandingSection from "./components/OutstandingSection";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq";
+type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding";
 
 interface SectionConfig {
   key: Section;
@@ -20,6 +21,7 @@ interface SectionConfig {
 const allSections: SectionConfig[] = [
   { key: "payment", endpoint: "/kindy/admin/payment" },
   { key: "invoice", endpoint: "/kindy/admin/invoice" },
+  { key: "outstanding", endpoint: "/kindy/admin/student/outstanding" },
   { key: "saving", endpoint: "/kindy/admin/student/saving" },
   { key: "infaq", endpoint: "/kindy/admin/student/infaq" },
   { key: "stamp", endpoint: "/kindy/admin/wa" },
@@ -93,6 +95,7 @@ export default function KindyAdminDashboard() {
       <div className="max-w-4xl mx-auto">
         {activeSection === "payment" && accessibleSections.includes("payment") && <PaymentSection />}
         {activeSection === "invoice" && accessibleSections.includes("invoice") && <InvoiceSection />}
+        {activeSection === "outstanding" && accessibleSections.includes("outstanding") && <OutstandingSection />}
         {activeSection === "stamp" && accessibleSections.includes("stamp") && <StampSection />}
         {activeSection === "openas" && accessibleSections.includes("openas") && <OpenAsSection />}
         {activeSection === "saving" && accessibleSections.includes("saving") && <SavingSection />}

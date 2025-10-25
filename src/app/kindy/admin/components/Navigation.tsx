@@ -1,6 +1,6 @@
 "use client";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq";
+type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding";
 
 interface NavigationProps {
   activeSection: Section;
@@ -22,6 +22,7 @@ export default function Navigation({
   const allItems: NavItem[] = [
     { key: "payment", label: "Payment", icon: "💰" },
     { key: "invoice", label: "Invoice", icon: "📄" },
+    { key: "outstanding", label: "Standing", icon: "📊" },
     { key: "saving", label: "Saving", icon: "🏦" },
     { key: "infaq", label: "Infaq", icon: "🤲" },
     { key: "stamp", label: "Stamp", icon: "📨" },

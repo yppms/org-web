@@ -297,11 +297,30 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append("file", paymentFile);
 
-      await kindyStudentApi.confirmPayment(formData);
+      const response = await kindyStudentApi.confirmPayment(formData);
+
+      // Validate response before proceeding
+      if (!response || response.status !== 'success') {
+        throw new Error('Respon server tidak valid');
+      }
 
       setPaymentSuccess(
         "Pengecekan segera dilakukan. Pembayaran terupdate otomatis apabila pengecekan berhasil."
       );
+
+      // Refresh stats and invoices in background (non-blocking)
+      try {
+        const [statsResponse] = await Promise.all([
+          kindyStudentApi.getStats(),
+          // We don't await these to avoid blocking the success message
+        ]);
+        if (statsResponse && statsResponse.data) {
+          setStats(statsResponse.data);
+        }
+      } catch (refreshErr) {
+        // Silently fail refresh - user already sees success message
+        console.warn('Failed to refresh data after payment confirmation:', refreshErr);
+      }
     } catch (err) {
       showGlobalError(err);
     } finally {
@@ -341,11 +360,29 @@ export default function Dashboard() {
       };
       formData.append("message", JSON.stringify(message));
 
-      await kindyStudentApi.confirmPayment(formData);
+      const response = await kindyStudentApi.confirmPayment(formData);
+
+      // Validate response before proceeding
+      if (!response || response.status !== 'success') {
+        throw new Error('Respon server tidak valid');
+      }
 
       setPaymentSuccess(
         "Pengecekan segera dilakukan. Pembayaran terupdate otomatis apabila pengecekan berhasil."
       );
+
+      // Refresh stats and invoices in background (non-blocking)
+      try {
+        const [statsResponse] = await Promise.all([
+          kindyStudentApi.getStats(),
+        ]);
+        if (statsResponse && statsResponse.data) {
+          setStats(statsResponse.data);
+        }
+      } catch (refreshErr) {
+        // Silently fail refresh - user already sees success message
+        console.warn('Failed to refresh data after payment confirmation:', refreshErr);
+      }
     } catch (err) {
       showGlobalError(err);
     } finally {

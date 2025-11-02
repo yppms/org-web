@@ -61,6 +61,13 @@ export interface KindyStudentRecurringFee {
   };
 }
 
+export interface OutstandingInvoice {
+  name: string;
+  outstanding: number;
+  dueDate: string;
+  daysLate: number;
+}
+
 export interface StudentStats {
   outstanding: number;
   total_invoice: number;
@@ -69,6 +76,7 @@ export interface StudentStats {
   count_payment: number;
   saving: number;
   infaq: number;
+  outstanding_invoice?: OutstandingInvoice[];
 }
 
 export interface Saving {

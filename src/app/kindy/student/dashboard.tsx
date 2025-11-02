@@ -228,7 +228,9 @@ export default function Dashboard() {
   };
 
   // Handle currency input change for withdraw
-  const handleWithdrawAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWithdrawAmountChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const inputValue = e.target.value;
 
     // Remove Rp prefix and dots for storage
@@ -300,8 +302,8 @@ export default function Dashboard() {
       const response = await kindyStudentApi.confirmPayment(formData);
 
       // Validate response before proceeding
-      if (!response || response.status !== 'success') {
-        throw new Error('Respon server tidak valid');
+      if (!response || response.status !== "success") {
+        throw new Error("Respon server tidak valid");
       }
 
       setPaymentSuccess(
@@ -319,7 +321,10 @@ export default function Dashboard() {
         }
       } catch (refreshErr) {
         // Silently fail refresh - user already sees success message
-        console.warn('Failed to refresh data after payment confirmation:', refreshErr);
+        console.warn(
+          "Failed to refresh data after payment confirmation:",
+          refreshErr
+        );
       }
     } catch (err) {
       showGlobalError(err);
@@ -363,8 +368,8 @@ export default function Dashboard() {
       const response = await kindyStudentApi.confirmPayment(formData);
 
       // Validate response before proceeding
-      if (!response || response.status !== 'success') {
-        throw new Error('Respon server tidak valid');
+      if (!response || response.status !== "success") {
+        throw new Error("Respon server tidak valid");
       }
 
       setPaymentSuccess(
@@ -373,15 +378,16 @@ export default function Dashboard() {
 
       // Refresh stats and invoices in background (non-blocking)
       try {
-        const [statsResponse] = await Promise.all([
-          kindyStudentApi.getStats(),
-        ]);
+        const [statsResponse] = await Promise.all([kindyStudentApi.getStats()]);
         if (statsResponse && statsResponse.data) {
           setStats(statsResponse.data);
         }
       } catch (refreshErr) {
         // Silently fail refresh - user already sees success message
-        console.warn('Failed to refresh data after payment confirmation:', refreshErr);
+        console.warn(
+          "Failed to refresh data after payment confirmation:",
+          refreshErr
+        );
       }
     } catch (err) {
       showGlobalError(err);
@@ -582,32 +588,80 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                    {/* Totals summary (no title): total invoice, total payment, and outstanding with inverted sign */}
-                    <div className="w-full mt-4 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-base-content/60 font-medium">
-                          Semua Tagihan (<strong>{stats.count_invoice ?? 0}</strong>)
-                        </span>
-                        <span className="text-base-content/60 font-medium">{formatCurrency(stats.total_invoice)}</span>
+                  {/* Outstanding Invoice Details */}
+                  {stats.outstanding_invoice &&
+                    stats.outstanding_invoice.length > 0 && (
+                      <div className="rounded-lg border border-base-300 overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="table table-sm">
+                            <thead className="bg-base-200">
+                              <tr className="border-b border-base-300">
+                                <th className="text-xs font-semibold">
+                                  Tagihan
+                                </th>
+                                <th className="text-xs font-semibold text-center">
+                                  Jumlah
+                                </th>
+                                <th className="text-xs font-semibold text-center">
+                                  Terlambat
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stats.outstanding_invoice.map((invoice, idx) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-base-300"
+                                >
+                                  <td className="text-base-content/60 font-medium">
+                                    {invoice.name}
+                                  </td>
+                                  <td className="text-base-content/60 text-right font-medium">
+                                    {formatCurrency(invoice.outstanding)}
+                                  </td>
+                                  <td className={`text-center font-medium ${invoice.daysLate > 0 ? 'text-error font-extrabold' : 'text-base-content/60'}`}>
+                                    {invoice.daysLate} hari
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
+                    )}
 
-                      <div className="flex justify-between mt-1">
-                        <span className="text-base-content/60 font-medium">
-                          Semua Pembayaran (<strong>{stats.count_payment ?? 0}</strong>)
-                        </span>
-                        <span className="text-base-content/60 font-medium">{formatCurrency(stats.total_payment)}</span>
-                      </div>
-
-                      <hr className="my-2 border-t border-base-300" />
-
-                      <div className="flex justify-end">
-                        {/* Inverted sign: show '+' when outstanding is negative, '-' when outstanding is zero or positive */}
-                        <span className="text-sm font-bold">
-                          {stats.outstanding < 0 ? "+" : "-"}
-                          {formatCurrency(Math.abs(stats.outstanding))}
-                        </span>
-                      </div>
+                  {/* Totals summary (no title): total invoice, total payment, and outstanding with inverted sign */}
+                  <div className="w-full mt-4 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60 font-medium">
+                        Semua Tagihan (
+                        <strong>{stats.count_invoice ?? 0}</strong>)
+                      </span>
+                      <span className="text-base-content/60 font-medium">
+                        {formatCurrency(stats.total_invoice)}
+                      </span>
                     </div>
+
+                    <div className="flex justify-between mt-1">
+                      <span className="text-base-content/60 font-medium">
+                        Semua Pembayaran (
+                        <strong>{stats.count_payment ?? 0}</strong>)
+                      </span>
+                      <span className="text-base-content/60 font-medium">
+                        {formatCurrency(stats.total_payment)}
+                      </span>
+                    </div>
+
+                    <hr className="my-2 border-t border-base-300" />
+
+                    <div className="flex justify-end">
+                      {/* Inverted sign: show '+' when outstanding is negative, '-' when outstanding is zero or positive */}
+                      <span className="text-sm font-bold">
+                        {stats.outstanding < 0 ? "+" : "-"}
+                        {formatCurrency(Math.abs(stats.outstanding))}
+                      </span>
+                    </div>
+                  </div>
 
                   <div className="card bg-base-100 border-2 py-4 px-1">
                     {orgFinInfo ? (
@@ -714,13 +768,26 @@ export default function Dashboard() {
               <div className="card-body p-0">
                 <div className="border-b border-base-300 px-6 py-4">
                   <h3 className="font-semibold text-base-content">
-                  Aktivitas Terbaru
+                    Aktivitas Terbaru
                   </h3>
                   <div className="alert mt-2 border border-base-300 bg-base-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span className="text-xs">Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam. Cek berkala.</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="stroke-current shrink-0 w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                    <span className="text-xs">
+                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam.
+                      Cek berkala.
+                    </span>
                   </div>
                 </div>
 

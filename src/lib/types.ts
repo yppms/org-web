@@ -109,6 +109,22 @@ export interface Invoice {
   updatedAt: string;
 }
 
+export interface UnpaidInvoice {
+  id: string;
+  name: string;
+  amount: number;
+  startDate: string;
+  dueDate: string;
+  status: 'issued' | 'paid' | 'partial' | 'overdue';
+  paid: number;
+  outstanding: number;
+  isCustom: boolean;
+  daysLate: number;
+  no: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Infaq {
   id: string;
   amount: number;

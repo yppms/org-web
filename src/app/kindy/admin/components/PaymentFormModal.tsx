@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { kindyAdminApi } from "@/lib/api";
+import type { UnpaidInvoice } from "@/lib/types";
 
 interface Payment {
   id: string;
@@ -23,6 +25,7 @@ interface PaymentFormData {
   amount: string;
   date: string;
   reference: string;
+  invoice_id?: string;
 }
 
 interface PaymentFormModalProps {
@@ -39,11 +42,14 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
     amount: "",
     date: new Date().toISOString().split("T")[0],
     reference: "",
+    invoice_id: "",
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -53,6 +59,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
         amount: payment.amount.toString(),
         date: payment.date.split("T")[0],
         reference: payment.reference,
+        invoice_id: "",
       });
     } else if (mode === 'add') {
       setFormData({
@@ -60,11 +67,40 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
         amount: "",
         date: new Date().toISOString().split("T")[0],
         reference: "",
+        invoice_id: "",
       });
       setStudentSearch("");
+      setUnpaidInvoices([]);
     }
     setFilteredStudents(students);
   }, [mode, payment, students]);
+
+  // Fetch unpaid invoices when student is selected
+  useEffect(() => {
+    const fetchUnpaidInvoices = async () => {
+      if (mode === 'add' && formData.student_id) {
+        setLoadingInvoices(true);
+        try {
+          const response = await kindyAdminApi.getStudentUnpaidInvoices(formData.student_id);
+          if (response.status === 'success' && response.data) {
+            setUnpaidInvoices(response.data);
+          } else {
+            setUnpaidInvoices([]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch unpaid invoices:', error);
+          setUnpaidInvoices([]);
+        } finally {
+          setLoadingInvoices(false);
+        }
+      } else {
+        setUnpaidInvoices([]);
+        setFormData(prev => ({ ...prev, invoice_id: "" }));
+      }
+    };
+
+    fetchUnpaidInvoices();
+  }, [mode, formData.student_id]);
 
   if (!mode) return null;
 
@@ -171,6 +207,25 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               <label className="label">
                 <span className="label-text">Amount (Rp) <span className="text-error">*</span></span>
               </label>
+              
+              {/* Quick Amount Buttons */}
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  className={`btn btn-sm flex-1 ${formData.amount === '300000' ? 'btn-primary' : 'btn-active'}`}
+                  onClick={() => setFormData({ ...formData, amount: '300000' })}
+                >
+                  Regular 300K
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm flex-1 ${formData.amount === '600000' ? 'btn-primary' : 'btn-active'}`}
+                  onClick={() => setFormData({ ...formData, amount: '600000' })}
+                >
+                  Full Day 600K
+                </button>
+              </div>
+              
               <input
                 type="text"
                 placeholder="40.000"
@@ -214,6 +269,41 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                 }
               />
             </div>
+
+            {/* Optional Invoice Attachment - Only in Add mode */}
+            {mode === 'add' && formData.student_id && (
+              <div>
+                <label className="label">
+                  <span className="label-text">Attach to Invoice (Optional)</span>
+                </label>
+                {loadingInvoices ? (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-base-200 rounded-lg">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span className="text-sm text-base-content/60">Loading invoices...</span>
+                  </div>
+                ) : unpaidInvoices.length > 0 ? (
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.invoice_id || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoice_id: e.target.value })
+                    }
+                  >
+                    <option value="">-- No invoice attachment --</option>
+                    {unpaidInvoices.map((invoice) => (
+                      <option key={invoice.id} value={invoice.id}>
+                        {invoice.name} | {formatCurrency(invoice.outstanding)} | {invoice.daysLate} hari
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="alert alert-sm text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info shrink-0 w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>No unpaid invoices available for this student</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="modal-action">
             <button onClick={onClose} className="btn btn-ghost">
@@ -280,6 +370,24 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                   {formData.reference}
                 </div>
               </div>
+
+              {/* Attached Invoice (if selected) */}
+              {mode === 'add' && formData.invoice_id && (
+                <div className="border-t border-base-300 pt-3">
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Attached to Invoice</div>
+                  <div className="flex items-start gap-2">
+                    <div className="badge badge-primary badge-sm mt-1">📋</div>
+                    <div>
+                      <div className="text-sm font-semibold">
+                        {unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.name || 'Unknown Invoice'}
+                      </div>
+                      <div className="text-xs text-base-content/60">
+                        Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.outstanding || 0)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="modal-action">

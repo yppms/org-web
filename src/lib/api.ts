@@ -229,6 +229,7 @@ export const kindyAdminApi = {
     amount: number;
     date: string;
     reference: string;
+    invoice_id?: string;
   }) =>
     apiCall('/kindy/admin/payment', {
       method: 'POST',
@@ -238,6 +239,7 @@ export const kindyAdminApi = {
     amount: number;
     date: string;
     reference: string;
+    invoice_id?: string;
   }) =>
     apiCall(`/kindy/admin/payment/${id}`, {
       method: 'PUT',
@@ -247,6 +249,10 @@ export const kindyAdminApi = {
     apiCall(`/kindy/admin/payment/${id}`, {
       method: 'DELETE',
     }),
+
+  // Get unpaid invoices for a student
+  getStudentUnpaidInvoices: (studentId: string) => 
+    apiCall(`/kindy/admin/invoice/student/${studentId}`),
 };
 
 // Org API endpoints

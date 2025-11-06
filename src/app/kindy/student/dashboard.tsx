@@ -307,7 +307,7 @@ export default function Dashboard() {
       }
 
       setPaymentSuccess(
-        "Pengecekan segera dilakukan. Pembayaran terupdate otomatis apabila pengecekan berhasil."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
       );
 
       // Refresh stats and invoices in background (non-blocking)
@@ -373,7 +373,7 @@ export default function Dashboard() {
       }
 
       setPaymentSuccess(
-        "Pengecekan segera dilakukan. Pembayaran terupdate otomatis apabila pengecekan berhasil."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
       );
 
       // Refresh stats and invoices in background (non-blocking)

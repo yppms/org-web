@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
-import { KindyStudent, StudentStats, OrgFinancialInfo } from "@/lib/types";
+import { KindyStudent, StudentStats, OrgFinancialInfo, Saving, Infaq } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import Navigation from "./components/Navigation";
 import ProfileSection from "./components/ProfileSection";
@@ -28,6 +28,12 @@ export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState<
     "invoices" | "payment" | "saving" | "infaq"
   >("invoices");
+
+  // Progress tracking counts
+  const [savingCount, setSavingCount] = useState(0);
+  const [infaqCount, setInfaqCount] = useState(0);
+  const [savingData, setSavingData] = useState<Saving[]>([]);
+  const [infaqData, setInfaqData] = useState<Infaq[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +67,36 @@ export default function Dashboard() {
 
   // Unified error modal state
   const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // Helper function to get color intensity based on amount
+  const getColorIntensity = (amount: number, allAmounts: number[]): string => {
+    if (allAmounts.length === 0) return 'bg-green-600';
+    
+    const maxAmount = Math.max(...allAmounts);
+    const minAmount = Math.min(...allAmounts);
+    const range = maxAmount - minAmount;
+    
+    if (range === 0) return 'bg-green-600'; // All amounts are the same
+    
+    const normalized = (amount - minAmount) / range;
+    
+    // Create 5 levels of green intensity
+    if (normalized >= 0.8) return 'bg-green-700'; // darkest
+    if (normalized >= 0.6) return 'bg-green-600';
+    if (normalized >= 0.4) return 'bg-green-500';
+    if (normalized >= 0.2) return 'bg-green-400';
+    return 'bg-green-300'; // lightest
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
 
   // Check if user is enrolled in full day program
   const isFullDayEnrolled =
@@ -467,16 +503,30 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        const [profileResponse, statsResponse, orgFinResponse] =
+        const [profileResponse, statsResponse, orgFinResponse, savingsResponse, infaqResponse] =
           await Promise.all([
             kindyStudentApi.getProfile(),
             kindyStudentApi.getStats(),
             orgApi.getFinancialInfo(),
+            kindyStudentApi.getSavings(),
+            kindyStudentApi.getInfaq(),
           ]);
 
         setProfile(profileResponse.data);
         setStats(statsResponse.data);
         setOrgFinInfo(orgFinResponse.data);
+        
+        // Store full data arrays for tooltips and color intensity
+        // Filter only SAVE type for savings (exclude WITHDRAW)
+        const saveTransactions = (savingsResponse.data || []).filter(
+          (s: Saving) => s.type === 'SAVE' && s.status === 'SUCCESS'
+        );
+        setSavingData(saveTransactions);
+        setSavingCount(saveTransactions.length);
+        
+        const infaqTransactions = infaqResponse.data || [];
+        setInfaqData(infaqTransactions);
+        setInfaqCount(infaqTransactions.length);
       } catch (err) {
         if (err instanceof ApiError) {
           setError(err.message);
@@ -738,12 +788,51 @@ export default function Dashboard() {
                       {formatCurrency(stats.saving)}
                     </p>
                     <button
-                      className="btn btn-warning btn-sm text-white w-full"
+                      className="btn btn-warning btn-sm text-white w-full mb-3"
                       onClick={handleWithdrawClick}
                       disabled={stats.saving <= 0}
                     >
                       Tarik
                     </button>
+                    
+                    {/* GitHub Contribution Style Progress */}
+                    <div className="pt-3">
+                      <div className="flex flex-col gap-[2px]">
+                        {Array.from({ length: 4 }).map((_, row) => (
+                          <div key={row} className="flex gap-[2px]">
+                            {Array.from({ length: 10 }).map((_, col) => {
+                              const index = row * 10 + col;
+                              const saving = savingData[index];
+                              const allAmounts = savingData.map(s => s.amount);
+                              const colorClass = saving 
+                                ? getColorIntensity(saving.amount, allAmounts)
+                                : 'bg-base-300';
+                              
+                              return (
+                                <div 
+                                  key={col}
+                                  className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
+                                  title={saving ? `${formatDate(saving.date)}: ${formatCurrency(saving.amount)}` : `${index + 1}/40`}
+                                >
+                                  {/* Tooltip on hover */}
+                                  {saving && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                      {formatDate(saving.date)}<br/>
+                                      {formatCurrency(saving.amount)}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <span className="text-[10px] font-bold text-base-content">{savingData.length}/40</span>
+                        <span className="text-[10px] text-base-content/40">•</span>
+                        <span className="text-[10px] font-bold text-base-content">{Math.round((savingData.length / 40) * 100)}%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -754,10 +843,49 @@ export default function Dashboard() {
                     <p className="text-xs font-medium text-base-content/60 mb-2">
                       Total Infaq
                     </p>
-                    <p className="text-lg font-bold" suppressHydrationWarning>
+                    <p className="text-lg font-bold mb-2" suppressHydrationWarning>
                       {formatCurrency(stats.infaq)}
                     </p>
-                    <span className="text-2xl">🤲</span>
+                    <span className="text-2xl mb-3 block">🤲</span>
+                    
+                    {/* GitHub Contribution Style Progress */}
+                    <div className="pt-3">
+                      <div className="flex flex-col gap-[2px]">
+                        {Array.from({ length: 4 }).map((_, row) => (
+                          <div key={row} className="flex gap-[2px]">
+                            {Array.from({ length: 10 }).map((_, col) => {
+                              const index = row * 10 + col;
+                              const infaq = infaqData[index];
+                              const allAmounts = infaqData.map(i => i.amount);
+                              const colorClass = infaq 
+                                ? getColorIntensity(infaq.amount, allAmounts)
+                                : 'bg-base-300';
+                              
+                              return (
+                                <div 
+                                  key={col}
+                                  className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
+                                  title={infaq ? `${formatDate(infaq.date)}: ${formatCurrency(infaq.amount)}` : `${index + 1}/40`}
+                                >
+                                  {/* Tooltip on hover */}
+                                  {infaq && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                      {formatDate(infaq.date)}<br/>
+                                      {formatCurrency(infaq.amount)}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <span className="text-[10px] font-bold text-base-content">{infaqData.length}/40</span>
+                        <span className="text-[10px] text-base-content/40">•</span>
+                        <span className="text-[10px] font-bold text-base-content">{Math.round((infaqData.length / 40) * 100)}%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

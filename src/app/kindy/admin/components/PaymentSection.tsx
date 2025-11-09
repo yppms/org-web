@@ -11,6 +11,8 @@ interface Payment {
   amount: number;
   date: string;
   reference: string;
+  invoiceId?: string;
+  invoiceName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +22,7 @@ interface PaymentFormData {
   amount: string;
   date: string;
   reference: string;
+  invoice_id?: string | null;
 }
 
 interface Student {
@@ -72,12 +75,14 @@ export default function PaymentSection() {
           amount: parseFloat(formData.amount),
           date: formData.date,
           reference: formData.reference,
+          invoice_id: formData.invoice_id || null,
         });
       } else if (formMode === 'edit' && selectedPayment) {
         await kindyAdminApi.updatePayment(selectedPayment.id, {
           amount: parseFloat(formData.amount),
           date: formData.date,
           reference: formData.reference,
+          invoice_id: formData.invoice_id || null,
         });
       }
       await fetchPayments();
@@ -327,6 +332,16 @@ export default function PaymentSection() {
                               <span className="text-base-content/60 font-medium">Ref:</span>
                               <span className="text-xs text-base-content/70">
                                 {payment.reference}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Attached Invoice */}
+                          {payment.invoiceName && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-base-content/60 font-medium">Invoice:</span>
+                              <span className="badge badge-primary badge-sm">
+                                📋 {payment.invoiceName}
                               </span>
                             </div>
                           )}

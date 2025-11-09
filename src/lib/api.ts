@@ -229,7 +229,7 @@ export const kindyAdminApi = {
     amount: number;
     date: string;
     reference: string;
-    invoice_id?: string;
+    invoice_id?: string | null;
   }) =>
     apiCall('/kindy/admin/payment', {
       method: 'POST',
@@ -239,7 +239,7 @@ export const kindyAdminApi = {
     amount: number;
     date: string;
     reference: string;
-    invoice_id?: string;
+    invoice_id?: string | null;
   }) =>
     apiCall(`/kindy/admin/payment/${id}`, {
       method: 'PUT',

@@ -11,6 +11,8 @@ interface Payment {
   amount: number;
   date: string;
   reference: string;
+  invoiceId?: string;
+  invoiceName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +27,7 @@ interface PaymentFormData {
   amount: string;
   date: string;
   reference: string;
-  invoice_id?: string;
+  invoice_id?: string | null;
 }
 
 interface PaymentFormModalProps {
@@ -50,17 +52,25 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [editModeStudentId, setEditModeStudentId] = useState<string>("");
+  const [shouldFetchInvoices, setShouldFetchInvoices] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
     if (mode === 'edit' && payment) {
+      // Find student ID by name (for edit mode to fetch invoices)
+      const student = students.find(s => s.name === payment.kindyStudentName);
+      const studentId = student?.id || "";
+      setEditModeStudentId(studentId);
+      
       setFormData({
-        student_id: "",
+        student_id: studentId,
         amount: payment.amount.toString(),
         date: payment.date.split("T")[0],
         reference: payment.reference,
-        invoice_id: "",
+        invoice_id: payment.invoiceId || "",
       });
+      setShouldFetchInvoices(false); // Don't auto-fetch in edit mode
     } else if (mode === 'add') {
       setFormData({
         student_id: "",
@@ -71,17 +81,25 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       });
       setStudentSearch("");
       setUnpaidInvoices([]);
+      setEditModeStudentId("");
+      setShouldFetchInvoices(false);
     }
     setFilteredStudents(students);
   }, [mode, payment, students]);
 
-  // Fetch unpaid invoices when student is selected
+  // Fetch unpaid invoices when student is selected (add mode) or when explicitly requested (edit mode)
   useEffect(() => {
     const fetchUnpaidInvoices = async () => {
-      if (mode === 'add' && formData.student_id) {
+      const studentIdToUse = mode === 'edit' ? editModeStudentId : formData.student_id;
+      
+      // For add mode: fetch when student is selected
+      // For edit mode: only fetch when explicitly requested
+      const shouldFetch = mode === 'add' ? !!studentIdToUse : (!!studentIdToUse && shouldFetchInvoices);
+      
+      if (shouldFetch) {
         setLoadingInvoices(true);
         try {
-          const response = await kindyAdminApi.getStudentUnpaidInvoices(formData.student_id);
+          const response = await kindyAdminApi.getStudentUnpaidInvoices(studentIdToUse);
           if (response.status === 'success' && response.data) {
             setUnpaidInvoices(response.data);
           } else {
@@ -93,14 +111,14 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
         } finally {
           setLoadingInvoices(false);
         }
-      } else {
+      } else if (mode === 'add' && !studentIdToUse) {
         setUnpaidInvoices([]);
         setFormData(prev => ({ ...prev, invoice_id: "" }));
       }
     };
 
     fetchUnpaidInvoices();
-  }, [mode, formData.student_id]);
+  }, [mode, formData.student_id, editModeStudentId, shouldFetchInvoices]);
 
   if (!mode) return null;
 
@@ -270,38 +288,94 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               />
             </div>
 
-            {/* Optional Invoice Attachment - Only in Add mode */}
-            {mode === 'add' && formData.student_id && (
+            {/* Optional Invoice Attachment - Show in both Add and Edit mode */}
+            {formData.student_id && (
               <div>
                 <label className="label">
                   <span className="label-text">Attach to Invoice (Optional)</span>
                 </label>
-                {loadingInvoices ? (
+                
+                {mode === 'edit' && payment?.invoiceName && !shouldFetchInvoices ? (
+                  // In edit mode, show current invoice with option to change
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+                      <div className="badge badge-primary badge-sm">📋</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold">{payment.invoiceName}</div>
+                        <div className="text-xs text-base-content/60">Current invoice attachment</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost btn-block"
+                      onClick={() => setShouldFetchInvoices(true)}
+                    >
+                      Change or Remove Invoice
+                    </button>
+                  </div>
+                ) : loadingInvoices ? (
                   <div className="flex items-center gap-2 px-4 py-3 bg-base-200 rounded-lg">
                     <span className="loading loading-spinner loading-sm"></span>
                     <span className="text-sm text-base-content/60">Loading invoices...</span>
                   </div>
-                ) : unpaidInvoices.length > 0 ? (
-                  <select
-                    className="select select-bordered w-full"
-                    value={formData.invoice_id || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, invoice_id: e.target.value })
-                    }
-                  >
-                    <option value="">-- No invoice attachment --</option>
-                    {unpaidInvoices.map((invoice) => (
-                      <option key={invoice.id} value={invoice.id}>
-                        {invoice.name} | {formatCurrency(invoice.outstanding)} | {invoice.daysLate} hari
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="alert alert-sm text-xs">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info shrink-0 w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>No unpaid invoices available for this student</span>
+                ) : (mode === 'add' || shouldFetchInvoices) && unpaidInvoices.length > 0 ? (
+                  <div className="space-y-2">
+                    <select
+                      className="select select-bordered w-full"
+                      value={formData.invoice_id || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, invoice_id: e.target.value })
+                      }
+                    >
+                      <option value="">-- No invoice attachment --</option>
+                      {unpaidInvoices.map((invoice) => (
+                        <option key={invoice.id} value={invoice.id}>
+                          {invoice.name} | {formatCurrency(invoice.outstanding)} | {invoice.daysLate} hari
+                        </option>
+                      ))}
+                    </select>
+                    {mode === 'edit' && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-ghost"
+                        onClick={() => {
+                          setShouldFetchInvoices(false);
+                          setFormData({ ...formData, invoice_id: payment?.invoiceId || "" });
+                        }}
+                      >
+                        ← Cancel
+                      </button>
+                    )}
                   </div>
-                )}
+                ) : (mode === 'add' || shouldFetchInvoices) ? (
+                  <div className="space-y-2">
+                    <div className="alert alert-sm text-xs">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info shrink-0 w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      <span>No unpaid invoices available for this student</span>
+                    </div>
+                    {mode === 'edit' && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-ghost"
+                        onClick={() => {
+                          setShouldFetchInvoices(false);
+                          setFormData({ ...formData, invoice_id: payment?.invoiceId || "" });
+                        }}
+                      >
+                        ← Cancel
+                      </button>
+                    )}
+                  </div>
+                ) : mode === 'edit' && !payment?.invoiceName ? (
+                  // Edit mode, no current invoice, not fetching yet
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline btn-block"
+                    onClick={() => setShouldFetchInvoices(true)}
+                  >
+                    + Attach to Invoice
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
@@ -372,18 +446,22 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               </div>
 
               {/* Attached Invoice (if selected) */}
-              {mode === 'add' && formData.invoice_id && (
+              {formData.invoice_id && (
                 <div className="border-t border-base-300 pt-3">
                   <div className="text-xs text-base-content/60 font-medium mb-1">Attached to Invoice</div>
                   <div className="flex items-start gap-2">
                     <div className="badge badge-primary badge-sm mt-1">📋</div>
                     <div>
                       <div className="text-sm font-semibold">
-                        {unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.name || 'Unknown Invoice'}
+                        {unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.name || 
+                         payment?.invoiceName || 
+                         'Unknown Invoice'}
                       </div>
-                      <div className="text-xs text-base-content/60">
-                        Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.outstanding || 0)}
-                      </div>
+                      {unpaidInvoices.find(inv => inv.id === formData.invoice_id) && (
+                        <div className="text-xs text-base-content/60">
+                          Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.outstanding || 0)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

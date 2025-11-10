@@ -1,6 +1,6 @@
 "use client";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding";
+type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor";
 
 interface NavigationProps {
   activeSection: Section;
@@ -25,6 +25,7 @@ export default function Navigation({
     { key: "outstanding", label: "Standing", icon: "📊" },
     { key: "saving", label: "Saving", icon: "🏦" },
     { key: "infaq", label: "Infaq", icon: "🤲" },
+    { key: "setor", label: "IS Ctrl", icon: "💵" },
     { key: "stamp", label: "Stamp", icon: "📨" },
     { key: "openas", label: "OAS", icon: "👤" },
   ];

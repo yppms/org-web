@@ -10,8 +10,9 @@ import OpenAsSection from "./components/OpenAsSection";
 import SavingSection from "./components/SavingSection";
 import InfaqSection from "./components/InfaqSection";
 import OutstandingSection from "./components/OutstandingSection";
+import SetorSection from "./components/SetorSection";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding";
+type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor";
 
 interface SectionConfig {
   key: Section;
@@ -24,6 +25,7 @@ const allSections: SectionConfig[] = [
   { key: "outstanding", endpoint: "/kindy/admin/student/outstanding" },
   { key: "saving", endpoint: "/kindy/admin/student/saving" },
   { key: "infaq", endpoint: "/kindy/admin/student/infaq" },
+  { key: "setor", endpoint: "/kindy/admin/setor" },
   { key: "stamp", endpoint: "/kindy/admin/wa" },
   { key: "openas", endpoint: "/kindy/admin/student" },
 ];
@@ -100,6 +102,7 @@ export default function KindyAdminDashboard() {
         {activeSection === "openas" && accessibleSections.includes("openas") && <OpenAsSection />}
         {activeSection === "saving" && accessibleSections.includes("saving") && <SavingSection />}
         {activeSection === "infaq" && accessibleSections.includes("infaq") && <InfaqSection />}
+        {activeSection === "setor" && accessibleSections.includes("setor") && <SetorSection />}
       </div>
     </div>
   );

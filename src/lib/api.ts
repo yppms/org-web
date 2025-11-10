@@ -253,6 +253,18 @@ export const kindyAdminApi = {
   // Get unpaid invoices for a student
   getStudentUnpaidInvoices: (studentId: string) => 
     apiCall(`/kindy/admin/invoice/student/${studentId}`),
+
+  // Setor endpoints
+  getSetor: () => apiCall('/kindy/admin/setor'),
+  getDeltaSetor: () => apiCall('/kindy/admin/setor/delta'),
+  addSetor: (data: {
+    amount: number;
+    type: 'bank' | 'amil';
+  }) =>
+    apiCall('/kindy/admin/setor', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Org API endpoints

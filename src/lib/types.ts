@@ -68,6 +68,12 @@ export interface OutstandingInvoice {
   daysLate: number;
 }
 
+export interface AdmissionInfo {
+  outstanding: number;
+  discount: number;
+  minimum: number;
+}
+
 export interface StudentStats {
   outstanding: number;
   total_invoice: number;
@@ -77,6 +83,7 @@ export interface StudentStats {
   saving: number;
   infaq: number;
   outstanding_invoice?: OutstandingInvoice[];
+  admission?: AdmissionInfo;
 }
 
 export interface Saving {

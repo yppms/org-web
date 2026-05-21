@@ -6,7 +6,9 @@ type Section =
   | "invoices"
   | "savings"
   | "infaq"
-  | "fullday";
+  | "fullday"
+  | "laporan-harian"
+  | "perkembangan-anak";
 
 interface NavigationProps {
   activeSection: Section;
@@ -21,6 +23,8 @@ export default function Navigation({
 }: NavigationProps) {
   const mainItems = [
     { key: "dashboard", label: "Dashboard", icon: "🏠" },
+    { key: "laporan-harian", label: "Harian", icon: "📋" },
+    { key: "perkembangan-anak", label: "Tumbuh", icon: "🌱" },
     { key: "profile", label: "Profil", icon: "👨‍🦲" },
   ];
 
@@ -54,22 +58,27 @@ export default function Navigation({
         <div className="px-4 py-2 safe-area-bottom">
           <div className="flex justify-center">
             <div className="flex bg-base-100 rounded-2xl p-1 gap-1 border-2">
-              {mainItems.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => onSectionChange(item.key as Section)}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-                    activeSection === item.key
-                      ? "bg-primary text-primary-content shadow-sm"
-                      : "text-base-content/60 hover:text-base-content hover:bg-base-300/50"
-                  }`}
-                >
-                  <span className="text-lg leading-none">{item.icon}</span>
-                  <span className="text-xs font-medium leading-none">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
+              {mainItems.map((item) => {
+                const isActive = activeSection === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => onSectionChange(item.key as Section)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? "bg-primary text-primary-content shadow-sm"
+                        : "text-base-content/60 hover:text-base-content hover:bg-base-300/50"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{item.icon}</span>
+                    {isActive && (
+                      <span className="text-xs font-medium leading-none whitespace-nowrap">
+                        {item.label}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

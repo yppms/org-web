@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
-import { KindyStudent, StudentStats, OrgFinancialInfo, Saving, Infaq } from "@/lib/types";
+import {
+  KindyStudent,
+  StudentStats,
+  OrgFinancialInfo,
+  Saving,
+  Infaq,
+} from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import Navigation from "./components/Navigation";
 import ProfileSection from "./components/ProfileSection";
@@ -18,7 +24,9 @@ type Section =
   | "invoices"
   | "savings"
   | "infaq"
-  | "fullday";
+  | "fullday"
+  | "laporan-harian"
+  | "perkembangan-anak";
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<KindyStudent | null>(null);
@@ -46,7 +54,7 @@ export default function Dashboard() {
   const [paymentFinNumName, setPaymentFinNumName] = useState("");
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [paymentFilePreview, setPaymentFilePreview] = useState<string | null>(
-    null
+    null,
   );
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [paymentChoice, setPaymentChoice] = useState<
@@ -70,38 +78,38 @@ export default function Dashboard() {
 
   // Helper function to get color intensity based on amount
   const getColorIntensity = (amount: number, allAmounts: number[]): string => {
-    if (allAmounts.length === 0) return 'bg-green-600';
-    
+    if (allAmounts.length === 0) return "bg-green-600";
+
     const maxAmount = Math.max(...allAmounts);
     const minAmount = Math.min(...allAmounts);
     const range = maxAmount - minAmount;
-    
-    if (range === 0) return 'bg-green-600'; // All amounts are the same
-    
+
+    if (range === 0) return "bg-green-600"; // All amounts are the same
+
     const normalized = (amount - minAmount) / range;
-    
+
     // Create 5 levels of green intensity
-    if (normalized >= 0.8) return 'bg-green-700'; // darkest
-    if (normalized >= 0.6) return 'bg-green-600';
-    if (normalized >= 0.4) return 'bg-green-500';
-    if (normalized >= 0.2) return 'bg-green-400';
-    return 'bg-green-300'; // lightest
+    if (normalized >= 0.8) return "bg-green-700"; // darkest
+    if (normalized >= 0.6) return "bg-green-600";
+    if (normalized >= 0.4) return "bg-green-500";
+    if (normalized >= 0.2) return "bg-green-400";
+    return "bg-green-300"; // lightest
   };
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   // Check if user is enrolled in full day program
   const isFullDayEnrolled =
     profile?.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
     ) || false;
 
   const showGlobalError = (error: any) => {
@@ -115,7 +123,7 @@ export default function Dashboard() {
 
     // Show the global error modal
     const modal = document.getElementById(
-      "global_error_modal"
+      "global_error_modal",
     ) as HTMLDialogElement;
     modal?.showModal();
   };
@@ -139,7 +147,7 @@ export default function Dashboard() {
       setFullDaySuccess(
         wasEnrolled
           ? "Ananda dapat mendaftar kembali kapan saja di bulan berikutnya."
-          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan."
+          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan.",
       );
     } catch (err) {
       showGlobalError(err);
@@ -161,7 +169,7 @@ export default function Dashboard() {
     if (!hasBankInfo) {
       // Show bank info required modal first
       const bankRequiredModal = document.getElementById(
-        "bank_required_modal"
+        "bank_required_modal",
       ) as HTMLDialogElement;
       bankRequiredModal?.showModal();
       return;
@@ -169,7 +177,7 @@ export default function Dashboard() {
 
     // Open withdraw modal directly
     const modal = document.getElementById(
-      "withdraw_modal"
+      "withdraw_modal",
     ) as HTMLDialogElement;
     modal?.showModal();
   };
@@ -180,7 +188,7 @@ export default function Dashboard() {
 
     // Close the bank required modal
     const bankRequiredModal = document.getElementById(
-      "bank_required_modal"
+      "bank_required_modal",
     ) as HTMLDialogElement;
     bankRequiredModal?.close();
 
@@ -190,7 +198,7 @@ export default function Dashboard() {
     // Wait for the profile section to render, then open the bank modal
     setTimeout(() => {
       const bankModal = document.getElementById(
-        "bank_modal"
+        "bank_modal",
       ) as HTMLDialogElement;
       if (bankModal) {
         bankModal.showModal();
@@ -210,7 +218,7 @@ export default function Dashboard() {
         // Wait for the component to render, then open the withdraw modal
         setTimeout(() => {
           const modal = document.getElementById(
-            "withdraw_modal"
+            "withdraw_modal",
           ) as HTMLDialogElement;
           modal?.showModal();
         }, 200);
@@ -235,7 +243,7 @@ export default function Dashboard() {
     setPaymentSuccess(null);
 
     const modal = document.getElementById(
-      "payment_confirm_modal"
+      "payment_confirm_modal",
     ) as HTMLDialogElement;
     modal?.showModal();
   };
@@ -265,7 +273,7 @@ export default function Dashboard() {
 
   // Handle currency input change for withdraw
   const handleWithdrawAmountChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const inputValue = e.target.value;
 
@@ -343,7 +351,7 @@ export default function Dashboard() {
       }
 
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
       );
 
       // Refresh stats and invoices in background (non-blocking)
@@ -359,7 +367,7 @@ export default function Dashboard() {
         // Silently fail refresh - user already sees success message
         console.warn(
           "Failed to refresh data after payment confirmation:",
-          refreshErr
+          refreshErr,
         );
       }
     } catch (err) {
@@ -409,7 +417,7 @@ export default function Dashboard() {
       }
 
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
       );
 
       // Refresh stats and invoices in background (non-blocking)
@@ -422,7 +430,7 @@ export default function Dashboard() {
         // Silently fail refresh - user already sees success message
         console.warn(
           "Failed to refresh data after payment confirmation:",
-          refreshErr
+          refreshErr,
         );
       }
     } catch (err) {
@@ -485,8 +493,8 @@ export default function Dashboard() {
       // Show success message in modal
       setWithdrawSuccess(
         `Berhasil mengirimkan permintaan penarikan dana sebesar ${formatCurrency(
-          amount
-        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`
+          amount,
+        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`,
       );
 
       // Reset form
@@ -503,27 +511,32 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        const [profileResponse, statsResponse, orgFinResponse, savingsResponse, infaqResponse] =
-          await Promise.all([
-            kindyStudentApi.getProfile(),
-            kindyStudentApi.getStats(),
-            orgApi.getFinancialInfo(),
-            kindyStudentApi.getSavings(),
-            kindyStudentApi.getInfaq(),
-          ]);
+        const [
+          profileResponse,
+          statsResponse,
+          orgFinResponse,
+          savingsResponse,
+          infaqResponse,
+        ] = await Promise.all([
+          kindyStudentApi.getProfile(),
+          kindyStudentApi.getStats(),
+          orgApi.getFinancialInfo(),
+          kindyStudentApi.getSavings(),
+          kindyStudentApi.getInfaq(),
+        ]);
 
         setProfile(profileResponse.data);
         setStats(statsResponse.data);
         setOrgFinInfo(orgFinResponse.data);
-        
+
         // Store full data arrays for tooltips and color intensity
         // Filter only SAVE type for savings (exclude WITHDRAW)
         const saveTransactions = (savingsResponse.data || []).filter(
-          (s: Saving) => s.type === 'SAVE' && s.status === 'SUCCESS'
+          (s: Saving) => s.type === "SAVE" && s.status === "SUCCESS",
         );
         setSavingData(saveTransactions);
         setSavingCount(saveTransactions.length);
-        
+
         const infaqTransactions = infaqResponse.data || [];
         setInfaqData(infaqTransactions);
         setInfaqCount(infaqTransactions.length);
@@ -564,6 +577,8 @@ export default function Dashboard() {
   }
 
   const renderContent = () => {
+    const admission = (stats as any).admission;
+
     switch (activeSection) {
       case "profile":
         return (
@@ -573,6 +588,30 @@ export default function Dashboard() {
             onBankInfoAdded={handleBankInfoAdded}
             onError={showGlobalError}
           />
+        );
+      case "laporan-harian":
+        return (
+          <div className="space-y-4 p-4">
+            <h2 className="text-lg font-bold">Laporan Harian</h2>
+            <div className="card bg-base-100 shadow-sm border border-base-300">
+              <div className="card-body items-center text-center py-12">
+                <span className="text-4xl">📋</span>
+                <p className="text-base-content/50 mt-3">Belum ada data</p>
+              </div>
+            </div>
+          </div>
+        );
+      case "perkembangan-anak":
+        return (
+          <div className="space-y-4 p-4">
+            <h2 className="text-lg font-bold">Perkembangan Anak</h2>
+            <div className="card bg-base-100 shadow-sm border border-base-300">
+              <div className="card-body items-center text-center py-12">
+                <span className="text-4xl">🌱</span>
+                <p className="text-base-content/50 mt-3">Belum ada data</p>
+              </div>
+            </div>
+          </div>
         );
       default:
         return (
@@ -638,6 +677,30 @@ export default function Dashboard() {
                     )}
                   </div>
 
+                  {/* Admission banners */}
+                  {admission && (
+                    <div className="flex flex-col gap-2">
+                      <div className="alert p-2 text-xs text-left">
+                        <span>
+                          Tagihan biaya masuk 2627 {" "}
+                          <strong>
+                            {formatCurrency(admission.outstanding)}
+                          </strong>
+                          . Bayar hanya{" "}
+                          <strong>{formatCurrency(admission.discount)}</strong>{" "}
+                          jika melunasi sebelum <strong>13 Juli 2026</strong>
+                        </span>
+                      </div>
+                      <div className="alert p-2 text-xs text-left">
+                        <span>
+                          Pembayaran{" "}
+                          <strong>{formatCurrency(admission.minimum)}</strong>{" "}
+                          lagi untuk <strong>50%</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Outstanding Invoice Details */}
                   {stats.outstanding_invoice &&
                     stats.outstanding_invoice.length > 0 && (
@@ -669,7 +732,9 @@ export default function Dashboard() {
                                   <td className="text-base-content/60 text-right font-medium">
                                     {formatCurrency(invoice.outstanding)}
                                   </td>
-                                  <td className={`text-center font-medium ${invoice.daysLate > 0 ? 'text-error font-extrabold' : 'text-base-content/60'}`}>
+                                  <td
+                                    className={`text-center font-medium ${invoice.daysLate > 0 ? "text-error font-extrabold" : "text-base-content/60"}`}
+                                  >
                                     {invoice.daysLate} hari
                                   </td>
                                 </tr>
@@ -794,7 +859,7 @@ export default function Dashboard() {
                     >
                       Tarik
                     </button>
-                    
+
                     {/* GitHub Contribution Style Progress */}
                     <div className="pt-3">
                       <div className="flex flex-col gap-[2px]">
@@ -803,21 +868,28 @@ export default function Dashboard() {
                             {Array.from({ length: 10 }).map((_, col) => {
                               const index = row * 10 + col;
                               const saving = savingData[index];
-                              const allAmounts = savingData.map(s => s.amount);
-                              const colorClass = saving 
+                              const allAmounts = savingData.map(
+                                (s) => s.amount,
+                              );
+                              const colorClass = saving
                                 ? getColorIntensity(saving.amount, allAmounts)
-                                : 'bg-base-300';
-                              
+                                : "bg-base-300";
+
                               return (
-                                <div 
+                                <div
                                   key={col}
                                   className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
-                                  title={saving ? `${formatDate(saving.date)}: ${formatCurrency(saving.amount)}` : `${index + 1}/40`}
+                                  title={
+                                    saving
+                                      ? `${formatDate(saving.date)}: ${formatCurrency(saving.amount)}`
+                                      : `${index + 1}/40`
+                                  }
                                 >
                                   {/* Tooltip on hover */}
                                   {saving && (
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                      {formatDate(saving.date)}<br/>
+                                      {formatDate(saving.date)}
+                                      <br />
                                       {formatCurrency(saving.amount)}
                                     </div>
                                   )}
@@ -828,9 +900,15 @@ export default function Dashboard() {
                         ))}
                       </div>
                       <div className="flex items-center justify-center gap-2 mt-2">
-                        <span className="text-[10px] font-bold text-base-content">{savingData.length}/40</span>
-                        <span className="text-[10px] text-base-content/40">•</span>
-                        <span className="text-[10px] font-bold text-base-content">{Math.round((savingData.length / 40) * 100)}%</span>
+                        <span className="text-[10px] font-bold text-base-content">
+                          {savingData.length}/40
+                        </span>
+                        <span className="text-[10px] text-base-content/40">
+                          •
+                        </span>
+                        <span className="text-[10px] font-bold text-base-content">
+                          {Math.round((savingData.length / 40) * 100)}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -843,11 +921,14 @@ export default function Dashboard() {
                     <p className="text-xs font-medium text-base-content/60 mb-2">
                       Total Infaq
                     </p>
-                    <p className="text-lg font-bold mb-2" suppressHydrationWarning>
+                    <p
+                      className="text-lg font-bold mb-2"
+                      suppressHydrationWarning
+                    >
                       {formatCurrency(stats.infaq)}
                     </p>
                     <span className="text-2xl mb-3 block">🤲</span>
-                    
+
                     {/* GitHub Contribution Style Progress */}
                     <div className="pt-3">
                       <div className="flex flex-col gap-[2px]">
@@ -856,21 +937,26 @@ export default function Dashboard() {
                             {Array.from({ length: 10 }).map((_, col) => {
                               const index = row * 10 + col;
                               const infaq = infaqData[index];
-                              const allAmounts = infaqData.map(i => i.amount);
-                              const colorClass = infaq 
+                              const allAmounts = infaqData.map((i) => i.amount);
+                              const colorClass = infaq
                                 ? getColorIntensity(infaq.amount, allAmounts)
-                                : 'bg-base-300';
-                              
+                                : "bg-base-300";
+
                               return (
-                                <div 
+                                <div
                                   key={col}
                                   className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
-                                  title={infaq ? `${formatDate(infaq.date)}: ${formatCurrency(infaq.amount)}` : `${index + 1}/40`}
+                                  title={
+                                    infaq
+                                      ? `${formatDate(infaq.date)}: ${formatCurrency(infaq.amount)}`
+                                      : `${index + 1}/40`
+                                  }
                                 >
                                   {/* Tooltip on hover */}
                                   {infaq && (
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                      {formatDate(infaq.date)}<br/>
+                                      {formatDate(infaq.date)}
+                                      <br />
                                       {formatCurrency(infaq.amount)}
                                     </div>
                                   )}
@@ -881,9 +967,15 @@ export default function Dashboard() {
                         ))}
                       </div>
                       <div className="flex items-center justify-center gap-2 mt-2">
-                        <span className="text-[10px] font-bold text-base-content">{infaqData.length}/40</span>
-                        <span className="text-[10px] text-base-content/40">•</span>
-                        <span className="text-[10px] font-bold text-base-content">{Math.round((infaqData.length / 40) * 100)}%</span>
+                        <span className="text-[10px] font-bold text-base-content">
+                          {infaqData.length}/40
+                        </span>
+                        <span className="text-[10px] text-base-content/40">
+                          •
+                        </span>
+                        <span className="text-[10px] font-bold text-base-content">
+                          {Math.round((infaqData.length / 40) * 100)}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -998,7 +1090,7 @@ export default function Dashboard() {
                   className="btn btn-success text-white"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "fullday_modal"
+                      "fullday_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setFullDaySuccess(null);
@@ -1029,7 +1121,7 @@ export default function Dashboard() {
                     className="btn"
                     onClick={() => {
                       const modal = document.getElementById(
-                        "fullday_modal"
+                        "fullday_modal",
                       ) as HTMLDialogElement;
                       modal?.close();
                       setError(null);
@@ -1060,7 +1152,7 @@ export default function Dashboard() {
                   className="btn"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "fullday_modal"
+                      "fullday_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setError(null);
@@ -1117,7 +1209,7 @@ export default function Dashboard() {
               className="btn"
               onClick={() => {
                 const modal = document.getElementById(
-                  "bank_required_modal"
+                  "bank_required_modal",
                 ) as HTMLDialogElement;
                 modal?.close();
               }}
@@ -1148,7 +1240,7 @@ export default function Dashboard() {
                   className="btn btn-success text-white"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "payment_confirm_modal"
+                      "payment_confirm_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setPaymentSuccess(null);
@@ -1336,7 +1428,7 @@ export default function Dashboard() {
                   className="btn"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "payment_confirm_modal"
+                      "payment_confirm_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setError(null);
@@ -1397,7 +1489,7 @@ export default function Dashboard() {
                   className="btn btn-success text-white"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "withdraw_modal"
+                      "withdraw_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setWithdrawSuccess(null);
@@ -1474,7 +1566,7 @@ export default function Dashboard() {
                   className="btn"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "withdraw_modal"
+                      "withdraw_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setWithdrawAmount("");
@@ -1514,7 +1606,7 @@ export default function Dashboard() {
               className="btn btn-secondary"
               onClick={() => {
                 const modal = document.getElementById(
-                  "global_error_modal"
+                  "global_error_modal",
                 ) as HTMLDialogElement;
                 modal?.close();
                 setGlobalError(null);

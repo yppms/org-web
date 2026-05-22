@@ -28,6 +28,7 @@ interface PaymentFormData {
   date: string;
   reference: string;
   invoice_id?: string | null;
+  is_saving?: boolean;
 }
 
 interface PaymentFormModalProps {
@@ -54,6 +55,9 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [editModeStudentId, setEditModeStudentId] = useState<string>("");
   const [shouldFetchInvoices, setShouldFetchInvoices] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingBalance, setSavingBalance] = useState<number | null>(null);
+  const [loadingSavingBalance, setLoadingSavingBalance] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -83,6 +87,8 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       setUnpaidInvoices([]);
       setEditModeStudentId("");
       setShouldFetchInvoices(false);
+      setIsSaving(false);
+      setSavingBalance(null);
     }
     setFilteredStudents(students);
   }, [mode, payment, students]);
@@ -119,6 +125,27 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
 
     fetchUnpaidInvoices();
   }, [mode, formData.student_id, editModeStudentId, shouldFetchInvoices]);
+
+  // Fetch saving balance whenever a student is selected (add mode)
+  useEffect(() => {
+    const studentId = mode === 'add' ? formData.student_id : editModeStudentId;
+    if (!studentId) {
+      setSavingBalance(null);
+      return;
+    }
+    const fetchBalance = async () => {
+      setLoadingSavingBalance(true);
+      try {
+        const res = await kindyAdminApi.getStudentSavingBalance(studentId);
+        setSavingBalance(res.data?.available_saving ?? null);
+      } catch {
+        setSavingBalance(null);
+      } finally {
+        setLoadingSavingBalance(false);
+      }
+    };
+    fetchBalance();
+  }, [formData.student_id, editModeStudentId, mode]);
 
   if (!mode) return null;
 
@@ -159,7 +186,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   };
 
   const handleSubmit = async () => {
-    await onSubmit(formData);
+    await onSubmit({ ...formData, is_saving: isSaving });
     setShowConfirmModal(false);
   };
 
@@ -379,6 +406,40 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               </div>
             )}
           </div>
+
+          {/* Pay from savings toggle — add mode only */}
+          {mode === 'add' && (
+            <div className={`mt-4 rounded-lg border p-3 transition-colors ${isSaving ? 'border-primary bg-primary/5' : 'border-base-300'}`}>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span className="text-sm font-medium">Student Saving ?</span>
+                  {formData.student_id && (
+                    <div className="text-xs text-base-content/60 mt-0.5">
+                      {loadingSavingBalance ? (
+                        <span className="loading loading-dots loading-xs" />
+                      ) : savingBalance !== null ? (
+                        <span>Saldo: <strong>{formatCurrency(savingBalance)}</strong></span>
+                      ) : (
+                        <span>Gagal memuat saldo</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary toggle-sm"
+                  checked={isSaving}
+                  onChange={(e) => setIsSaving(e.target.checked)}
+                />
+              </label>
+              {isSaving && savingBalance !== null && formData.amount && parseFloat(formData.amount) > savingBalance && (
+                <div className="alert alert-error p-2 text-xs mt-2">
+                  <span>Saldo tidak cukup. Dibutuhkan {formatCurrency(parseFloat(formData.amount))}, tersedia {formatCurrency(savingBalance)}.</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="modal-action">
             <button onClick={onClose} className="btn btn-ghost">
               Cancel
@@ -463,6 +524,14 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+              {/* Savings deduction notice */}
+              {isSaving && (
+                <div className="border-t border-base-300 pt-3">
+                  <div className="alert alert-warning p-2 text-xs">
+                    <span>💰 Pembayaran akan dipotong dari <strong>tabungan siswa</strong>{savingBalance !== null ? ` (saldo: ${formatCurrency(savingBalance)})` : ''}.</span>
                   </div>
                 </div>
               )}

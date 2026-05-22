@@ -224,12 +224,16 @@ export const kindyAdminApi = {
 
   // Payment endpoints
   getPayments: () => apiCall('/kindy/admin/payment'),
+  getStudentSavingBalance: (studentId: string) =>
+    apiCall<{ available_saving: number }>(`/kindy/admin/student/saving/${studentId}`),
+
   addPayment: (data: {
     student_id: string;
     amount: number;
     date: string;
     reference: string;
     invoice_id?: string | null;
+    is_saving?: boolean;
   }) =>
     apiCall('/kindy/admin/payment', {
       method: 'POST',

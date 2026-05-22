@@ -23,6 +23,7 @@ interface PaymentFormData {
   date: string;
   reference: string;
   invoice_id?: string | null;
+  is_saving?: boolean;
 }
 
 interface Student {
@@ -76,6 +77,7 @@ export default function PaymentSection() {
           date: formData.date,
           reference: formData.reference,
           invoice_id: formData.invoice_id || null,
+          is_saving: formData.is_saving || false,
         });
       } else if (formMode === 'edit' && selectedPayment) {
         await kindyAdminApi.updatePayment(selectedPayment.id, {

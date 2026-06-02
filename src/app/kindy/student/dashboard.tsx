@@ -682,13 +682,14 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-2">
                       <div className="alert p-2 text-xs text-left">
                         <span>
-                          Tagihan biaya masuk 2627 {" "}
+                          Tagihan biaya masuk {" "}
                           <strong>
                             {formatCurrency(admission.outstanding)}
                           </strong>
+                          <br />
                           . Bayar hanya{" "}
                           <strong>{formatCurrency(admission.discount)}</strong>{" "}
-                          jika melunasi sebelum <strong>13 Juli 2026</strong>
+                          jika lunas sebelum <strong>13 Juli</strong>
                         </span>
                       </div>
                       <div className="alert p-2 text-xs text-left">

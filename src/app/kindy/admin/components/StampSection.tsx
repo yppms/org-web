@@ -99,7 +99,7 @@ export default function StampSection() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 w-full overflow-x-hidden">
       {/* Header */}
       <div>
         <h2 className="text-lg font-semibold">WhatsApp Message Tasks</h2>

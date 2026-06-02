@@ -685,11 +685,12 @@ export default function Dashboard() {
                           Tagihan biaya masuk {" "}
                           <strong>
                             {formatCurrency(admission.outstanding)}
+                            .
                           </strong>
                           <br />
-                          . Bayar hanya{" "}
+                          Bayar hanya{" "}
                           <strong>{formatCurrency(admission.discount)}</strong>{" "}
-                          jika lunas sebelum <strong>13 Juli</strong>
+                          jika lunas sebelum <strong>13 Juli.</strong>
                         </span>
                       </div>
                       <div className="alert p-2 text-xs text-left">

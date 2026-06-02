@@ -94,7 +94,7 @@ export default function KindyAdminDashboard() {
         accessibleSections={accessibleSections}
       />
       
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
         {activeSection === "payment" && accessibleSections.includes("payment") && <PaymentSection />}
         {activeSection === "invoice" && accessibleSections.includes("invoice") && <InvoiceSection />}
         {activeSection === "outstanding" && accessibleSections.includes("outstanding") && <OutstandingSection />}

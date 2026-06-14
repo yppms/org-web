@@ -258,6 +258,9 @@ export const kindyAdminApi = {
   getStudentUnpaidInvoices: (studentId: string) => 
     apiCall(`/kindy/admin/invoice/student/${studentId}`),
 
+  // Event endpoints
+  getAkhirussanah26: () => apiCall('/kindy/admin/event/akhirussanah-26'),
+
   // Setor endpoints
   getSetor: () => apiCall('/kindy/admin/setor'),
   getDeltaSetor: () => apiCall('/kindy/admin/setor/delta'),

@@ -1,6 +1,6 @@
 "use client";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor";
+type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor" | "event";
 
 interface NavigationProps {
   activeSection: Section;
@@ -28,6 +28,7 @@ export default function Navigation({
     { key: "setor", label: "IS Ctrl", icon: "💵" },
     { key: "stamp", label: "Stamp", icon: "📨" },
     { key: "openas", label: "OAS", icon: "👤" },
+    { key: "event", label: "Event", icon: "🎓" },
   ];
 
   // Filter items to only show accessible sections

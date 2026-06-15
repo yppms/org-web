@@ -15,6 +15,17 @@ interface StudentEvent {
 
 type FilterType = "all" | "additional" | "unpaid";
 
+const ADD_BADGE_COLORS: Record<number, string> = {
+  1: "bg-emerald-500 text-white ring-emerald-400/40",
+  2: "bg-blue-500 text-white ring-blue-400/40",
+  3: "bg-violet-500 text-white ring-violet-400/40",
+  4: "bg-orange-500 text-white ring-orange-400/40",
+};
+
+function getAddBadgeColor(add: number): string {
+  return ADD_BADGE_COLORS[add] ?? "bg-rose-600 text-white ring-rose-500/40";
+}
+
 export default function AkhirussanahSection() {
   const [data, setData] = useState<StudentEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,7 +224,7 @@ export default function AkhirussanahSection() {
                         <span className="badge badge-ghost badge-sm flex-shrink-0">Not Join</span>
                       )}
                       {student.add > 0 && (
-                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent text-accent-content font-extrabold text-sm flex items-center justify-center ring-2 ring-accent/40 ring-offset-1 shadow-md">
+                        <span className={`flex-shrink-0 w-7 h-7 rounded-full font-extrabold text-sm flex items-center justify-center ring-2 ring-offset-1 shadow-md ${getAddBadgeColor(student.add)}`}>
                           +{student.add}
                         </span>
                       )}

@@ -146,11 +146,11 @@ export default function StampSection() {
           {filteredTasks.map((task) => (
             <div key={task.id} className="card bg-base-100 border border-base-300 shadow-sm">
               <div className="card-body p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">{task.name}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-base">{task.name}</h3>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
                     {isSent(task.id) && (
                       <span className="badge badge-success badge-sm text-white whitespace-nowrap">Sent</span>
                     )}

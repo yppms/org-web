@@ -616,39 +616,6 @@ export default function Dashboard() {
       default:
         return (
           <div className="space-y-6">
-            {/* Full Day Program - Only show if not enrolled */}
-            {!isFullDayEnrolled && (
-              <div className="relative p-0.5 rounded-lg bg-gradient-to-r from-primary via-secondary to-primary bg-[length:400%_400%] animate-[gradient_4s_ease_infinite]">
-                <div className="card bg-base-100 shadow-sm rounded-lg h-full">
-                  <div className="card-body p-6">
-                    <div className="space-y-4">
-                      <div className="w-full">
-                        <h3 className="font-semibold text-base-content mb-1 flex items-center gap-4">
-                          Program Full Day dibuka!
-                          <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium animate-pulse">
-                            Fleksibel!
-                          </span>
-                        </h3>
-                        <p className="text-sm text-base-content/60 leading-relaxed">
-                          Program Full Day dapat diikuti secara fleksibel.
-                          Ananda bisa memilih ikut atau berhenti setiap
-                          bulan-nya. Daftar sekarang!
-                        </p>
-                      </div>
-                      <div className="w-full flex justify-end">
-                        <button
-                          onClick={openFullDayModal}
-                          className="btn btn-sm btn-primary text-white shadow-lg hover:shadow-primary/25 transition-all duration-300"
-                        >
-                          Gabung Full Day
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Outstanding Payment */}
             <div className="card bg-gradient-to-br bg-base-100 from-error/5 to-error/10 shadow-sm border border-error/20">
               <div className="card-body p-6">

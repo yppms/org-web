@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 interface StudentSaving {
   id: string;
   name: string;
+  class: string | null;
   totalSaving: number;
   transactionCount: number;
   lastTransaction: string | null;
@@ -19,6 +20,7 @@ export default function SavingSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"no" | "name" | "totalSaving" | "lastTransaction">("lastTransaction");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
   const fetchSavings = async () => {
     setLoading(true);
@@ -36,31 +38,44 @@ export default function SavingSection() {
     fetchSavings();
   }, []);
 
-  // Filter and sort savings
+  const classes = useMemo(() => {
+    const set = new Set<string>();
+    savings.forEach((s) => { if (s.class) set.add(s.class); });
+    return Array.from(set).sort();
+  }, [savings]);
+
+  const classStats = useMemo(() => {
+    return classes.map((cls) => {
+      const students = savings.filter((s) => s.class === cls);
+      return {
+        name: cls,
+        total: students.reduce((sum, s) => sum + s.totalSaving, 0),
+        count: students.length,
+        active: students.filter((s) => s.totalSaving > 0).length,
+      };
+    });
+  }, [savings, classes]);
+
   const filteredAndSortedSavings = useMemo(() => {
     let filtered = savings;
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = savings.filter((student) =>
-        student.name.toLowerCase().includes(query)
-      );
+    if (selectedClass) {
+      filtered = filtered.filter((s) => s.class === selectedClass);
     }
 
-    // Apply sorting
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((s) => s.name.toLowerCase().includes(query));
+    }
+
     return [...filtered].sort((a, b) => {
-      // When sorting by amount or transaction date, students without transactions go to the end
       if (sortBy === "totalSaving" || sortBy === "lastTransaction") {
-        // If one has no transactions and the other does, prioritize the one with transactions
         if (a.totalSaving === 0 && b.totalSaving > 0) return 1;
         if (a.totalSaving > 0 && b.totalSaving === 0) return -1;
-        // If both have no transactions, they stay in their current order
         if (a.totalSaving === 0 && b.totalSaving === 0) return 0;
       }
 
       let comparison = 0;
-
       switch (sortBy) {
         case "no":
           comparison = a.no - b.no;
@@ -78,10 +93,9 @@ export default function SavingSection() {
           else comparison = new Date(a.lastTransaction).getTime() - new Date(b.lastTransaction).getTime();
           break;
       }
-
       return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [savings, searchQuery, sortBy, sortOrder]);
+  }, [savings, searchQuery, sortBy, sortOrder, selectedClass]);
 
   const toggleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -92,9 +106,8 @@ export default function SavingSection() {
     }
   };
 
-  // Calculate total statistics
   const totalSavings = savings.reduce((sum, s) => sum + s.totalSaving, 0);
-  const studentsWithSavings = savings.filter(s => s.totalSaving > 0).length;
+  const studentsWithSavings = savings.filter((s) => s.totalSaving > 0).length;
 
   if (loading) {
     return (
@@ -114,16 +127,7 @@ export default function SavingSection() {
           View all student saving balances and transaction history
         </p>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search by student name..."
-          className="input input-bordered input-sm w-full mb-4"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        {/* Statistics Cards */}
+        {/* Overall Statistics */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="card bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
             <div className="card-body p-4">
@@ -142,6 +146,62 @@ export default function SavingSection() {
             </div>
           </div>
         </div>
+
+        {/* Per-Class Stats */}
+        {classStats.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-2">Per Class</div>
+            <div className="grid grid-cols-2 gap-2">
+              {classStats.map((cs) => (
+                <button
+                  key={cs.name}
+                  onClick={() => setSelectedClass(selectedClass === cs.name ? null : cs.name)}
+                  className={`card text-left transition-all ${
+                    selectedClass === cs.name
+                      ? "bg-green-500/20 border-2 border-green-500/60"
+                      : "bg-base-100 border border-base-300 hover:border-green-500/40"
+                  }`}
+                >
+                  <div className="card-body p-3">
+                    <div className="text-xs font-semibold text-base-content/70 mb-1">{cs.name}</div>
+                    <div className="text-sm font-bold text-green-600">{formatCurrency(cs.total)}</div>
+                    <div className="text-xs text-base-content/50">{cs.active}/{cs.count} active</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Class Filter Tabs */}
+        {classes.length > 0 && (
+          <div className="flex gap-2 flex-wrap mb-4">
+            <button
+              className={`btn btn-xs ${selectedClass === null ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setSelectedClass(null)}
+            >
+              All
+            </button>
+            {classes.map((cls) => (
+              <button
+                key={cls}
+                className={`btn btn-xs ${selectedClass === cls ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setSelectedClass(selectedClass === cls ? null : cls)}
+              >
+                {cls}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Search Input */}
+        <input
+          type="text"
+          placeholder="Search by student name..."
+          className="input input-bordered input-sm w-full mb-4"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
 
         {/* Sort Controls */}
         <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -186,26 +246,26 @@ export default function SavingSection() {
               <div className="card-body p-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-base mb-2">{student.name}</h3>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="font-semibold text-base">{student.name}</h3>
+                      {student.class && (
+                        <span className="badge badge-sm badge-ghost">{student.class}</span>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      {/* Total Saving */}
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-base-content/60">Balance:</span>
                         <span className={`font-bold ${student.totalSaving > 0 ? "text-green-600" : "text-base-content/40"}`}>
                           {formatCurrency(student.totalSaving)}
                         </span>
                       </div>
-
-                      {/* Transaction Count */}
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-base-content/60">Transactions:</span>
                         <span className="badge badge-sm badge-outline">
                           {student.transactionCount}
                         </span>
                       </div>
-
-                      {/* Last Transaction */}
                       {student.lastTransaction && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-base-content/60">Last:</span>
@@ -214,7 +274,6 @@ export default function SavingSection() {
                           </span>
                         </div>
                       )}
-
                       {student.totalSaving === 0 && (
                         <span className="text-xs text-base-content/40 italic">No savings yet</span>
                       )}
@@ -227,7 +286,6 @@ export default function SavingSection() {
         )}
       </div>
 
-      {/* Result Count */}
       {filteredAndSortedSavings.length > 0 && (
         <div className="mt-4 text-center text-sm text-base-content/60">
           Showing {filteredAndSortedSavings.length} of {savings.length} student{savings.length !== 1 ? "s" : ""}

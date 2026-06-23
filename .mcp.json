@@ -2,12 +2,8 @@
   "mcpServers": {
     "org-server": {
       "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/home/r/Documents/projects/y/org-server"
-      ],
+      "command": "bash",
+      "args": ["-c", "npx -y @modelcontextprotocol/server-filesystem \"$ORG_SERVER_PATH\""],
       "env": {}
     }
   }

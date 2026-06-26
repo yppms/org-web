@@ -89,6 +89,38 @@ export default function PaymentSection() {
                         </span>
                       </div>
                     </div>
+                    {/* Which invoice(s) this payment was used for */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-xs text-base-content/60 font-medium">Digunakan untuk</span>
+                      {payment.appliedInvoices && payment.appliedInvoices.length > 0 ? (
+                        <div className="space-y-1">
+                          {payment.appliedInvoices.map((inv) => (
+                            <div key={inv.invoiceId} className="flex justify-between items-center gap-2">
+                              <span className="badge badge-primary badge-sm font-medium gap-1">
+                                📋 {inv.invoiceName}
+                              </span>
+                              <span className="text-xs font-semibold text-base-content/70">
+                                {formatCurrency(inv.amount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {payment.savingsAmount && payment.savingsAmount > 0 ? (
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="badge badge-ghost badge-sm font-medium gap-1">
+                            💰 Simpanan / saldo
+                          </span>
+                          <span className="text-xs font-semibold text-base-content/70">
+                            {formatCurrency(payment.savingsAmount)}
+                          </span>
+                        </div>
+                      ) : null}
+                      {(!payment.appliedInvoices || payment.appliedInvoices.length === 0) &&
+                        !(payment.savingsAmount && payment.savingsAmount > 0) && (
+                          <span className="text-xs text-base-content/50 italic">Belum dialokasikan</span>
+                        )}
+                    </div>
                   </div>
                   
                   {/* Footer */}

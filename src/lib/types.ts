@@ -150,6 +150,11 @@ export interface Payment {
   date: string;
   kindyStudentName: string;
   no: number;
+  invoiceId?: string | null;
+  invoiceName?: string | null;
+  appliedInvoices?: { invoiceId: string; invoiceName: string; amount: number }[];
+  savingsAmount?: number;
+  isAttached?: boolean;
   createdAt: string;
   updatedAt: string;
 }

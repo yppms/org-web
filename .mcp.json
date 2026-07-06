@@ -10,12 +10,13 @@
       "env": {}
     },
     "postgres-org-server": {
-      "command": "npx",
+      "type": "stdio",
+      "command": "bash",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "${POSTGRES_ORG_SERVER}"
-      ]
+        "-c",
+        "npx -y @modelcontextprotocol/server-postgres \"$POSTGRES_ORG_SERVER\""
+      ],
+      "env": {}
     }
   }
 }

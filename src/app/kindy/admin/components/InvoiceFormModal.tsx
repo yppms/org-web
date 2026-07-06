@@ -17,12 +17,12 @@ interface Invoice {
 }
 
 interface InvoiceFormData {
-  student_id: string;
+  studentId: string;
   name: string;
   amount: string;
   discount: string;
-  start_date: string;
-  due_date: string;
+  startDate: string;
+  dueDate: string;
 }
 
 interface Student {
@@ -46,12 +46,12 @@ export default function InvoiceFormModal({
   onSubmit,
 }: InvoiceFormModalProps) {
   const [formData, setFormData] = useState<InvoiceFormData>({
-    student_id: "",
+    studentId: "",
     name: "",
     amount: "",
     discount: "0",
-    start_date: new Date().toISOString().split("T")[0],
-    due_date: new Date().toISOString().split("T")[0],
+    startDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date().toISOString().split("T")[0],
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
@@ -62,23 +62,23 @@ export default function InvoiceFormModal({
   useEffect(() => {
     if (mode === 'add') {
       setFormData({
-        student_id: "",
+        studentId: "",
         name: "",
         amount: "",
         discount: "0",
-        start_date: new Date().toISOString().split("T")[0],
-        due_date: new Date().toISOString().split("T")[0],
+        startDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date().toISOString().split("T")[0],
       });
       setStudentSearch("");
       setFilteredStudents(students);
     } else if (mode === 'edit' && invoice) {
       setFormData({
-        student_id: "", // Cannot edit student_id
+        studentId: "", // Cannot edit studentId
         name: invoice.name,
         amount: invoice.amountFull.toString(),
         discount: invoice.discount.toString(),
-        start_date: invoice.startDate.split("T")[0],
-        due_date: invoice.dueDate.split("T")[0],
+        startDate: invoice.startDate.split("T")[0],
+        dueDate: invoice.dueDate.split("T")[0],
       });
       setStudentSearch("");
       setFilteredStudents(students);
@@ -91,7 +91,7 @@ export default function InvoiceFormModal({
     
     if (searchValue.trim() === "") {
       setFilteredStudents(students);
-      setFormData({ ...formData, student_id: "" });
+      setFormData({ ...formData, studentId: "" });
     } else {
       const filtered = students.filter((student) =>
         student.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -101,19 +101,19 @@ export default function InvoiceFormModal({
   };
 
   const handleStudentSelect = (student: Student) => {
-    setFormData({ ...formData, student_id: student.id });
+    setFormData({ ...formData, studentId: student.id });
     setStudentSearch(student.name);
     setShowStudentDropdown(false);
   };
 
   const handleContinue = () => {
     // Validate all required fields before showing confirmation
-    if (mode === 'add' && (!formData.student_id || !formData.name || !formData.amount || !formData.discount || !formData.start_date || !formData.due_date)) {
+    if (mode === 'add' && (!formData.studentId || !formData.name || !formData.amount || !formData.discount || !formData.startDate || !formData.dueDate)) {
       alert("Please fill in all required fields");
       return;
     }
     
-    if (mode === 'edit' && (!formData.name || !formData.amount || !formData.discount || !formData.start_date || !formData.due_date)) {
+    if (mode === 'edit' && (!formData.name || !formData.amount || !formData.discount || !formData.startDate || !formData.dueDate)) {
       alert("Please fill in all required fields");
       return;
     }
@@ -174,7 +174,7 @@ export default function InvoiceFormModal({
                         type="button"
                         onClick={() => handleStudentSelect(student)}
                         className={`w-full text-left px-4 py-2 hover:bg-base-200 ${
-                          formData.student_id === student.id ? "bg-primary/10" : ""
+                          formData.studentId === student.id ? "bg-primary/10" : ""
                         }`}
                       >
                         {student.name}
@@ -182,7 +182,7 @@ export default function InvoiceFormModal({
                     ))}
                   </div>
                 )}
-                {studentSearch && !formData.student_id && (
+                {studentSearch && !formData.studentId && (
                   <div className="label">
                     <span className="label-text-alt text-warning">Please select a student from the list</span>
                   </div>
@@ -252,9 +252,9 @@ export default function InvoiceFormModal({
                 <input
                   type="date"
                   className="input input-bordered w-full"
-                  value={formData.start_date}
+                  value={formData.startDate}
                   onChange={(e) =>
-                    setFormData({ ...formData, start_date: e.target.value })
+                    setFormData({ ...formData, startDate: e.target.value })
                   }
                 />
               </div>
@@ -265,9 +265,9 @@ export default function InvoiceFormModal({
                 <input
                   type="date"
                   className="input input-bordered w-full"
-                  value={formData.due_date}
+                  value={formData.dueDate}
                   onChange={(e) =>
-                    setFormData({ ...formData, due_date: e.target.value })
+                    setFormData({ ...formData, dueDate: e.target.value })
                   }
                 />
               </div>
@@ -306,7 +306,7 @@ export default function InvoiceFormModal({
                 <div>
                   <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
                   <div className="text-base font-semibold">
-                    {students.find(s => s.id === formData.student_id)?.name || 'Unknown'}
+                    {students.find(s => s.id === formData.studentId)?.name || 'Unknown'}
                   </div>
                 </div>
               )}
@@ -359,12 +359,12 @@ export default function InvoiceFormModal({
                 <div className="flex items-center justify-between text-sm">
                   <div>
                     <div className="text-base-content/60 text-xs">Start Date</div>
-                    <div className="font-medium">{formatDate(formData.start_date)}</div>
+                    <div className="font-medium">{formatDate(formData.startDate)}</div>
                   </div>
                   <div className="text-base-content/40">→</div>
                   <div>
                     <div className="text-base-content/60 text-xs">Due Date</div>
-                    <div className="font-medium">{formatDate(formData.due_date)}</div>
+                    <div className="font-medium">{formatDate(formData.dueDate)}</div>
                   </div>
                 </div>
               </div>

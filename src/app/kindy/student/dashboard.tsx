@@ -671,8 +671,8 @@ export default function Dashboard() {
                   )}
 
                   {/* Outstanding Invoice Details */}
-                  {stats.outstanding_invoice &&
-                    stats.outstanding_invoice.length > 0 && (
+                  {stats.outstandingInvoice &&
+                    stats.outstandingInvoice.length > 0 && (
                       <div className="rounded-lg border border-base-300 overflow-hidden">
                         <div className="overflow-x-auto">
                           <table className="table table-sm">
@@ -690,7 +690,7 @@ export default function Dashboard() {
                               </tr>
                             </thead>
                             <tbody>
-                              {stats.outstanding_invoice.map((invoice, idx) => (
+                              {stats.outstandingInvoice.map((invoice, idx) => (
                                 <tr
                                   key={idx}
                                   className="border-b border-base-300"
@@ -719,20 +719,20 @@ export default function Dashboard() {
                     <div className="flex justify-between">
                       <span className="text-base-content/60 font-medium">
                         Semua Tagihan (
-                        <strong>{stats.count_invoice ?? 0}</strong>)
+                        <strong>{stats.countInvoice ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
-                        {formatCurrency(stats.total_invoice)}
+                        {formatCurrency(stats.totalInvoice)}
                       </span>
                     </div>
 
                     <div className="flex justify-between mt-1">
                       <span className="text-base-content/60 font-medium">
                         Semua Pembayaran (
-                        <strong>{stats.count_payment ?? 0}</strong>)
+                        <strong>{stats.countPayment ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
-                        {formatCurrency(stats.total_payment)}
+                        {formatCurrency(stats.totalPayment)}
                       </span>
                     </div>
 

@@ -8,7 +8,7 @@ interface WhatsAppTask {
   name: string;
   phone: string;
   key: string;
-  wa_link: string;
+  waLink: string;
   no: number;
 }
 
@@ -155,7 +155,7 @@ export default function StampSection() {
                       <span className="badge badge-success badge-sm text-white whitespace-nowrap">Sent</span>
                     )}
                     <button
-                      onClick={() => handleOpenWhatsApp(task.wa_link, task.id)}
+                      onClick={() => handleOpenWhatsApp(task.waLink, task.id)}
                       className="btn btn-sm btn-success text-white gap-1 whitespace-nowrap"
                     >
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">

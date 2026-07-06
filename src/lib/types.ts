@@ -76,13 +76,13 @@ export interface AdmissionInfo {
 
 export interface StudentStats {
   outstanding: number;
-  total_invoice: number;
-  count_invoice: number;
-  total_payment: number;
-  count_payment: number;
+  totalInvoice: number;
+  countInvoice: number;
+  totalPayment: number;
+  countPayment: number;
   saving: number;
   infaq: number;
-  outstanding_invoice?: OutstandingInvoice[];
+  outstandingInvoice?: OutstandingInvoice[];
   admission?: AdmissionInfo;
 }
 

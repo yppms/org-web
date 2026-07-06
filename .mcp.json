@@ -3,8 +3,19 @@
     "org-server": {
       "type": "stdio",
       "command": "bash",
-      "args": ["-c", "npx -y @modelcontextprotocol/server-filesystem \"$ORG_SERVER_PATH\""],
+      "args": [
+        "-c",
+        "npx -y @modelcontextprotocol/server-filesystem \"$ORG_SERVER_PATH\""
+      ],
       "env": {}
+    },
+    "postgres-org-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${POSTGRES_ORG_SERVER}"
+      ]
     }
   }
 }

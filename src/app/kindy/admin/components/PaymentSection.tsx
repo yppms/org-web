@@ -18,12 +18,12 @@ interface Payment {
 }
 
 interface PaymentFormData {
-  student_id: string;
+  studentId: string;
   amount: string;
   date: string;
   reference: string;
-  invoice_id?: string | null;
-  is_saving?: boolean;
+  invoiceId?: string | null;
+  isSaving?: boolean;
 }
 
 interface Student {
@@ -72,19 +72,19 @@ export default function PaymentSection() {
     try {
       if (formMode === 'add') {
         await kindyAdminApi.addPayment({
-          student_id: formData.student_id,
+          studentId: formData.studentId,
           amount: parseFloat(formData.amount),
           date: formData.date,
           reference: formData.reference,
-          invoice_id: formData.invoice_id || null,
-          is_saving: formData.is_saving || false,
+          invoiceId: formData.invoiceId || null,
+          isSaving: formData.isSaving || false,
         });
       } else if (formMode === 'edit' && selectedPayment) {
         await kindyAdminApi.updatePayment(selectedPayment.id, {
           amount: parseFloat(formData.amount),
           date: formData.date,
           reference: formData.reference,
-          invoice_id: formData.invoice_id || null,
+          invoiceId: formData.invoiceId || null,
         });
       }
       await fetchPayments();

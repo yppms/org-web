@@ -19,12 +19,12 @@ interface Invoice {
 }
 
 interface InvoiceFormData {
-  student_id: string;
+  studentId: string;
   name: string;
   amount: string;
   discount: string;
-  start_date: string;
-  due_date: string;
+  startDate: string;
+  dueDate: string;
 }
 
 interface Student {
@@ -77,20 +77,20 @@ export default function InvoiceSection() {
     try {
       if (formMode === "add") {
         await kindyAdminApi.addInvoice({
-          student_id: formData.student_id,
+          studentId: formData.studentId,
           name: formData.name,
           amount: parseFloat(formData.amount),
           discount: parseFloat(formData.discount),
-          start_date: formData.start_date,
-          due_date: formData.due_date,
+          startDate: formData.startDate,
+          dueDate: formData.dueDate,
         });
       } else if (formMode === "edit" && selectedInvoice) {
         await kindyAdminApi.updateInvoice(selectedInvoice.id, {
           name: formData.name,
           amount: parseFloat(formData.amount),
           discount: parseFloat(formData.discount),
-          start_date: formData.start_date,
-          end_date: formData.due_date,
+          startDate: formData.startDate,
+          dueDate: formData.dueDate,
         });
       }
       await fetchInvoices();

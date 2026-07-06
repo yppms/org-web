@@ -23,12 +23,12 @@ interface Student {
 }
 
 interface PaymentFormData {
-  student_id: string;
+  studentId: string;
   amount: string;
   date: string;
   reference: string;
-  invoice_id?: string | null;
-  is_saving?: boolean;
+  invoiceId?: string | null;
+  isSaving?: boolean;
 }
 
 interface PaymentFormModalProps {
@@ -41,11 +41,11 @@ interface PaymentFormModalProps {
 
 export default function PaymentFormModal({ mode, payment, students, onClose, onSubmit }: PaymentFormModalProps) {
   const [formData, setFormData] = useState<PaymentFormData>({
-    student_id: "",
+    studentId: "",
     amount: "",
     date: new Date().toISOString().split("T")[0],
     reference: "",
-    invoice_id: "",
+    invoiceId: "",
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
@@ -68,20 +68,20 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       setEditModeStudentId(studentId);
       
       setFormData({
-        student_id: studentId,
+        studentId: studentId,
         amount: payment.amount.toString(),
         date: payment.date.split("T")[0],
         reference: payment.reference,
-        invoice_id: payment.invoiceId || "",
+        invoiceId: payment.invoiceId || "",
       });
       setShouldFetchInvoices(false); // Don't auto-fetch in edit mode
     } else if (mode === 'add') {
       setFormData({
-        student_id: "",
+        studentId: "",
         amount: "",
         date: new Date().toISOString().split("T")[0],
         reference: "",
-        invoice_id: "",
+        invoiceId: "",
       });
       setStudentSearch("");
       setUnpaidInvoices([]);
@@ -96,7 +96,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   // Fetch unpaid invoices when student is selected (add mode) or when explicitly requested (edit mode)
   useEffect(() => {
     const fetchUnpaidInvoices = async () => {
-      const studentIdToUse = mode === 'edit' ? editModeStudentId : formData.student_id;
+      const studentIdToUse = mode === 'edit' ? editModeStudentId : formData.studentId;
       
       // For add mode: fetch when student is selected
       // For edit mode: only fetch when explicitly requested
@@ -119,16 +119,16 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
         }
       } else if (mode === 'add' && !studentIdToUse) {
         setUnpaidInvoices([]);
-        setFormData(prev => ({ ...prev, invoice_id: "" }));
+        setFormData(prev => ({ ...prev, invoiceId: "" }));
       }
     };
 
     fetchUnpaidInvoices();
-  }, [mode, formData.student_id, editModeStudentId, shouldFetchInvoices]);
+  }, [mode, formData.studentId, editModeStudentId, shouldFetchInvoices]);
 
   // Fetch saving balance whenever a student is selected (add mode)
   useEffect(() => {
-    const studentId = mode === 'add' ? formData.student_id : editModeStudentId;
+    const studentId = mode === 'add' ? formData.studentId : editModeStudentId;
     if (!studentId) {
       setSavingBalance(null);
       return;
@@ -137,7 +137,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       setLoadingSavingBalance(true);
       try {
         const res = await kindyAdminApi.getStudentSavingBalance(studentId);
-        setSavingBalance(res.data?.available_saving ?? null);
+        setSavingBalance(res.data?.availableSaving ?? null);
       } catch {
         setSavingBalance(null);
       } finally {
@@ -145,7 +145,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       }
     };
     fetchBalance();
-  }, [formData.student_id, editModeStudentId, mode]);
+  }, [formData.studentId, editModeStudentId, mode]);
 
   if (!mode) return null;
 
@@ -155,7 +155,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
     
     if (searchValue.trim() === "") {
       setFilteredStudents(students);
-      setFormData({ ...formData, student_id: "" });
+      setFormData({ ...formData, studentId: "" });
     } else {
       const filtered = students.filter((student) =>
         student.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -165,14 +165,14 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   };
 
   const handleStudentSelect = (student: Student) => {
-    setFormData({ ...formData, student_id: student.id });
+    setFormData({ ...formData, studentId: student.id });
     setStudentSearch(student.name);
     setShowStudentDropdown(false);
   };
 
   const openConfirmModal = () => {
     // Validate all required fields
-    if (mode === 'add' && (!formData.student_id || !formData.amount || !formData.date || !formData.reference)) {
+    if (mode === 'add' && (!formData.studentId || !formData.amount || !formData.date || !formData.reference)) {
       alert("Please fill in all required fields");
       return;
     }
@@ -186,7 +186,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   };
 
   const handleSubmit = async () => {
-    await onSubmit({ ...formData, is_saving: isSaving });
+    await onSubmit({ ...formData, isSaving: isSaving });
     setShowConfirmModal(false);
   };
 
@@ -232,7 +232,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                           handleStudentSelect(student);
                         }}
                         className={`w-full text-left px-4 py-2 hover:bg-base-200 ${
-                          formData.student_id === student.id ? "bg-primary/10" : ""
+                          formData.studentId === student.id ? "bg-primary/10" : ""
                         }`}
                       >
                         {student.name}
@@ -240,7 +240,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                     ))}
                   </div>
                 )}
-                {studentSearch && !formData.student_id && (
+                {studentSearch && !formData.studentId && (
                   <div className="label">
                     <span className="label-text-alt text-warning">Please select a student from the list</span>
                   </div>
@@ -316,7 +316,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             </div>
 
             {/* Optional Invoice Attachment - Show in both Add and Edit mode */}
-            {formData.student_id && (
+            {formData.studentId && (
               <div>
                 <label className="label">
                   <span className="label-text">Attach to Invoice (Optional)</span>
@@ -349,9 +349,9 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                   <div className="space-y-2">
                     <select
                       className="select select-bordered w-full"
-                      value={formData.invoice_id || ""}
+                      value={formData.invoiceId || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, invoice_id: e.target.value })
+                        setFormData({ ...formData, invoiceId: e.target.value })
                       }
                     >
                       <option value="">-- No invoice attachment --</option>
@@ -367,7 +367,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                         className="btn btn-xs btn-ghost"
                         onClick={() => {
                           setShouldFetchInvoices(false);
-                          setFormData({ ...formData, invoice_id: payment?.invoiceId || "" });
+                          setFormData({ ...formData, invoiceId: payment?.invoiceId || "" });
                         }}
                       >
                         ← Cancel
@@ -386,7 +386,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                         className="btn btn-xs btn-ghost"
                         onClick={() => {
                           setShouldFetchInvoices(false);
-                          setFormData({ ...formData, invoice_id: payment?.invoiceId || "" });
+                          setFormData({ ...formData, invoiceId: payment?.invoiceId || "" });
                         }}
                       >
                         ← Cancel
@@ -413,7 +413,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="text-sm font-medium">Student Saving ?</span>
-                  {formData.student_id && (
+                  {formData.studentId && (
                     <div className="text-xs text-base-content/60 mt-0.5">
                       {loadingSavingBalance ? (
                         <span className="loading loading-dots loading-xs" />
@@ -472,7 +472,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                 <div>
                   <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
                   <div className="text-base font-semibold">
-                    {students.find(s => s.id === formData.student_id)?.name || 'Unknown'}
+                    {students.find(s => s.id === formData.studentId)?.name || 'Unknown'}
                   </div>
                 </div>
               )}
@@ -507,20 +507,20 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               </div>
 
               {/* Attached Invoice (if selected) */}
-              {formData.invoice_id && (
+              {formData.invoiceId && (
                 <div className="border-t border-base-300 pt-3">
                   <div className="text-xs text-base-content/60 font-medium mb-1">Attached to Invoice</div>
                   <div className="flex items-start gap-2">
                     <div className="badge badge-primary badge-sm mt-1">📋</div>
                     <div>
                       <div className="text-sm font-semibold">
-                        {unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.name || 
+                        {unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.name || 
                          payment?.invoiceName || 
                          'Unknown Invoice'}
                       </div>
-                      {unpaidInvoices.find(inv => inv.id === formData.invoice_id) && (
+                      {unpaidInvoices.find(inv => inv.id === formData.invoiceId) && (
                         <div className="text-xs text-base-content/60">
-                          Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoice_id)?.outstanding || 0)}
+                          Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.outstanding || 0)}
                         </div>
                       )}
                     </div>

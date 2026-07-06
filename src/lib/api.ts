@@ -6,7 +6,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   meta?: {
-    total_count?: number;
+    totalCount?: number;
   };
 }
 
@@ -112,10 +112,10 @@ export const kindyStudentApi = {
 
   // Full Day endpoints
   getFullDayDate: () => apiCall('/kindy/student/fd/date'),
-  changeFullDay: (is_join: boolean) =>
+  changeFullDay: (isJoin: boolean) =>
     apiCall('/kindy/student/fd', {
       method: 'PATCH',
-      body: JSON.stringify({ is_join }),
+      body: JSON.stringify({ isJoin }),
     }),
 
   // Saving endpoints
@@ -195,12 +195,12 @@ export const kindyAdminApi = {
   // Invoice endpoints
   getInvoices: () => apiCall('/kindy/admin/invoice'),
   addInvoice: (data: {
-    student_id: string;
+    studentId: string;
     name: string;
     amount: number;
     discount: number;
-    start_date: string;
-    due_date: string;
+    startDate: string;
+    dueDate: string;
   }) =>
     apiCall('/kindy/admin/invoice', {
       method: 'POST',
@@ -210,8 +210,8 @@ export const kindyAdminApi = {
     name: string;
     amount: number;
     discount: number;
-    start_date: string;
-    end_date: string;
+    startDate: string;
+    dueDate: string;
   }) =>
     apiCall(`/kindy/admin/invoice/${id}`, {
       method: 'PUT',
@@ -225,15 +225,15 @@ export const kindyAdminApi = {
   // Payment endpoints
   getPayments: () => apiCall('/kindy/admin/payment'),
   getStudentSavingBalance: (studentId: string) =>
-    apiCall<{ available_saving: number }>(`/kindy/admin/student/saving/${studentId}`),
+    apiCall<{ availableSaving: number }>(`/kindy/admin/student/saving/${studentId}`),
 
   addPayment: (data: {
-    student_id: string;
+    studentId: string;
     amount: number;
     date: string;
     reference: string;
-    invoice_id?: string | null;
-    is_saving?: boolean;
+    invoiceId?: string | null;
+    isSaving?: boolean;
   }) =>
     apiCall('/kindy/admin/payment', {
       method: 'POST',
@@ -243,7 +243,7 @@ export const kindyAdminApi = {
     amount: number;
     date: string;
     reference: string;
-    invoice_id?: string | null;
+    invoiceId?: string | null;
   }) =>
     apiCall(`/kindy/admin/payment/${id}`, {
       method: 'PUT',

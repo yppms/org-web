@@ -3,20 +3,20 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
-import {
-  KindyStudent,
-  StudentStats,
-  OrgFinancialInfo,
-  Saving,
-  Infaq,
-} from "@/lib/types";
+import { KindyStudent, StudentStats, OrgFinancialInfo, Saving, Infaq } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { Spinner, ErrorAlert } from "@/components/ui";
 import Navigation from "./components/Navigation";
 import ProfileSection from "./components/ProfileSection";
 import InvoicesSection from "./components/InvoicesSection";
 import PaymentSection from "./components/PaymentSection";
 import SavingsSection from "./components/SavingsSection";
 import InfaqSection from "./components/InfaqSection";
+import FullDayModal from "./components/modals/FullDayModal";
+import BankRequiredModal from "./components/modals/BankRequiredModal";
+import PaymentConfirmModal from "./components/modals/PaymentConfirmModal";
+import WithdrawModal from "./components/modals/WithdrawModal";
+import GlobalErrorModal from "./components/modals/GlobalErrorModal";
 
 type Section =
   | "dashboard"
@@ -28,18 +28,43 @@ type Section =
   | "laporan-harian"
   | "perkembangan-anak";
 
+// GitHub-style contribution intensity: each cell is shaded by its amount
+// relative to the largest amount (ratio-to-max), so bigger contributions read
+// darker. Uses opacity ramps of a theme token (no raw palette) so it re-themes.
+type GraphTone = "primary" | "info";
+
+const RAMP: Record<GraphTone, string[]> = {
+  primary: ["bg-primary/25", "bg-primary/45", "bg-primary/70", "bg-primary"],
+  info: ["bg-info/25", "bg-info/45", "bg-info/70", "bg-info"],
+};
+
+const cellColor = (amount: number, max: number, tone: GraphTone): string => {
+  const ramp = RAMP[tone];
+  if (max <= 0) return ramp[3];
+  const ratio = amount / max;
+  if (ratio > 0.75) return ramp[3];
+  if (ratio > 0.5) return ramp[2];
+  if (ratio > 0.25) return ramp[1];
+  return ramp[0];
+};
+
+// Tooltip date format (long-ish) — distinct from lib/utils' compact formatDate.
+const formatTooltipDate = (dateString: string): string =>
+  new Date(dateString).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
 export default function Dashboard() {
   const [profile, setProfile] = useState<KindyStudent | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [orgFinInfo, setOrgFinInfo] = useState<OrgFinancialInfo | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
-  const [currentTab, setCurrentTab] = useState<
-    "invoices" | "payment" | "saving" | "infaq"
-  >("invoices");
+  const [currentTab, setCurrentTab] = useState<"invoices" | "payment" | "saving" | "infaq">(
+    "invoices"
+  );
 
-  // Progress tracking counts
-  const [savingCount, setSavingCount] = useState(0);
-  const [infaqCount, setInfaqCount] = useState(0);
   const [savingData, setSavingData] = useState<Saving[]>([]);
   const [infaqData, setInfaqData] = useState<Infaq[]>([]);
 
@@ -53,101 +78,45 @@ export default function Dashboard() {
   const [paymentFinEnt, setPaymentFinEnt] = useState("");
   const [paymentFinNumName, setPaymentFinNumName] = useState("");
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
-  const [paymentFilePreview, setPaymentFilePreview] = useState<string | null>(
-    null,
-  );
+  const [paymentFilePreview, setPaymentFilePreview] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
-  const [paymentChoice, setPaymentChoice] = useState<
-    "receipt" | "no_receipt" | ""
-  >("");
+  const [paymentChoice, setPaymentChoice] = useState<"receipt" | "no_receipt" | "">("");
   const [isCopied, setIsCopied] = useState(false);
   const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
 
-  // Withdraw modal state
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null);
 
-  // Bank info intent tracking
-  const [bankInfoIntent, setBankInfoIntent] = useState<
-    "withdraw" | "standalone"
-  >("standalone");
-
-  // Unified error modal state
+  const [bankInfoIntent, setBankInfoIntent] = useState<"withdraw" | "standalone">("standalone");
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // Helper function to get color intensity based on amount
-  const getColorIntensity = (amount: number, allAmounts: number[]): string => {
-    if (allAmounts.length === 0) return "bg-green-600";
-
-    const maxAmount = Math.max(...allAmounts);
-    const minAmount = Math.min(...allAmounts);
-    const range = maxAmount - minAmount;
-
-    if (range === 0) return "bg-green-600"; // All amounts are the same
-
-    const normalized = (amount - minAmount) / range;
-
-    // Create 5 levels of green intensity
-    if (normalized >= 0.8) return "bg-green-700"; // darkest
-    if (normalized >= 0.6) return "bg-green-600";
-    if (normalized >= 0.4) return "bg-green-500";
-    if (normalized >= 0.2) return "bg-green-400";
-    return "bg-green-300"; // lightest
-  };
-
-  // Helper function to format date
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Check if user is enrolled in full day program
   const isFullDayEnrolled =
     profile?.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
     ) || false;
 
-  const showGlobalError = (error: any) => {
+  const showGlobalError = (err: unknown) => {
     let errorMessage = "Terjadi kesalahan. Mohon ulangi berkala.";
-    if (error instanceof ApiError) {
-      errorMessage = error.message;
-    } else if (typeof error === "string") {
-      errorMessage = error;
-    }
+    if (err instanceof ApiError) errorMessage = err.message;
+    else if (typeof err === "string") errorMessage = err;
     setGlobalError(errorMessage);
-
-    // Show the global error modal
-    const modal = document.getElementById(
-      "global_error_modal",
-    ) as HTMLDialogElement;
-    modal?.showModal();
+    (document.getElementById("global_error_modal") as HTMLDialogElement | null)?.showModal();
   };
 
   const handleFullDayToggle = async () => {
     setIsChangingFullDay(true);
     setError(null);
     setFullDaySuccess(null);
-
     try {
-      // Call API to change full day status
       const wasEnrolled = isFullDayEnrolled;
       await kindyStudentApi.changeFullDay(!isFullDayEnrolled);
-
-      // Refresh profile data to get updated status
       const profileResponse = await kindyStudentApi.getProfile();
       setProfile(profileResponse.data);
-
-      // Show success message
-      const action = wasEnrolled ? "berhenti" : "mendaftar";
       setFullDaySuccess(
         wasEnrolled
           ? "Ananda dapat mendaftar kembali kapan saja di bulan berikutnya."
-          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan.",
+          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan."
       );
     } catch (err) {
       showGlobalError(err);
@@ -156,82 +125,38 @@ export default function Dashboard() {
     }
   };
 
-  const openFullDayModal = () => {
-    setFullDaySuccess(null);
-    const modal = document.getElementById("fullday_modal") as HTMLDialogElement;
-    modal?.showModal();
-  };
-
   const handleWithdrawClick = () => {
-    // Check if user has bank information
     const hasBankInfo = profile?.finEnt && profile?.finNum && profile?.finName;
-
     if (!hasBankInfo) {
-      // Show bank info required modal first
-      const bankRequiredModal = document.getElementById(
-        "bank_required_modal",
-      ) as HTMLDialogElement;
-      bankRequiredModal?.showModal();
+      (document.getElementById("bank_required_modal") as HTMLDialogElement | null)?.showModal();
       return;
     }
-
-    // Open withdraw modal directly
-    const modal = document.getElementById(
-      "withdraw_modal",
-    ) as HTMLDialogElement;
-    modal?.showModal();
+    (document.getElementById("withdraw_modal") as HTMLDialogElement | null)?.showModal();
   };
 
   const handleAddBankInfo = () => {
-    // Set intent to withdraw since this is triggered from withdraw flow
     setBankInfoIntent("withdraw");
-
-    // Close the bank required modal
-    const bankRequiredModal = document.getElementById(
-      "bank_required_modal",
-    ) as HTMLDialogElement;
-    bankRequiredModal?.close();
-
-    // Switch to profile section where the bank modal is available
+    (document.getElementById("bank_required_modal") as HTMLDialogElement | null)?.close();
     setActiveSection("profile");
-
-    // Wait for the profile section to render, then open the bank modal
     setTimeout(() => {
-      const bankModal = document.getElementById(
-        "bank_modal",
-      ) as HTMLDialogElement;
-      if (bankModal) {
-        bankModal.showModal();
-      }
+      (document.getElementById("bank_modal") as HTMLDialogElement | null)?.showModal();
     }, 200);
   };
 
   const handleBankInfoAdded = () => {
-    // Only redirect to withdraw modal if the intent was for withdrawal
     if (bankInfoIntent === "withdraw") {
-      // When bank info is successfully added, switch back to dashboard and proceed to withdraw modal
       setActiveSection("dashboard");
-
       setTimeout(() => {
-        // Switch to savings tab
         setCurrentTab("saving");
-        // Wait for the component to render, then open the withdraw modal
         setTimeout(() => {
-          const modal = document.getElementById(
-            "withdraw_modal",
-          ) as HTMLDialogElement;
-          modal?.showModal();
+          (document.getElementById("withdraw_modal") as HTMLDialogElement | null)?.showModal();
         }, 200);
-      }, 300); // Give time for dashboard to render
+      }, 300);
     }
-    // For standalone bank info operations, don't redirect - just stay in profile with success feedback
-
-    // Reset the intent for next time
     setBankInfoIntent("standalone");
   };
 
   const openPaymentConfirmModal = () => {
-    // Reset form
     setPaymentDate("");
     setPaymentAmount("");
     setPaymentFinEnt("");
@@ -241,92 +166,53 @@ export default function Dashboard() {
     setPaymentChoice("");
     setError(null);
     setPaymentSuccess(null);
-
-    const modal = document.getElementById(
-      "payment_confirm_modal",
-    ) as HTMLDialogElement;
-    modal?.showModal();
+    (document.getElementById("payment_confirm_modal") as HTMLDialogElement | null)?.showModal();
   };
 
-  // Currency formatting helper
-  const formatRupiah = (value: string): string => {
-    // Remove all non-digit characters
-    const numericValue = value.replace(/\D/g, "");
-
-    if (!numericValue) return "";
-
-    // Add thousands separators
-    const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return `Rp${formatted}`;
-  };
-
-  // Handle currency input change for payment
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-
-    // Remove Rp prefix and dots for storage
-    const numericValue = inputValue.replace(/[Rp.]/g, "");
-
-    // Store the numeric value
-    setPaymentAmount(numericValue);
+    setPaymentAmount(e.target.value.replace(/[Rp.]/g, ""));
   };
 
-  // Handle currency input change for withdraw
-  const handleWithdrawAmountChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const inputValue = e.target.value;
-
-    // Remove Rp prefix and dots for storage
-    const numericValue = inputValue.replace(/[Rp.]/g, "");
-
-    // Store the numeric value
-    setWithdrawAmount(numericValue);
+  const handleWithdrawAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWithdrawAmount(e.target.value.replace(/[Rp.]/g, ""));
   };
 
-  // File validation and preview handling
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-
     if (!file) {
       setPaymentFile(null);
       setPaymentFilePreview(null);
       return;
     }
-
-    // Check file size (5MB = 5 * 1024 * 1024 bytes)
     const maxSizeInBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
       setError("Ukuran file terlalu besar. Maksimal 5MB.");
-      e.target.value = ""; // Reset the input
+      e.target.value = "";
       return;
     }
-
-    // Check file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "application/pdf",
-    ];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
     if (!allowedTypes.includes(file.type)) {
       setError("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
-      e.target.value = ""; // Reset the input
+      e.target.value = "";
       return;
     }
-
     setPaymentFile(file);
     setError(null);
-
-    // Create preview for images only
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onload = () => {
-        setPaymentFilePreview(reader.result as string);
-      };
+      reader.onload = () => setPaymentFilePreview(reader.result as string);
       reader.readAsDataURL(file);
     } else {
       setPaymentFilePreview(null);
+    }
+  };
+
+  const refreshStats = async () => {
+    try {
+      const statsResponse = await kindyStudentApi.getStats();
+      if (statsResponse?.data) setStats(statsResponse.data);
+    } catch (refreshErr) {
+      console.warn("Failed to refresh data after payment confirmation:", refreshErr);
     }
   };
 
@@ -335,41 +221,17 @@ export default function Dashboard() {
       showGlobalError("Mohon pilih file untuk diunggah");
       return;
     }
-
     setIsConfirmingPayment(true);
     setPaymentSuccess(null);
-
     try {
       const formData = new FormData();
       formData.append("file", paymentFile);
-
       const response = await kindyStudentApi.confirmPayment(formData);
-
-      // Validate response before proceeding
-      if (!response || response.status !== "success") {
-        throw new Error("Respon server tidak valid");
-      }
-
+      if (!response || response.status !== "success") throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
       );
-
-      // Refresh stats and invoices in background (non-blocking)
-      try {
-        const [statsResponse] = await Promise.all([
-          kindyStudentApi.getStats(),
-          // We don't await these to avoid blocking the success message
-        ]);
-        if (statsResponse && statsResponse.data) {
-          setStats(statsResponse.data);
-        }
-      } catch (refreshErr) {
-        // Silently fail refresh - user already sees success message
-        console.warn(
-          "Failed to refresh data after payment confirmation:",
-          refreshErr,
-        );
-      }
+      await refreshStats();
     } catch (err) {
       showGlobalError(err);
     } finally {
@@ -378,61 +240,32 @@ export default function Dashboard() {
   };
 
   const handlePaymentWithForm = async () => {
-    if (
-      !paymentDate ||
-      !paymentAmount.trim() ||
-      !paymentFinEnt.trim() ||
-      !paymentFinNumName.trim()
-    ) {
+    if (!paymentDate || !paymentAmount.trim() || !paymentFinEnt.trim() || !paymentFinNumName.trim()) {
       showGlobalError("Semua field wajib diisi");
       return;
     }
-
     const amount = parseFloat(paymentAmount);
     if (!amount || amount <= 0) {
       showGlobalError("Mohon masukkan jumlah yang benar");
       return;
     }
-
     setIsConfirmingPayment(true);
     setPaymentSuccess(null);
-
     try {
       const formData = new FormData();
-
-      // Create message JSON with required fields
       const message = {
         date: paymentDate,
-        amount: amount,
+        amount,
         fin_ent: paymentFinEnt.trim(),
         fin_num_name: paymentFinNumName.trim(),
       };
       formData.append("message", JSON.stringify(message));
-
       const response = await kindyStudentApi.confirmPayment(formData);
-
-      // Validate response before proceeding
-      if (!response || response.status !== "success") {
-        throw new Error("Respon server tidak valid");
-      }
-
+      if (!response || response.status !== "success") throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
       );
-
-      // Refresh stats and invoices in background (non-blocking)
-      try {
-        const [statsResponse] = await Promise.all([kindyStudentApi.getStats()]);
-        if (statsResponse && statsResponse.data) {
-          setStats(statsResponse.data);
-        }
-      } catch (refreshErr) {
-        // Silently fail refresh - user already sees success message
-        console.warn(
-          "Failed to refresh data after payment confirmation:",
-          refreshErr,
-        );
-      }
+      await refreshStats();
     } catch (err) {
       showGlobalError(err);
     } finally {
@@ -441,63 +274,50 @@ export default function Dashboard() {
   };
 
   const copyBankNumber = async () => {
-    if (orgFinInfo?.num) {
-      // Remove dashes when copying
-      const cleanNumber = orgFinInfo.num.replace(/-/g, "");
+    if (!orgFinInfo?.num) return;
+    const cleanNumber = orgFinInfo.num.replace(/-/g, "");
+    try {
+      await navigator.clipboard.writeText(cleanNumber);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = cleanNumber;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
       try {
-        await navigator.clipboard.writeText(cleanNumber);
+        document.execCommand("copy");
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
       } catch (err) {
-        // Fallback for older browsers
-        const textArea = document.createElement("textarea");
-        textArea.value = cleanNumber;
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand("copy");
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
-        } catch (err) {
-          console.error("Gagal menyalin tulisan: ", err);
-        }
-        document.body.removeChild(textArea);
+        console.error("Gagal menyalin tulisan: ", err);
       }
+      document.body.removeChild(textArea);
     }
   };
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
-
     if (!amount || amount <= 0) {
       showGlobalError("Mohon mengisi dengan angka yang benar");
       return;
     }
-
     if (stats && amount > stats.saving) {
       showGlobalError("Saldo tidak mencukupi");
       return;
     }
-
     setIsWithdrawing(true);
     setWithdrawSuccess(null);
-
     try {
       await kindyStudentApi.withdrawSaving(amount);
-
-      // Update stats
       const statsResponse = await kindyStudentApi.getStats();
       setStats(statsResponse.data);
-
-      // Show success message in modal
       setWithdrawSuccess(
         `Berhasil mengirimkan permintaan penarikan dana sebesar ${formatCurrency(
-          amount,
-        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`,
+          amount
+        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`
       );
-
-      // Reset form
       setWithdrawAmount("");
     } catch (err) {
       showGlobalError(err);
@@ -508,77 +328,48 @@ export default function Dashboard() {
 
   useEffect(() => {
     setIsClient(true);
-
     const fetchData = async () => {
       try {
-        const [
-          profileResponse,
-          statsResponse,
-          orgFinResponse,
-          savingsResponse,
-          infaqResponse,
-        ] = await Promise.all([
-          kindyStudentApi.getProfile(),
-          kindyStudentApi.getStats(),
-          orgApi.getFinancialInfo(),
-          kindyStudentApi.getSavings(),
-          kindyStudentApi.getInfaq(),
-        ]);
-
+        const [profileResponse, statsResponse, orgFinResponse, savingsResponse, infaqResponse] =
+          await Promise.all([
+            kindyStudentApi.getProfile(),
+            kindyStudentApi.getStats(),
+            orgApi.getFinancialInfo(),
+            kindyStudentApi.getSavings(),
+            kindyStudentApi.getInfaq(),
+          ]);
         setProfile(profileResponse.data);
         setStats(statsResponse.data);
         setOrgFinInfo(orgFinResponse.data);
-
-        // Store full data arrays for tooltips and color intensity
-        // Filter only SAVE type for savings (exclude WITHDRAW)
         const saveTransactions = (savingsResponse.data || []).filter(
-          (s: Saving) => s.type === "SAVE" && s.status === "SUCCESS",
+          (s: Saving) => s.type === "SAVE" && s.status === "SUCCESS"
         );
         setSavingData(saveTransactions);
-        setSavingCount(saveTransactions.length);
-
-        const infaqTransactions = infaqResponse.data || [];
-        setInfaqData(infaqTransactions);
-        setInfaqCount(infaqTransactions.length);
+        setInfaqData(infaqResponse.data || []);
       } catch (err) {
-        if (err instanceof ApiError) {
-          setError(err.message);
-        } else {
-          setError("Gagal memuat data");
-        }
+        setError(err instanceof ApiError ? err.message : "Gagal memuat data");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Show loading state during both server and client rendering
   if (!isClient || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="mt-4 text-base-content/70">Memuat...</p>
-        </div>
-      </div>
-    );
+    return <Spinner variant="page" label="Memuat..." />;
   }
 
   if (error || !profile || !stats || !orgFinInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-base alert">
-          <span>{error || "Terjadi kesalahan"}</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorAlert message={error || "Terjadi kesalahan"} />
       </div>
     );
   }
 
-  const renderContent = () => {
-    const admission = (stats as any).admission;
+  const admission = stats.admission;
 
+  const renderContent = () => {
     switch (activeSection) {
       case "profile":
         return (
@@ -617,17 +408,14 @@ export default function Dashboard() {
         return (
           <div className="space-y-6">
             {/* Outstanding Payment */}
-            <div className="card bg-gradient-to-br bg-base-100 from-error/5 to-error/10 shadow-sm border border-error/20">
+            <div className="card bg-gradient-to-br from-error/5 to-error/10 shadow-sm border border-error/20">
               <div className="card-body p-6">
                 <div className="text-center space-y-4">
                   <div>
                     <p className="text-md font-medium text-base-content/60 mb-1">
                       Tagihan saat ini
                     </p>
-                    <div
-                      className="text-2xl font-bold text-decoration-line"
-                      suppressHydrationWarning
-                    >
+                    <div className="text-2xl font-bold" suppressHydrationWarning>
                       {formatCurrency(Math.max(0, stats.outstanding))}
                     </div>
                     {stats.outstanding > 0 ? (
@@ -644,102 +432,80 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  {/* Admission banners */}
                   {admission && (
                     <div className="flex flex-col gap-2">
                       <div className="alert p-2 text-xs text-left">
                         <span>
-                          Tagihan biaya masuk {" "}
-                          <strong>
-                            {formatCurrency(admission.outstanding)}
-                            .
-                          </strong>
+                          Tagihan biaya masuk{" "}
+                          <strong>{formatCurrency(admission.outstanding)}.</strong>
                           <br />
-                          Bayar hanya{" "}
-                          <strong>{formatCurrency(admission.discount)}</strong>{" "}
-                          jika lunas sebelum <strong>13 Juli.</strong>
+                          Bayar hanya <strong>{formatCurrency(admission.discount)}</strong> jika
+                          lunas sebelum <strong>13 Juli.</strong>
                         </span>
                       </div>
                       <div className="alert p-2 text-xs text-left">
                         <span>
-                          Pembayaran{" "}
-                          <strong>{formatCurrency(admission.minimum)}</strong>{" "}
-                          lagi untuk <strong>50%</strong>
+                          Pembayaran <strong>{formatCurrency(admission.minimum)}</strong> lagi untuk{" "}
+                          <strong>50%</strong>
                         </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Outstanding Invoice Details */}
-                  {stats.outstandingInvoice &&
-                    stats.outstandingInvoice.length > 0 && (
-                      <div className="rounded-lg border border-base-300 overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="table table-sm">
-                            <thead className="bg-base-200">
-                              <tr className="border-b border-base-300">
-                                <th className="text-xs font-semibold">
-                                  Tagihan
-                                </th>
-                                <th className="text-xs font-semibold text-center">
-                                  Jumlah
-                                </th>
-                                <th className="text-xs font-semibold text-center">
-                                  Terlambat
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {stats.outstandingInvoice.map((invoice, idx) => (
-                                <tr
-                                  key={idx}
-                                  className="border-b border-base-300"
+                  {stats.outstandingInvoice && stats.outstandingInvoice.length > 0 && (
+                    <div className="rounded-lg border border-base-300 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="table table-sm">
+                          <thead className="bg-base-200">
+                            <tr className="border-b border-base-300">
+                              <th className="text-xs font-semibold">Tagihan</th>
+                              <th className="text-xs font-semibold text-center">Jumlah</th>
+                              <th className="text-xs font-semibold text-center">Terlambat</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stats.outstandingInvoice.map((invoice, idx) => (
+                              <tr key={idx} className="border-b border-base-300">
+                                <td className="text-base-content/60 font-medium">{invoice.name}</td>
+                                <td className="text-base-content/60 text-right font-medium">
+                                  {formatCurrency(invoice.outstanding)}
+                                </td>
+                                <td
+                                  className={`text-center font-medium ${
+                                    invoice.daysLate > 0
+                                      ? "text-error font-extrabold"
+                                      : "text-base-content/60"
+                                  }`}
                                 >
-                                  <td className="text-base-content/60 font-medium">
-                                    {invoice.name}
-                                  </td>
-                                  <td className="text-base-content/60 text-right font-medium">
-                                    {formatCurrency(invoice.outstanding)}
-                                  </td>
-                                  <td
-                                    className={`text-center font-medium ${invoice.daysLate > 0 ? "text-error font-extrabold" : "text-base-content/60"}`}
-                                  >
-                                    {invoice.daysLate} hari
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                                  {invoice.daysLate} hari
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                  {/* Totals summary (no title): total invoice, total payment, and outstanding with inverted sign */}
                   <div className="w-full mt-4 text-xs">
                     <div className="flex justify-between">
                       <span className="text-base-content/60 font-medium">
-                        Semua Tagihan (
-                        <strong>{stats.countInvoice ?? 0}</strong>)
+                        Semua Tagihan (<strong>{stats.countInvoice ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
                         {formatCurrency(stats.totalInvoice)}
                       </span>
                     </div>
-
                     <div className="flex justify-between mt-1">
                       <span className="text-base-content/60 font-medium">
-                        Semua Pembayaran (
-                        <strong>{stats.countPayment ?? 0}</strong>)
+                        Semua Pembayaran (<strong>{stats.countPayment ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
                         {formatCurrency(stats.totalPayment)}
                       </span>
                     </div>
-
                     <hr className="my-2 border-t border-base-300" />
-
                     <div className="flex justify-end">
-                      {/* Inverted sign: show '+' when outstanding is negative, '-' when outstanding is zero or positive */}
                       <span className="text-sm font-bold">
                         {stats.outstanding < 0 ? "+" : "-"}
                         {formatCurrency(Math.abs(stats.outstanding))}
@@ -764,19 +530,11 @@ export default function Dashboard() {
                           {orgFinInfo.ent.replace(/-/g, " ")}
                         </p>
                         <div className="flex items-center justify-center gap-2">
-                          <p className="text-xs font-medium text-center">
-                            {orgFinInfo.num}
-                          </p>
+                          <p className="text-xs font-medium text-center">{orgFinInfo.num}</p>
                           <button
                             onClick={copyBankNumber}
-                            className={`btn btn-xs ${
-                              isCopied
-                                ? "btn-success text-white"
-                                : "btn-primary text-white"
-                            }`}
-                            title={
-                              isCopied ? "Disalin!" : "Salin nomor rekening"
-                            }
+                            className={`btn btn-xs ${isCopied ? "btn-success" : "btn-primary"}`}
+                            title={isCopied ? "Disalin!" : "Salin nomor rekening"}
                           >
                             {isCopied ? "Disalin!" : "Salin"}
                           </button>
@@ -797,10 +555,7 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  <button
-                    className="btn btn-success text-white w-full"
-                    onClick={openPaymentConfirmModal}
-                  >
+                  <button className="btn btn-success w-full" onClick={openPaymentConfirmModal}>
                     Konfirmasi Pembayaran
                   </button>
                 </div>
@@ -809,144 +564,42 @@ export default function Dashboard() {
 
             {/* Balance Cards */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="card bg-gradient-to-br bg-base-100 from-success/5 to-success/10 shadow-sm border border-success/20">
+              <div className="card bg-gradient-to-br from-success/5 to-success/10 shadow-sm border border-success/20">
                 <div className="card-body p-4">
                   <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">
-                      Total Tabungan
-                    </p>
-                    <p
-                      className="text-lg font-bold mb-3"
-                      suppressHydrationWarning
-                    >
+                    <p className="text-xs font-medium text-base-content/60 mb-2">Total Tabungan</p>
+                    <p className="text-lg font-bold mb-3" suppressHydrationWarning>
                       {formatCurrency(stats.saving)}
                     </p>
                     <button
-                      className="btn btn-warning btn-sm text-white w-full mb-3"
+                      className="btn btn-warning btn-sm w-full mb-3"
                       onClick={handleWithdrawClick}
                       disabled={stats.saving <= 0}
                     >
                       Tarik
                     </button>
 
-                    {/* GitHub Contribution Style Progress */}
-                    <div className="pt-3">
-                      <div className="flex flex-col gap-[2px]">
-                        {Array.from({ length: 4 }).map((_, row) => (
-                          <div key={row} className="flex gap-[2px]">
-                            {Array.from({ length: 10 }).map((_, col) => {
-                              const index = row * 10 + col;
-                              const saving = savingData[index];
-                              const allAmounts = savingData.map(
-                                (s) => s.amount,
-                              );
-                              const colorClass = saving
-                                ? getColorIntensity(saving.amount, allAmounts)
-                                : "bg-base-300";
-
-                              return (
-                                <div
-                                  key={col}
-                                  className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
-                                  title={
-                                    saving
-                                      ? `${formatDate(saving.date)}: ${formatCurrency(saving.amount)}`
-                                      : `${index + 1}/40`
-                                  }
-                                >
-                                  {/* Tooltip on hover */}
-                                  {saving && (
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                      {formatDate(saving.date)}
-                                      <br />
-                                      {formatCurrency(saving.amount)}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-center gap-2 mt-2">
-                        <span className="text-[10px] font-bold text-base-content">
-                          {savingData.length}/40
-                        </span>
-                        <span className="text-[10px] text-base-content/40">
-                          •
-                        </span>
-                        <span className="text-[10px] font-bold text-base-content">
-                          {Math.round((savingData.length / 40) * 100)}%
-                        </span>
-                      </div>
-                    </div>
+                    <ContributionGraph
+                      tone="primary"
+                      items={savingData.map((s) => ({ amount: s.amount, date: s.date }))}
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="card bg-gradient-to-br bg-base-100 from-info/5 to-info/10 shadow-sm border border-info/20">
+              <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
                 <div className="card-body p-4">
                   <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">
-                      Total Infaq
-                    </p>
-                    <p
-                      className="text-lg font-bold mb-2"
-                      suppressHydrationWarning
-                    >
+                    <p className="text-xs font-medium text-base-content/60 mb-2">Total Infaq</p>
+                    <p className="text-lg font-bold mb-2" suppressHydrationWarning>
                       {formatCurrency(stats.infaq)}
                     </p>
                     <span className="text-2xl mb-3 block">🤲</span>
 
-                    {/* GitHub Contribution Style Progress */}
-                    <div className="pt-3">
-                      <div className="flex flex-col gap-[2px]">
-                        {Array.from({ length: 4 }).map((_, row) => (
-                          <div key={row} className="flex gap-[2px]">
-                            {Array.from({ length: 10 }).map((_, col) => {
-                              const index = row * 10 + col;
-                              const infaq = infaqData[index];
-                              const allAmounts = infaqData.map((i) => i.amount);
-                              const colorClass = infaq
-                                ? getColorIntensity(infaq.amount, allAmounts)
-                                : "bg-base-300";
-
-                              return (
-                                <div
-                                  key={col}
-                                  className={`flex-1 h-3 rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-success/50 cursor-pointer relative group`}
-                                  title={
-                                    infaq
-                                      ? `${formatDate(infaq.date)}: ${formatCurrency(infaq.amount)}`
-                                      : `${index + 1}/40`
-                                  }
-                                >
-                                  {/* Tooltip on hover */}
-                                  {infaq && (
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                      {formatDate(infaq.date)}
-                                      <br />
-                                      {formatCurrency(infaq.amount)}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-center gap-2 mt-2">
-                        <span className="text-[10px] font-bold text-base-content">
-                          {infaqData.length}/40
-                        </span>
-                        <span className="text-[10px] text-base-content/40">
-                          •
-                        </span>
-                        <span className="text-[10px] font-bold text-base-content">
-                          {Math.round((infaqData.length / 40) * 100)}%
-                        </span>
-                      </div>
-                    </div>
+                    <ContributionGraph
+                      tone="info"
+                      items={infaqData.map((i) => ({ amount: i.amount, date: i.date }))}
+                    />
                   </div>
                 </div>
               </div>
@@ -956,9 +609,7 @@ export default function Dashboard() {
             <div className="card bg-base-100 shadow-sm border border-base-300">
               <div className="card-body p-0">
                 <div className="border-b border-base-300 px-6 py-4">
-                  <h3 className="font-semibold text-base-content">
-                    Aktivitas Terbaru
-                  </h3>
+                  <h3 className="font-semibold text-base-content">Aktivitas Terbaru</h3>
                   <div className="alert mt-2 border border-base-300 bg-base-200">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -974,53 +625,32 @@ export default function Dashboard() {
                       ></path>
                     </svg>
                     <span className="text-xs">
-                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam.
-                      Cek berkala.
+                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam. Cek berkala.
                     </span>
                   </div>
                 </div>
 
                 <div className="tabs tabs-lifted -mb-px justify-evenly">
-                  <button
-                    className={`tab tab-lifted font-medium text-sm transition-all ${
-                      currentTab === "invoices"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
-                        : "text-base-content/60 hover:text-base-content"
-                    }`}
-                    onClick={() => setCurrentTab("invoices")}
-                  >
-                    Tagihan
-                  </button>
-                  <button
-                    className={`tab tab-lifted font-medium text-sm transition-all ${
-                      currentTab === "payment"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
-                        : "text-base-content/60 hover:text-base-content"
-                    }`}
-                    onClick={() => setCurrentTab("payment")}
-                  >
-                    Pembayaran
-                  </button>
-                  <button
-                    className={`tab tab-lifted font-medium text-sm transition-all ${
-                      currentTab === "saving"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
-                        : "text-base-content/60 hover:text-base-content"
-                    }`}
-                    onClick={() => setCurrentTab("saving")}
-                  >
-                    Tabungan
-                  </button>
-                  <button
-                    className={`tab tab-lifted font-medium text-sm transition-all ${
-                      currentTab === "infaq"
-                        ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
-                        : "text-base-content/60 hover:text-base-content"
-                    }`}
-                    onClick={() => setCurrentTab("infaq")}
-                  >
-                    Infaq
-                  </button>
+                  {(
+                    [
+                      ["invoices", "Tagihan"],
+                      ["payment", "Pembayaran"],
+                      ["saving", "Tabungan"],
+                      ["infaq", "Infaq"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      className={`tab tab-lifted font-medium text-sm transition-all ${
+                        currentTab === key
+                          ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
+                          : "text-base-content/60 hover:text-base-content"
+                      }`}
+                      onClick={() => setCurrentTab(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="p-6 min-h-[200px]">
@@ -1047,548 +677,116 @@ export default function Dashboard() {
       />
       <main className="px-4 py-6 pb-24 w-full">{renderContent()}</main>
 
-      {/* Full Day Confirmation Modal */}
-      <dialog id="fullday_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          {fullDaySuccess ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-success mb-4">Sukses!</h3>
-                <p className="text-base-content/70 mb-6">{fullDaySuccess}</p>
-                <button
-                  className="btn btn-success text-white"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "fullday_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setFullDaySuccess(null);
-                    setError(null);
-                  }}
-                >
-                  Selesai
-                </button>
-              </div>
-            </>
-          ) : error ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-error mb-4">
-                  Update gagal
-                </h3>
-                <p className="text-base-content/70 mb-6">{error}</p>
-                <div className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setError(null);
-                    }}
-                  >
-                    Ulangi lagi
-                  </button>
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      const modal = document.getElementById(
-                        "fullday_modal",
-                      ) as HTMLDialogElement;
-                      modal?.close();
-                      setError(null);
-                      setFullDaySuccess(null);
-                    }}
-                  >
-                    Keluar
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="font-bold text-lg">
-                {isFullDayEnrolled ? "Berhenti Full Day" : "Daftar Full Day"}
-              </h3>
+      <FullDayModal
+        isEnrolled={isFullDayEnrolled}
+        isSubmitting={isChangingFullDay}
+        success={fullDaySuccess}
+        error={error}
+        onToggle={handleFullDayToggle}
+        onClearError={() => setError(null)}
+        onClose={() => {
+          setError(null);
+          setFullDaySuccess(null);
+        }}
+      />
 
-              <div className="py-4">
-                <p className="text-base-content/70 mb-4">
-                  {isFullDayEnrolled
-                    ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan berikutnya"
-                    : "Ananda akan mengikuti full day mulai bulan depan. Konfirmasi."}
-                </p>
-              </div>
+      <BankRequiredModal onAddBankInfo={handleAddBankInfo} />
 
-              <div className="modal-action">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "fullday_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setError(null);
-                    setFullDaySuccess(null);
-                  }}
-                  disabled={isChangingFullDay}
-                >
-                  Keluar
-                </button>
-                <button
-                  className={`btn ${
-                    isFullDayEnrolled ? "btn-error" : "btn-primary"
-                  } text-white`}
-                  onClick={handleFullDayToggle}
-                  disabled={isChangingFullDay}
-                >
-                  {isChangingFullDay && (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  )}
-                  {isFullDayEnrolled ? "Berhenti Full Day" : "Ya. Daftarkan"}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
+      <PaymentConfirmModal
+        choice={paymentChoice}
+        onChoiceChange={setPaymentChoice}
+        file={paymentFile}
+        filePreview={paymentFilePreview}
+        onFileSelect={handleFileSelect}
+        date={paymentDate}
+        onDateChange={setPaymentDate}
+        amount={paymentAmount}
+        onAmountChange={handleAmountChange}
+        finEnt={paymentFinEnt}
+        onFinEntChange={setPaymentFinEnt}
+        finNumName={paymentFinNumName}
+        onFinNumNameChange={setPaymentFinNumName}
+        error={error}
+        success={paymentSuccess}
+        isSubmitting={isConfirmingPayment}
+        onSubmitFile={handlePaymentWithFile}
+        onSubmitForm={handlePaymentWithForm}
+        onClose={() => {
+          setError(null);
+          setPaymentSuccess(null);
+          setPaymentFile(null);
+          setPaymentFilePreview(null);
+          setPaymentChoice("");
+        }}
+      />
 
-      {/* Bank Required Modal */}
-      <dialog id="bank_required_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          <h3 className="font-bold text-lg text-center">
-            Informasi rekening penerimaan dibutuhkan
-          </h3>
+      <WithdrawModal
+        balance={stats.saving}
+        amount={withdrawAmount}
+        onAmountChange={handleWithdrawAmountChange}
+        onSetAmount={setWithdrawAmount}
+        isSubmitting={isWithdrawing}
+        success={withdrawSuccess}
+        onWithdraw={handleWithdraw}
+        onClose={() => {
+          setWithdrawAmount("");
+          setWithdrawSuccess(null);
+        }}
+      />
 
-          <div className="py-4">
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-3">🏦</div>
-              <p className="text-sm text-base-content/50 mb-3">
-                Untuk menarik tabungan, mohon isi rekening penerimaan terlebih
-                dahulu.
-              </p>
-              <p className="text-sm text-base-content/50">
-                Dana yang ditarik akan dikirimkan ke rekening tersebut melalui
-                transfer.
-              </p>
-            </div>
-          </div>
+      <GlobalErrorModal message={globalError} onClose={() => setGlobalError(null)} />
+    </div>
+  );
+}
 
-          <div className="modal-action">
-            <button
-              className="btn"
-              onClick={() => {
-                const modal = document.getElementById(
-                  "bank_required_modal",
-                ) as HTMLDialogElement;
-                modal?.close();
-              }}
-            >
-              Keluar
-            </button>
-            <button className="btn btn-primary" onClick={handleAddBankInfo}>
-              Tambah rekening penerimaan
-            </button>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
-
-      {/* Payment Confirmation Modal - Unified */}
-      <dialog id="payment_confirm_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          {paymentSuccess ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-success mb-4">
-                  Konfirmasi pembayaran terkirim!
-                </h3>
-                <p className="text-base-content/70 mb-6">{paymentSuccess}</p>
-                <button
-                  className="btn btn-success text-white"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "payment_confirm_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setPaymentSuccess(null);
-                    setError(null);
-                    setPaymentFile(null);
-                    setPaymentFilePreview(null);
-                    setPaymentChoice("");
-                  }}
-                >
-                  Selesai
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="font-bold text-lg text-center">
-                Konfirmasi Pembayaran
-              </h3>
-
-              <div className="py-4">
-                {/* Radio Choice */}
-                <div className="mb-6">
-                  <div className="text-3xl mb-4 text-center">📄</div>
-                  <p className="text-base-content/70 mb-4 text-center">
-                    Apakah Anda memiliki screenshot atau dokumen transfer?
-                  </p>
-
-                  <div className="flex justify-center gap-10">
-                    <div className="form-control">
-                      <label className="label cursor-pointer flex-col gap-2">
-                        <input
-                          type="radio"
-                          name="payment-choice"
-                          className="radio radio-primary"
-                          checked={paymentChoice === "no_receipt"}
-                          onChange={() => setPaymentChoice("no_receipt")}
-                        />
-                        <span className="label-text">Tidak</span>
-                      </label>
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label cursor-pointer flex-col gap-2">
-                        <input
-                          type="radio"
-                          name="payment-choice"
-                          className="radio radio-primary"
-                          checked={paymentChoice === "receipt"}
-                          onChange={() => setPaymentChoice("receipt")}
-                        />
-                        <span className="label-text">Punya</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* File Upload Section - Show when "Ada" is selected */}
-                {paymentChoice === "receipt" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="label">
-                        <span className="label-text text-sm font-medium py-2">
-                          Upload file screenshot atau dokumen transfer *
-                        </span>
-                      </label>
-                      <input
-                        type="file"
-                        onChange={handleFileSelect}
-                        className="file-input file-input-bordered w-full"
-                        accept="image/*,.pdf"
-                      />
-                      <div className="label">
-                        <span className="label-text-alt text-xs text-base-content/60 py-2">
-                          Format: JPG, PNG, PDF (max 5MB)
-                        </span>
-                      </div>
-
-                      {/* File preview for images */}
-                      {paymentFile && (
-                        <div className="mt-2">
-                          <div className="bg-base-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs">
-                                File: {paymentFile.name}
-                              </span>
-                            </div>
-                            {paymentFilePreview ? (
-                              <>
-                                <Image
-                                  src={paymentFilePreview}
-                                  alt="Preview dokumen"
-                                  width={300}
-                                  height={300}
-                                  className="max-w-full h-auto rounded object-contain"
-                                  style={{ maxHeight: "100px" }}
-                                />
-                              </>
-                            ) : paymentFile.type === "application/pdf" ? (
-                              <div className="text-xs text-base-content/70">
-                                📄 File PDF (preview tidak tersedia)
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Form Section - Show when "Tidak Ada" is selected */}
-                {paymentChoice === "no_receipt" && (
-                  <div className="space-y-2">
-                    <div>
-                      <label className="label">
-                        <span className="label-text text-sm font-medium py-1">
-                          Tanggal pembayaran *
-                        </span>
-                      </label>
-                      <input
-                        type="date"
-                        value={paymentDate}
-                        onChange={(e) => setPaymentDate(e.target.value)}
-                        className="input input-bordered w-full"
-                        max={new Date().toISOString().split("T")[0]}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="label">
-                        <span className="label-text text-sm font-medium py-1">
-                          Jumlah pembayaran *
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formatRupiah(paymentAmount)}
-                        onChange={handleAmountChange}
-                        className="input input-bordered w-full"
-                        placeholder="contoh: 300000"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="label">
-                        <span className="label-text text-sm font-medium py-1">
-                          Nama Bank / E-Wallet pengirim *
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentFinEnt}
-                        onChange={(e) => setPaymentFinEnt(e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="contoh: BCA, BRI, Mandiri, GoPay"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="label">
-                        <span className="label-text text-sm font-medium py-1">
-                          Atas nama / nomor rekening pengirim *
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentFinNumName}
-                        onChange={(e) => setPaymentFinNumName(e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="contoh: 1234567890 atau Fulan"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Error display */}
-                {error && (
-                  <div className="alert alert-error mt-4">
-                    <span className="text-sm">{error}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-action">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "payment_confirm_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setError(null);
-                    setPaymentSuccess(null);
-                    setPaymentFile(null);
-                    setPaymentFilePreview(null);
-                    setPaymentChoice("");
-                  }}
-                  disabled={isConfirmingPayment}
-                >
-                  Keluar
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    if (paymentChoice === "receipt") {
-                      handlePaymentWithFile();
-                    } else if (paymentChoice === "no_receipt") {
-                      handlePaymentWithForm();
-                    }
-                  }}
-                  disabled={
-                    isConfirmingPayment ||
-                    paymentChoice === "" ||
-                    (paymentChoice === "receipt" && !paymentFile) ||
-                    (paymentChoice === "no_receipt" &&
-                      (!paymentDate ||
-                        !paymentAmount.trim() ||
-                        !paymentFinEnt.trim() ||
-                        !paymentFinNumName.trim()))
+/** 40-cell contribution graph shared by the savings and infaq balance cards. */
+function ContributionGraph({
+  items,
+  tone,
+}: {
+  items: { amount: number; date: string }[];
+  tone: GraphTone;
+}) {
+  const max = items.length ? Math.max(...items.map((i) => i.amount)) : 0;
+  return (
+    <div className="pt-3">
+      <div className="flex flex-col gap-1">
+        {Array.from({ length: 4 }).map((_, row) => (
+          <div key={row} className="flex gap-1">
+            {Array.from({ length: 10 }).map((_, col) => {
+              const index = row * 10 + col;
+              const item = items[index];
+              const colorClass = item ? cellColor(item.amount, max, tone) : "bg-base-300/60";
+              return (
+                <div
+                  key={col}
+                  className={`flex-1 aspect-square rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-base-content/20 cursor-pointer relative group`}
+                  title={
+                    item
+                      ? `${formatTooltipDate(item.date)}: ${formatCurrency(item.amount)}`
+                      : `${index + 1}/40`
                   }
                 >
-                  {isConfirmingPayment && (
-                    <span className="loading loading-spinner loading-sm"></span>
+                  {item && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      {formatTooltipDate(item.date)}
+                      <br />
+                      {formatCurrency(item.amount)}
+                    </div>
                   )}
-                  Kirim konfirmasi
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
-
-      {/* Withdraw Modal */}
-      <dialog id="withdraw_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          {withdrawSuccess ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-success mb-4">
-                  Permintaan penarikan berhasil dikirim
-                </h3>
-                <p className="text-base-content/70 mb-6">{withdrawSuccess}</p>
-                <button
-                  className="btn btn-success text-white"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "withdraw_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setWithdrawSuccess(null);
-                  }}
-                >
-                  Selesai
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="font-bold text-lg">Tarik Tabungan</h3>
-
-              <div className="py-4">
-                <div className="mb-4">
-                  <p className="text-base-content/70 mb-2">
-                    Saldo tersedia:{" "}
-                    <span className="font-semibold text-success">
-                      {stats && formatCurrency(stats.saving)}
-                    </span>
-                  </p>
                 </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text text-sm font-medium py-2">
-                      Jumlah penarikan
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    placeholder="contoh: 50000"
-                    value={formatRupiah(withdrawAmount)}
-                    onChange={handleWithdrawAmountChange}
-                  />
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() =>
-                      stats &&
-                      setWithdrawAmount(Math.floor(stats.saving / 4).toString())
-                    }
-                    disabled={!stats || stats.saving <= 0}
-                  >
-                    25%
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() =>
-                      stats &&
-                      setWithdrawAmount(Math.floor(stats.saving / 2).toString())
-                    }
-                    disabled={!stats || stats.saving <= 0}
-                  >
-                    50%
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() =>
-                      stats && setWithdrawAmount(stats.saving.toString())
-                    }
-                    disabled={!stats || stats.saving <= 0}
-                  >
-                    Semua
-                  </button>
-                </div>
-              </div>
-
-              <div className="modal-action">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "withdraw_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setWithdrawAmount("");
-                  }}
-                  disabled={isWithdrawing}
-                >
-                  Keluar
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleWithdraw}
-                  disabled={isWithdrawing || !withdrawAmount}
-                >
-                  {isWithdrawing && (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  )}
-                  Tarik sekarang
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
-
-      {/* Global Error Modal */}
-      <dialog id="global_error_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          <div className="text-center py-8">
-            <h3 className="text-md mb-4">Terjadi kesalahan</h3>
-            <p className="text-md mb-4">
-              <strong>{globalError}</strong>
-            </p>
-            <button
-              className="btn btn-secondary"
-              onClick={() => {
-                const modal = document.getElementById(
-                  "global_error_modal",
-                ) as HTMLDialogElement;
-                modal?.close();
-                setGlobalError(null);
-              }}
-            >
-              Mengerti
-            </button>
+              );
+            })}
           </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
+        ))}
+      </div>
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <span className="text-xs font-bold text-base-content">{items.length}/40</span>
+        <span className="text-xs text-base-content/40">•</span>
+        <span className="text-xs font-bold text-base-content">
+          {Math.round((items.length / 40) * 100)}%
+        </span>
+      </div>
     </div>
   );
 }

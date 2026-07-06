@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { kindyAdminApi } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { useState } from "react";
+import { kindyAdminApi, ApiError } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
+import { useApi } from "@/hooks/useApi";
+import { Spinner, ErrorAlert, StatCard } from "@/components/ui";
 
 interface Setor {
   id: string;
   amount: number;
-  type: 'bank' | 'amil';
+  type: "bank" | "amil";
   no: number;
   createdAt: string;
   updatedAt: string;
@@ -19,112 +21,91 @@ interface DeltaSetor {
   delta: number;
 }
 
+interface SetorData {
+  setor: Setor[];
+  delta: DeltaSetor | null;
+}
+
 export default function SetorSection() {
-  const [setorData, setSetorData] = useState<Setor[]>([]);
-  const [deltaData, setDeltaData] = useState<DeltaSetor | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, error, refetch } = useApi<SetorData>(
+    async () => {
+      const [setorRes, deltaRes] = await Promise.all([
+        kindyAdminApi.getSetor(),
+        kindyAdminApi.getDeltaSetor(),
+      ]);
+      return {
+        status: "success",
+        data: {
+          setor: (setorRes.data as Setor[]) || [],
+          delta: (deltaRes.data as DeltaSetor) || null,
+        },
+      };
+    },
+    { fallbackMessage: "Gagal memuat data setoran" }
+  );
+
+  const setorData = data?.setor ?? [];
+  const deltaData = data?.delta ?? null;
+
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     amount: "",
     type: "bank" as "bank" | "amil",
   });
 
-  const fetchSetor = async () => {
-    setLoading(true);
-    try {
-      const [setorResponse, deltaResponse] = await Promise.all([
-        kindyAdminApi.getSetor(),
-        kindyAdminApi.getDeltaSetor(),
-      ]);
-      setSetorData(setorResponse.data || []);
-      setDeltaData(deltaResponse.data || null);
-    } catch (error) {
-      console.error("Failed to fetch setor:", error);
-    } finally {
-      setLoading(false);
-    }
+  const closeModal = () => {
+    setShowAddModal(false);
+    setFormData({ amount: "", type: "bank" });
+    setFormError(null);
   };
-
-  useEffect(() => {
-    fetchSetor();
-  }, []);
 
   const handleSubmit = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      alert("Please enter a valid amount");
+      setFormError("Masukkan jumlah yang valid");
       return;
     }
-
+    setIsSubmitting(true);
+    setFormError(null);
     try {
       await kindyAdminApi.addSetor({
         amount: parseFloat(formData.amount),
         type: formData.type,
       });
-      await fetchSetor();
-      setShowAddModal(false);
-      setFormData({ amount: "", type: "bank" });
-    } catch (error) {
-      console.error("Failed to add setor:", error);
-      alert("Failed to record. Please try again.");
+      await refetch();
+      closeModal();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Gagal mencatat setoran. Coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
-    );
-  }
+  if (isLoading) return <Spinner label="Memuat..." />;
+  if (error) return <ErrorAlert message={error} />;
 
   return (
     <div className="p-4">
       <div className="mb-4">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold">IS Ctrl</h2>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-sm btn-primary"
-          >
-            + Record
+          <h2 className="text-lg font-bold">Kontrol Setoran</h2>
+          <button onClick={() => setShowAddModal(true)} className="btn btn-sm btn-primary">
+            + Catat
           </button>
         </div>
 
         {/* Delta Statistics */}
         {deltaData && (
           <div className="space-y-3 mb-6">
-            {/* Remaining Delta - Full Width */}
-            <div className={`card bg-gradient-to-br ${
-              deltaData.delta > 0 
-                ? 'from-orange-500/10 to-orange-600/5 border-orange-500/20' 
-                : 'from-gray-500/10 to-gray-600/5 border-gray-500/20'
-            } border`}>
-              <div className="card-body p-4">
-                <div className="text-xs text-base-content/60">Remaining</div>
-                <div className={`text-2xl font-bold ${deltaData.delta > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
-                  {formatCurrency(deltaData.delta)}
-                </div>
-              </div>
-            </div>
-
-            {/* Collected and Deposited - Two Columns */}
+            <StatCard
+              tone={deltaData.delta > 0 ? "warning" : "neutral"}
+              label="Sisa"
+              value={formatCurrency(deltaData.delta)}
+            />
             <div className="grid grid-cols-2 gap-3">
-              <div className="card bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <div className="card-body p-4">
-                  <div className="text-xs text-base-content/60">Total Collected</div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatCurrency(deltaData.totalCollected)}
-                  </div>
-                </div>
-              </div>
-              <div className="card bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <div className="card-body p-4">
-                  <div className="text-xs text-base-content/60">Total Deposited</div>
-                  <div className="text-lg font-bold text-green-600">
-                    {formatCurrency(deltaData.totalSetor)}
-                  </div>
-                </div>
-              </div>
+              <StatCard tone="info" label="Total Terkumpul" value={formatCurrency(deltaData.totalCollected)} />
+              <StatCard tone="primary" label="Total Disetor" value={formatCurrency(deltaData.totalSetor)} />
             </div>
           </div>
         )}
@@ -134,55 +115,55 @@ export default function SetorSection() {
       <div className="space-y-2">
         {setorData.length === 0 ? (
           <div className="text-center py-12 text-base-content/60">
-            No deposit records yet
+            Belum ada catatan setoran
           </div>
         ) : (
           setorData.map((setor) => (
-            <div key={setor.id} className="card bg-base-100 shadow-sm border border-base-300 hover:border-base-300">
+            <div key={setor.id} className="card bg-base-100 shadow-sm border border-base-300">
               <div className="card-body p-4">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`badge ${
-                        setor.type === 'bank' ? 'badge-primary' : 'badge-secondary'
-                      } badge-sm`}>
-                        {setor.type === 'bank' ? '🏦 Bank' : '👤 Amil'}
-                      </span>
-                      <span className="text-xs text-base-content/50">#{setor.no}</span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {/* Amount */}
-                      <div className="text-sm">
-                        <span className="text-base-content/60">Amount:</span>
-                        <span className="ml-2 font-bold text-success">
-                          {formatCurrency(setor.amount)}
-                        </span>
-                      </div>
-
-                      {/* Timestamps */}
-                      <div className="text-xs text-base-content/50">
-                        <span className="font-medium">Recorded:</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`badge badge-sm ${
+                      setor.type === "bank" ? "badge-primary" : "badge-secondary"
+                    }`}
+                  >
+                    {setor.type === "bank" ? "🏦 Bank" : "👤 Amil"}
+                  </span>
+                  <span className="text-xs text-base-content/50">#{setor.no}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm">
+                    <span className="text-base-content/60">Jumlah:</span>
+                    <span className="ml-2 font-bold text-success">
+                      {formatCurrency(setor.amount)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-base-content/50">
+                    <span className="font-medium">Dicatat:</span>
+                    <span className="ml-1">
+                      {new Date(setor.createdAt).toLocaleString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    {setor.createdAt !== setor.updatedAt && (
+                      <>
+                        <span className="mx-1">•</span>
+                        <span className="font-medium">Diperbarui:</span>
                         <span className="ml-1">
-                          {new Date(setor.createdAt).toLocaleString('en-GB', { 
-                            day: '2-digit', month: 'short', year: '2-digit', 
-                            hour: '2-digit', minute: '2-digit' 
+                          {new Date(setor.updatedAt).toLocaleString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </span>
-                        {setor.createdAt !== setor.updatedAt && (
-                          <>
-                            <span className="mx-1">•</span>
-                            <span className="font-medium">Updated:</span>
-                            <span className="ml-1">
-                              {new Date(setor.updatedAt).toLocaleString('en-GB', { 
-                                day: '2-digit', month: 'short', year: '2-digit', 
-                                hour: '2-digit', minute: '2-digit' 
-                              })}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -195,12 +176,16 @@ export default function SetorSection() {
       {showAddModal && (
         <dialog className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Record New</h3>
-            
+            <h3 className="font-bold text-lg mb-4">Catat Setoran Baru</h3>
+
             <div className="space-y-4">
+              {formError && <ErrorAlert message={formError} />}
+
               <div>
                 <label className="label">
-                  <span className="label-text">Amount (Rp) <span className="text-error">*</span></span>
+                  <span className="label-text">
+                    Jumlah (Rp) <span className="text-error">*</span>
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -208,11 +193,11 @@ export default function SetorSection() {
                   className="input input-bordered w-full"
                   value={
                     formData.amount
-                      ? formatCurrency(parseFloat(formData.amount)).replace('Rp', '').trim()
-                      : ''
+                      ? formatCurrency(parseFloat(formData.amount)).replace("Rp", "").trim()
+                      : ""
                   }
                   onChange={(e) => {
-                    const numericValue = e.target.value.replace(/\D/g, '');
+                    const numericValue = e.target.value.replace(/\D/g, "");
                     setFormData({ ...formData, amount: numericValue });
                   }}
                 />
@@ -220,7 +205,9 @@ export default function SetorSection() {
 
               <div>
                 <label className="label">
-                  <span className="label-text">Deposit Type <span className="text-error">*</span></span>
+                  <span className="label-text">
+                    Jenis Setoran <span className="text-error">*</span>
+                  </span>
                 </label>
                 <div className="flex gap-3">
                   <label className="flex items-center gap-2 cursor-pointer flex-1">
@@ -228,18 +215,18 @@ export default function SetorSection() {
                       type="radio"
                       name="type"
                       className="radio radio-primary"
-                      checked={formData.type === 'bank'}
-                      onChange={() => setFormData({ ...formData, type: 'bank' })}
+                      checked={formData.type === "bank"}
+                      onChange={() => setFormData({ ...formData, type: "bank" })}
                     />
-                    <span className="label-text">🏦 Bank Transfer</span>
+                    <span className="label-text">🏦 Transfer Bank</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer flex-1">
                     <input
                       type="radio"
                       name="type"
                       className="radio radio-primary"
-                      checked={formData.type === 'amil'}
-                      onChange={() => setFormData({ ...formData, type: 'amil' })}
+                      checked={formData.type === "amil"}
+                      onChange={() => setFormData({ ...formData, type: "amil" })}
                     />
                     <span className="label-text">👤 Via Amil</span>
                   </label>
@@ -248,37 +235,40 @@ export default function SetorSection() {
 
               {deltaData && (
                 <div className="alert alert-info text-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    className="stroke-current shrink-0 w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
                   <div>
-                    <div className="font-medium">Current Balance</div>
-                    <div className="text-xs">Remaining to deposit: {formatCurrency(deltaData.delta)}</div>
+                    <div className="font-medium">Saldo Saat Ini</div>
+                    <div className="text-xs">
+                      Sisa untuk disetor: {formatCurrency(deltaData.delta)}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             <div className="modal-action">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setFormData({ amount: "", type: "bank" });
-                }}
-                className="btn btn-ghost"
-              >
-                Cancel
+              <button onClick={closeModal} className="btn btn-ghost" disabled={isSubmitting}>
+                Batal
               </button>
-              <button onClick={handleSubmit} className="btn btn-primary">
-                Record
+              <button onClick={handleSubmit} className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting && <span className="loading loading-spinner loading-sm" />}
+                Catat
               </button>
             </div>
           </div>
-          <div 
-            className="modal-backdrop" 
-            onClick={() => {
-              setShowAddModal(false);
-              setFormData({ amount: "", type: "bank" });
-            }}
-          ></div>
+          <div className="modal-backdrop" onClick={closeModal}></div>
         </dialog>
       )}
     </div>

@@ -24,6 +24,17 @@ export const formatDate = (dateString: string): string => {
   return `${day}-${month}-${year}`;
 };
 
+/**
+ * Formats a raw digit string (from a currency text input) into "Rp1.000".
+ * Returns "" for empty/non-numeric input. Strips any non-digits first.
+ */
+export const formatRupiah = (value: string): string => {
+  const numericValue = value.replace(/\D/g, '');
+  if (!numericValue) return '';
+  const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `Rp${formatted}`;
+};
+
 export const formatDateShort = (dateString: string): string => {
   const date = new Date(dateString);
   

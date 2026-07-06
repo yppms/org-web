@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { kindyAdminApi } from "@/lib/api";
+import { Spinner } from "@/components/ui";
 import Navigation from "./components/Navigation";
 import PaymentSection from "./components/PaymentSection";
 import InvoiceSection from "./components/InvoiceSection";
@@ -61,14 +62,7 @@ export default function KindyAdminDashboard() {
 
   // Don't render anything until we've checked access
   if (isCheckingAccess) {
-    return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <div className="text-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content/60">Loading portal...</p>
-        </div>
-      </div>
-    );
+    return <Spinner variant="page" label="Memuat portal..." />;
   }
 
   // If no sections are accessible, show error
@@ -76,9 +70,9 @@ export default function KindyAdminDashboard() {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-semibold text-base-content/70">No Access</p>
+          <p className="text-lg font-bold text-base-content/70">Tidak Ada Akses</p>
           <p className="mt-2 text-sm text-base-content/60">
-            You don&apos;t have permission to access any sections
+            Anda tidak memiliki akses ke bagian mana pun
           </p>
         </div>
       </div>

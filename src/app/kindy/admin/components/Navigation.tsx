@@ -20,14 +20,14 @@ export default function Navigation({
   accessibleSections,
 }: NavigationProps) {
   const allItems: NavItem[] = [
-    { key: "payment", label: "Payment", icon: "💰" },
-    { key: "invoice", label: "Invoice", icon: "📄" },
-    { key: "outstanding", label: "Standing", icon: "📊" },
-    { key: "saving", label: "Saving", icon: "🏦" },
+    { key: "payment", label: "Bayar", icon: "💰" },
+    { key: "invoice", label: "Tagihan", icon: "📄" },
+    { key: "outstanding", label: "Tunggakan", icon: "📊" },
+    { key: "saving", label: "Tabungan", icon: "🏦" },
     { key: "infaq", label: "Infaq", icon: "🤲" },
-    { key: "setor", label: "IS Ctrl", icon: "💵" },
+    { key: "setor", label: "Setor", icon: "💵" },
     { key: "stamp", label: "Stamp", icon: "📨" },
-    { key: "openas", label: "OAS", icon: "👤" },
+    { key: "openas", label: "Buka", icon: "👤" },
   ];
 
   // Filter items to only show accessible sections
@@ -38,7 +38,7 @@ export default function Navigation({
       <div className="max-w-4xl mx-auto px-4 py-3">
         {/* Header */}
         <div className="mb-3">
-          <h1 className="text-base font-semibold">Kindy Admin Portal</h1>
+          <h1 className="text-base font-semibold">Portal Admin Kindy</h1>
           <p className="text-xs text-base-content/60">Miftahussalam Islamic Kindy</p>
         </div>
 

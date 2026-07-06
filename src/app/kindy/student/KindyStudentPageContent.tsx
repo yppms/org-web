@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import kindyStudentApi, { orgApi } from "@/lib/api";
+import { Spinner } from "@/components/ui";
 import Dashboard from "./dashboard";
 
 export default function KindyStudentPageContent() {
@@ -26,7 +27,7 @@ export default function KindyStudentPageContent() {
             setIsAuthenticated(true);
             return;
           } catch (profileErr) {
-            setError("need stamp, please open with original link.");
+            setError("Butuh tautan akses. Silakan buka dari tautan asli.");
             setIsAuthenticated(false);
             return;
           }
@@ -41,11 +42,11 @@ export default function KindyStudentPageContent() {
           url.searchParams.delete("stamp");
           router.replace(url.pathname + url.search);
         } catch (loginErr) {
-          setError("access is limited, you should contact admin.");
+          setError("Akses terbatas. Silakan hubungi admin.");
           setIsAuthenticated(false);
         }
       } catch (serverErr) {
-        setError("sorry. server is busy.");
+        setError("Maaf, server sedang sibuk.");
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -56,14 +57,7 @@ export default function KindyStudentPageContent() {
   }, [searchParams, router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="mt-4 text-base-content/70">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Spinner variant="page" label="Memuat..." />;
   }
 
   if (!isAuthenticated) {
@@ -74,7 +68,7 @@ export default function KindyStudentPageContent() {
           <div className="hero-content text-center">
             <div className="max-w-md">
               <h1 className="text-lg font-bold">
-                {error || "sorry you don't have access."}
+                {error || "Maaf, Anda tidak memiliki akses."}
               </h1>
             </div>
           </div>

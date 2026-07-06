@@ -14,7 +14,7 @@
   "description": "Web portal for Yayasan Pondok Pesantren Miftahussalam Sleman",
   "dependencies": {
     "autoprefix": "^1.0.1",
-    "daisyui": "^5.1.6",
+    "daisyui": "^4.12.24",
     "next": "15.5.9",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

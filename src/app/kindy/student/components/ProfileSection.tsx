@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { KindyStudent, InsuranceInfo } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import kindyStudentApi, { ApiError } from "@/lib/api";
+import { useApi } from "@/hooks/useApi";
 import Image from "next/image";
 
 interface ProfileSectionProps {
   profile: KindyStudent;
   onUpdate: (profile: KindyStudent) => void;
   onBankInfoAdded?: () => void; // Optional callback when bank info is successfully added
-  onError?: (error: any) => void; // Optional global error handler
+  onError?: (error: unknown) => void; // Optional global error handler
 }
 
 export default function ProfileSection({
@@ -32,12 +33,10 @@ export default function ProfileSection({
     finName: string;
   } | null>(null);
   const [bankSuccess, setBankSuccess] = useState<string | null>(null);
-  const [insuranceInfo, setInsuranceInfo] = useState<InsuranceInfo | null>(
-    null
-  );
-  const [isLoadingInsurance, setIsLoadingInsurance] = useState(true);
 
-  const locale = profile.lang;
+  // Insurance is non-critical — errors are ignored (card just doesn't render).
+  const { data: insuranceInfo, isLoading: isLoadingInsurance } =
+    useApi<InsuranceInfo>(() => kindyStudentApi.getInsurance());
 
   // Check if user is enrolled in full day program
   const isFullDayEnrolled =
@@ -174,29 +173,11 @@ export default function ProfileSection({
     modal?.showModal();
   };
 
-  // Fetch insurance information
-  useEffect(() => {
-    const fetchInsuranceInfo = async () => {
-      try {
-        setIsLoadingInsurance(true);
-        const response = await kindyStudentApi.getInsurance();
-        setInsuranceInfo(response.data);
-      } catch (err) {
-        console.error("Failed to fetch insurance info:", err);
-        // Insurance info is not critical, so we don't show global error
-      } finally {
-        setIsLoadingInsurance(false);
-      }
-    };
-
-    fetchInsuranceInfo();
-  }, []);
-
   return (
     <>
       <div className="space-y-6">
         {/* Student Info Card */}
-        <div className="card bg-white shadow-md border border-primary/20">
+        <div className="card bg-base-100 shadow-md border border-primary/20">
           <div className="card-body p-0">
             {/* Header Section */}
             <div className="bg-primary/5 border-b border-primary/15 px-4 py-3">
@@ -220,7 +201,7 @@ export default function ProfileSection({
                 <div className="space-y-2">
                   {/* NISN */}
                   {profile.nisn && (
-                    <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                    <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
                       <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
                         <span className="text-sm">🆔</span>
                       </div>
@@ -237,7 +218,7 @@ export default function ProfileSection({
 
                   {/* Gender */}
                   {profile.gender && (
-                    <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                    <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
                       <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
                         <span className="text-sm">
                           {profile.gender === "MALE" ? "👦" : "👧"}
@@ -255,7 +236,7 @@ export default function ProfileSection({
                   )}
 
                   {/* Class Information */}
-                  <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                  <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
                     <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
                       <span className="text-sm">📚</span>
                     </div>
@@ -270,7 +251,7 @@ export default function ProfileSection({
                   </div>
 
                   {/* Academic Year */}
-                  <div className="flex items-center gap-3 p-3 bg-base-50 rounded-lg border border-primary/8">
+                  <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
                     <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
                       <span className="text-sm">📅</span>
                     </div>
@@ -298,11 +279,11 @@ export default function ProfileSection({
 
         {/* Insurance Information Card - Only show if insurance number exists */}
         {(!isLoadingInsurance && insuranceInfo && insuranceInfo.num) && (
-        <div className="card bg-gradient-to-br bg-base-100 from-blue-500/5 to-blue-600/10 shadow-sm border border-blue-500/20">
+        <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
           <div className="card-body p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-base-content flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-info rounded-full"></div>
                 Asuransi
               </h3>
               <div className="text-2xl">🛡️</div>
@@ -311,7 +292,7 @@ export default function ProfileSection({
             {insuranceInfo && (
               <div className="space-y-4">
                 {/* Insurance Provider */}
-                <div className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg border border-info/20">
                   <div className="flex items-center gap-3">
                     <div className="w-30 h-30 flex items-center">
                       <Image
@@ -364,7 +345,7 @@ export default function ProfileSection({
                         key={index}
                         className="flex items-start gap-2 p-2 px-3 rounded text-xs"
                       >
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
                         <span className="text-base-content/80 leading-relaxed">
                           {benefit}
                         </span>
@@ -395,9 +376,7 @@ export default function ProfileSection({
               <button
                 onClick={openFullDayModal}
                 className={`btn btn-sm ${
-                  isFullDayEnrolled
-                    ? "btn-error text-white"
-                    : "btn-primary text-white"
+                  isFullDayEnrolled ? "btn-error" : "btn-primary"
                 }`}
               >
                 {isFullDayEnrolled ? "Berhenti" : "Daftar"}
@@ -480,7 +459,7 @@ export default function ProfileSection({
                   Rekening Penerimaan
                 </h3>
                 <button
-                  className={`btn btn-sm text-white ${
+                  className={`btn btn-sm ${
                     hasBankInfo ? "btn-primary" : "btn-success"
                   }`}
                   onClick={openBankModal}
@@ -548,7 +527,7 @@ export default function ProfileSection({
                 </h3>
                 <p className="text-base-content/70 mb-6">{fullDaySuccess}</p>
                 <button
-                  className="btn btn-success text-white"
+                  className="btn btn-success"
                   onClick={() => {
                     const modal = document.getElementById(
                       "fullday_profile_modal"
@@ -626,7 +605,7 @@ export default function ProfileSection({
                 <button
                   className={`btn ${
                     isFullDayEnrolled ? "btn-error" : "btn-primary"
-                  } text-white`}
+                  }`}
                   onClick={handleFullDayToggle}
                   disabled={isChangingFullDay}
                 >
@@ -717,10 +696,10 @@ export default function ProfileSection({
                 setError(null);
               }}
             >
-              Cancel
+              Batal
             </button>
             <button
-              className={`btn text-white ${
+              className={`btn ${
                 hasBankInfo ? "btn-primary" : "btn-success"
               }`}
               onClick={handleBankSave}
@@ -761,7 +740,7 @@ export default function ProfileSection({
           ) : error ? (
             <>
               <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-error mb-4">Failed!</h3>
+                <h3 className="font-bold text-lg text-error mb-4">Gagal!</h3>
                 <p className="text-base-content/70 mb-6">{error}</p>
                 <div className="flex gap-2 justify-center">
                   <button
@@ -849,9 +828,9 @@ export default function ProfileSection({
                   Keluar
                 </button>
                 <button
-                  className={`btn text-white ${
+                  className={`btn ${
                     hasBankInfo ? "btn-primary" : "btn-success"
-                  } text-white`}
+                  }`}
                   onClick={handleBankConfirm}
                   disabled={isSavingBank}
                 >

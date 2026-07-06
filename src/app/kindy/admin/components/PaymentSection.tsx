@@ -1,76 +1,39 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { kindyAdminApi } from "@/lib/api";
+import { useState, useMemo } from "react";
+import { kindyAdminApi, ApiError } from "@/lib/api";
+import { AdminPayment, AdminStudent, PaymentFormData } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useApi } from "@/hooks/useApi";
+import { Spinner, ErrorAlert } from "@/components/ui";
 import PaymentFormModal from "./PaymentFormModal";
 
-interface Payment {
-  id: string;
-  kindyStudentName: string;
-  amount: number;
-  date: string;
-  reference: string;
-  invoiceId?: string;
-  invoiceName?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PaymentFormData {
-  studentId: string;
-  amount: string;
-  date: string;
-  reference: string;
-  invoiceId?: string | null;
-  isSaving?: boolean;
-}
-
-interface Student {
-  id: string;
-  name: string;
-}
-
 export default function PaymentSection() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null);
+  const {
+    data: paymentsData,
+    isLoading,
+    error,
+    refetch,
+  } = useApi<AdminPayment[]>(() => kindyAdminApi.getPayments(), {
+    fallbackMessage: "Gagal memuat pembayaran",
+  });
+  const { data: studentsData } = useApi<AdminStudent[]>(() => kindyAdminApi.getAllStudents());
+
+  const payments = useMemo(() => paymentsData ?? [], [paymentsData]);
+  const students = studentsData ?? [];
+
+  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'date'>('date');
+  const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "date">("date");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const fetchStudents = async () => {
-    try {
-      const response = await kindyAdminApi.getAllStudents();
-      setStudents(response.data || []);
-    } catch (error) {
-      console.error("Failed to fetch students:", error);
-    }
-  };
-
-  const fetchPayments = async () => {
-    setLoading(true);
-    try {
-      const response = await kindyAdminApi.getPayments();
-      setPayments(response.data || []);
-    } catch (error) {
-      console.error("Failed to fetch payments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStudents();
-    fetchPayments();
-  }, []);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleFormSubmit = async (formData: PaymentFormData) => {
+    setActionError(null);
     try {
-      if (formMode === 'add') {
+      if (formMode === "add") {
         await kindyAdminApi.addPayment({
           studentId: formData.studentId,
           amount: parseFloat(formData.amount),
@@ -79,7 +42,7 @@ export default function PaymentSection() {
           invoiceId: formData.invoiceId || null,
           isSaving: formData.isSaving || false,
         });
-      } else if (formMode === 'edit' && selectedPayment) {
+      } else if (formMode === "edit" && selectedPayment) {
         await kindyAdminApi.updatePayment(selectedPayment.id, {
           amount: parseFloat(formData.amount),
           date: formData.date,
@@ -87,131 +50,112 @@ export default function PaymentSection() {
           invoiceId: formData.invoiceId || null,
         });
       }
-      await fetchPayments();
+      await refetch();
       setFormMode(null);
       setSelectedPayment(null);
-    } catch (error) {
-      console.error("Failed to save payment:", error);
-      alert("Failed to save payment. Please try again.");
+    } catch (err) {
+      setActionError(
+        err instanceof ApiError ? err.message : "Gagal menyimpan pembayaran. Coba lagi."
+      );
     }
   };
 
   const handleDeletePayment = async () => {
     if (!selectedPayment) return;
+    setActionError(null);
     try {
       await kindyAdminApi.deletePayment(selectedPayment.id);
-      await fetchPayments();
+      await refetch();
       setShowDeleteModal(false);
       setSelectedPayment(null);
-    } catch (error) {
-      console.error("Failed to delete payment:", error);
+    } catch (err) {
+      setActionError(
+        err instanceof ApiError ? err.message : "Gagal menghapus pembayaran. Coba lagi."
+      );
+      setShowDeleteModal(false);
     }
   };
 
-  const openEditModal = (payment: Payment) => {
+  const openEditModal = (payment: AdminPayment) => {
     setSelectedPayment(payment);
-    setFormMode('edit');
+    setFormMode("edit");
   };
 
-  const openDeleteModal = (payment: Payment) => {
+  const openDeleteModal = (payment: AdminPayment) => {
     setSelectedPayment(payment);
     setShowDeleteModal(true);
   };
 
   const toggleGroup = (date: string) => {
     setCollapsedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(date)) {
-        newSet.delete(date);
-      } else {
-        newSet.add(date);
-      }
-      return newSet;
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
     });
   };
 
-  // Filter payments by search query - memoized for performance
   const filteredPayments = useMemo(() => {
     if (!searchQuery.trim()) return payments;
-    
     const query = searchQuery.toLowerCase();
-    return payments.filter((payment) =>
-      payment.kindyStudentName.toLowerCase().includes(query) ||
-      payment.reference.toLowerCase().includes(query)
+    return payments.filter(
+      (payment) =>
+        payment.kindyStudentName.toLowerCase().includes(query) ||
+        payment.reference.toLowerCase().includes(query)
     );
   }, [payments, searchQuery]);
 
-  // Group payments by selected date field - memoized for performance
   const groupedPayments = useMemo(() => {
     return filteredPayments.reduce((groups, payment) => {
-      // Get the date field based on sort selection
-      let dateValue: string;
-      if (sortBy === 'createdAt') {
-        dateValue = payment.createdAt;
-      } else if (sortBy === 'updatedAt') {
-        dateValue = payment.updatedAt;
-      } else {
-        dateValue = payment.date;
-      }
-      
-      // Use local date instead of UTC date for grouping
-      const dateObj = new Date(dateValue);
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const date = `${year}-${month}-${day}`;
-      
-      if (!groups[date]) {
-        groups[date] = [];
-      }
+      const dateValue =
+        sortBy === "createdAt"
+          ? payment.createdAt
+          : sortBy === "updatedAt"
+          ? payment.updatedAt
+          : payment.date;
+      const d = new Date(dateValue);
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+      if (!groups[date]) groups[date] = [];
       groups[date].push(payment);
       return groups;
-    }, {} as Record<string, Payment[]>);
+    }, {} as Record<string, AdminPayment[]>);
   }, [filteredPayments, sortBy]);
 
-  // Sort dates in descending order (newest first) - memoized for performance
-  const sortedDates = useMemo(() => {
-    return Object.keys(groupedPayments).sort((a, b) => 
-      new Date(b).getTime() - new Date(a).getTime()
-    );
-  }, [groupedPayments]);
+  const sortedDates = useMemo(
+    () => Object.keys(groupedPayments).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
+    [groupedPayments]
+  );
 
-  const collapseAll = () => {
-    setCollapsedGroups(new Set(sortedDates));
-  };
+  const collapseAll = () => setCollapsedGroups(new Set(sortedDates));
+  const expandAll = () => setCollapsedGroups(new Set());
 
-  const expandAll = () => {
-    setCollapsedGroups(new Set());
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
-    );
-  }
+  if (isLoading) return <Spinner label="Memuat..." />;
+  if (error) return <ErrorAlert message={error} />;
 
   return (
     <div className="p-4">
       <div className="mb-4">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold">Payment Records</h2>
-          <button
-            onClick={() => setFormMode('add')}
-            className="btn btn-sm btn-primary"
-          >
-            + Add Payment
+          <h2 className="text-lg font-bold">Data Pembayaran</h2>
+          <button onClick={() => setFormMode("add")} className="btn btn-sm btn-primary">
+            + Tambah
           </button>
         </div>
         <p className="text-sm text-base-content/60 mb-4">
-          Track all student payment transactions
+          Catat semua transaksi pembayaran siswa
         </p>
 
-        {/* Search Input */}
+        {actionError && (
+          <div className="mb-4">
+            <ErrorAlert message={actionError} />
+          </div>
+        )}
+
         <input
           type="text"
-          placeholder="Search by student name or reference..."
+          placeholder="Cari nama siswa atau referensi..."
           className="input input-bordered input-sm w-full"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -221,45 +165,36 @@ export default function PaymentSection() {
       {/* Sort selector */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between mb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-base-content/70 font-medium">Sort by:</span>
+          <span className="text-sm text-base-content/70 font-medium">Urutkan:</span>
           <div className="btn-group">
             <button
-              className={`btn btn-xs ${sortBy === 'createdAt' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setSortBy('createdAt')}
+              className={`btn btn-xs ${sortBy === "createdAt" ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setSortBy("createdAt")}
             >
-              Created
+              Dibuat
             </button>
             <button
-              className={`btn btn-xs ${sortBy === 'updatedAt' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setSortBy('updatedAt')}
+              className={`btn btn-xs ${sortBy === "updatedAt" ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setSortBy("updatedAt")}
             >
-              Updated
+              Diperbarui
             </button>
             <button
-              className={`btn btn-xs ${sortBy === 'date' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setSortBy('date')}
+              className={`btn btn-xs ${sortBy === "date" ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setSortBy("date")}
             >
-              Payment Date
+              Tgl Bayar
             </button>
           </div>
         </div>
-        
-        {/* Collapse/Expand controls */}
+
         {payments.length > 0 && (
           <div className="flex items-center gap-1 flex-shrink-0">
-            <button
-              onClick={collapseAll}
-              className="btn btn-xs btn-ghost"
-              title="Collapse all groups"
-            >
-              📁 Collapse All
+            <button onClick={collapseAll} className="btn btn-xs btn-ghost">
+              📁 Tutup Semua
             </button>
-            <button
-              onClick={expandAll}
-              className="btn btn-xs btn-ghost"
-              title="Expand all groups"
-            >
-              📂 Expand All
+            <button onClick={expandAll} className="btn btn-xs btn-ghost">
+              📂 Buka Semua
             </button>
           </div>
         )}
@@ -267,125 +202,115 @@ export default function PaymentSection() {
 
       <div className="space-y-6">
         {payments.length === 0 ? (
-          <div className="text-center py-12 text-base-content/60">
-            No payment records yet
-          </div>
+          <div className="text-center py-12 text-base-content/60">Belum ada pembayaran</div>
         ) : filteredPayments.length === 0 ? (
           <div className="text-center py-12 text-base-content/60">
-            No payments found matching &quot;{searchQuery}&quot;
+            Tidak ada pembayaran dengan kata kunci &quot;{searchQuery}&quot;
           </div>
         ) : (
           sortedDates.map((date) => {
             const isCollapsed = collapsedGroups.has(date);
             const groupCount = groupedPayments[date].length;
-            
+
             return (
               <div key={date} className="space-y-3">
-                {/* Collapsible Date header */}
                 <button
                   onClick={() => toggleGroup(date)}
                   className="w-full sticky top-0 bg-base-200/90 backdrop-blur-sm px-3 py-2 rounded-lg hover:bg-base-300/90 transition-colors flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`text-lg transition-transform ${isCollapsed ? '' : 'rotate-90'}`}>
+                    <span className={`text-lg transition-transform ${isCollapsed ? "" : "rotate-90"}`}>
                       ▶
                     </span>
-                    <h3 className="text-sm font-semibold text-base-content/70">
-                      {formatDate(date)}
-                    </h3>
-                    <span className="badge badge-sm badge-ghost">
-                      {groupCount} {groupCount === 1 ? 'payment' : 'payments'}
-                    </span>
+                    <h3 className="text-sm font-semibold text-base-content/70">{formatDate(date)}</h3>
+                    <span className="badge badge-sm badge-ghost">{groupCount} pembayaran</span>
                   </div>
-                  <span className="text-xs text-base-content/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isCollapsed ? 'Click to expand' : 'Click to collapse'}
-                  </span>
                 </button>
-                
-                {/* Payments for this date */}
-                {!isCollapsed && groupedPayments[date].map((payment) => (
-                <div key={payment.id} className="card bg-base-100 shadow-sm border border-base-300">
-                  <div className="card-body p-4">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1">
-                        {/* Student Name - Main heading */}
-                        <h3 className="font-semibold text-base mb-3">{payment.kindyStudentName}</h3>
-                        
-                        <div className="space-y-2">
-                          {/* Amount */}
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-base-content/60 font-medium">Amount:</span>
-                            <span className="badge badge-success badge-sm font-semibold">
-                              {formatCurrency(payment.amount)}
-                            </span>
-                          </div>
-                          
-                          {/* Payment Date */}
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-base-content/60 font-medium">Date:</span>
-                            <span className="text-xs text-base-content/70">
-                              {formatDate(payment.date)}
-                            </span>
-                          </div>
-                          
-                          {/* Reference */}
-                          {payment.reference && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-base-content/60 font-medium">Ref:</span>
-                              <span className="text-xs text-base-content/70">
-                                {payment.reference}
-                              </span>
+
+                {!isCollapsed &&
+                  groupedPayments[date].map((payment) => (
+                    <div key={payment.id} className="card bg-base-100 shadow-sm border border-base-300">
+                      <div className="card-body p-4">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base mb-3">
+                              {payment.kindyStudentName}
+                            </h3>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-base-content/60 font-medium">Jumlah:</span>
+                                <span className="badge badge-success badge-sm font-semibold">
+                                  {formatCurrency(payment.amount)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-base-content/60 font-medium">Tanggal:</span>
+                                <span className="text-xs text-base-content/70">
+                                  {formatDate(payment.date)}
+                                </span>
+                              </div>
+                              {payment.reference && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="text-base-content/60 font-medium">Ref:</span>
+                                  <span className="text-xs text-base-content/70">
+                                    {payment.reference}
+                                  </span>
+                                </div>
+                              )}
+                              {payment.invoiceName && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="text-base-content/60 font-medium">Tagihan:</span>
+                                  <span className="badge badge-primary badge-sm">
+                                    📋 {payment.invoiceName}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/50 border-t border-base-300 mt-2 pt-2">
+                                <span className="font-medium">Dibuat:</span>
+                                <span>
+                                  {new Date(payment.createdAt).toLocaleString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <span>•</span>
+                                <span className="font-medium">Diperbarui:</span>
+                                <span>
+                                  {new Date(payment.updatedAt).toLocaleString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
                             </div>
-                          )}
-                          
-                          {/* Attached Invoice */}
-                          {payment.invoiceName && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-base-content/60 font-medium">Invoice:</span>
-                              <span className="badge badge-primary badge-sm">
-                                📋 {payment.invoiceName}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Timestamps */}
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/50 border-t border-base-300 mt-2 pt-2">
-                            <span className="font-medium">Created:</span>
-                            <span>{new Date(payment.createdAt).toLocaleString('en-GB', { 
-                              day: '2-digit', month: 'short', year: '2-digit', 
-                              hour: '2-digit', minute: '2-digit' 
-                            })}</span>
-                            <span>•</span>
-                            <span className="font-medium">Updated:</span>
-                            <span>{new Date(payment.updatedAt).toLocaleString('en-GB', { 
-                              day: '2-digit', month: 'short', year: '2-digit', 
-                              hour: '2-digit', minute: '2-digit' 
-                            })}</span>
+                          </div>
+
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => openEditModal(payment)}
+                              className="btn btn-sm btn-ghost btn-square"
+                              title="Ubah"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => openDeleteModal(payment)}
+                              className="btn btn-sm btn-ghost btn-square text-error"
+                              title="Hapus"
+                            >
+                              🗑️
+                            </button>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Action buttons */}
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => openEditModal(payment)}
-                          className="btn btn-sm btn-ghost btn-square"
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(payment)}
-                          className="btn btn-sm btn-ghost btn-square text-error"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))}
               </div>
             );
           })
@@ -408,14 +333,14 @@ export default function PaymentSection() {
       {showDeleteModal && selectedPayment && (
         <dialog className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Confirm Delete</h3>
+            <h3 className="font-bold text-lg mb-4">Konfirmasi Hapus</h3>
             <p className="mb-4">
-              Are you sure you want to delete this payment record for{" "}
+              Yakin ingin menghapus pembayaran untuk{" "}
               <strong>{selectedPayment.kindyStudentName}</strong>?
             </p>
             <div className="bg-base-200 p-3 rounded-lg text-sm space-y-1">
-              <div>Amount: {formatCurrency(selectedPayment.amount)}</div>
-              <div>Date: {formatDate(selectedPayment.date)}</div>
+              <div>Jumlah: {formatCurrency(selectedPayment.amount)}</div>
+              <div>Tanggal: {formatDate(selectedPayment.date)}</div>
             </div>
             <div className="modal-action">
               <button
@@ -425,10 +350,10 @@ export default function PaymentSection() {
                 }}
                 className="btn btn-ghost"
               >
-                Cancel
+                Batal
               </button>
               <button onClick={handleDeletePayment} className="btn btn-error">
-                Delete
+                Hapus
               </button>
             </div>
           </div>

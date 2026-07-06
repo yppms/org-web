@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { kindyAdminApi, orgApi } from "@/lib/api";
+import { kindyAdminApi, orgApi, ApiError } from "@/lib/api";
+import { Spinner, ErrorAlert } from "@/components/ui";
 import Dashboard from "./dashboard";
 
 export default function KindyAdminPageContent() {
@@ -26,7 +27,7 @@ export default function KindyAdminPageContent() {
           setIsAuthenticated(false);
         }
       } catch (serverErr) {
-        setError("sorry. server is busy.");
+        setError("Maaf, server sedang sibuk.");
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -39,7 +40,7 @@ export default function KindyAdminPageContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
-      setError("jah");
+      setError("Masukkan kata sandi.");
       return;
     }
 
@@ -49,22 +50,15 @@ export default function KindyAdminPageContent() {
     try {
       await kindyAdminApi.login(password);
       setIsAuthenticated(true);
-    } catch (loginErr: any) {
-      setError(loginErr.message || "Invalid password");
+    } catch (loginErr) {
+      setError(loginErr instanceof ApiError ? loginErr.message : "Kata sandi salah");
     } finally {
       setIsLoading(false);
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="mt-4 text-base-content/70">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Spinner variant="page" label="Memuat..." />;
   }
 
   if (!isAuthenticated) {
@@ -82,7 +76,7 @@ export default function KindyAdminPageContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="input input-bordered w-full pr-12"
                     disabled={isLoading}
-                    placeholder="Password"
+                    placeholder="Kata sandi"
                   />
                   <button
                     type="button"
@@ -104,25 +98,21 @@ export default function KindyAdminPageContent() {
                 </div>
               </div>
 
-              {error && (
-                <div className="alert alert-error">
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
+              {error && <ErrorAlert message={error} />}
 
               <div className="form-control mt-6">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      Logging in...
+                      Memproses...
                     </>
                   ) : (
-                    "yey"
+                    "Masuk"
                   )}
                 </button>
               </div>

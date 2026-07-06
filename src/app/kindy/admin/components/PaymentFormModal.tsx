@@ -3,38 +3,12 @@
 import { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { kindyAdminApi } from "@/lib/api";
-import type { UnpaidInvoice } from "@/lib/types";
-
-interface Payment {
-  id: string;
-  kindyStudentName: string;
-  amount: number;
-  date: string;
-  reference: string;
-  invoiceId?: string;
-  invoiceName?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-}
-
-interface PaymentFormData {
-  studentId: string;
-  amount: string;
-  date: string;
-  reference: string;
-  invoiceId?: string | null;
-  isSaving?: boolean;
-}
+import type { UnpaidInvoice, AdminPayment, AdminStudent, PaymentFormData } from "@/lib/types";
 
 interface PaymentFormModalProps {
   mode: 'add' | 'edit' | null;
-  payment: Payment | null;
-  students: Student[];
+  payment: AdminPayment | null;
+  students: AdminStudent[];
   onClose: () => void;
   onSubmit: (data: PaymentFormData) => Promise<void>;
 }
@@ -48,7 +22,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
     invoiceId: "",
   });
   const [studentSearch, setStudentSearch] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<AdminStudent[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
@@ -164,7 +138,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
     }
   };
 
-  const handleStudentSelect = (student: Student) => {
+  const handleStudentSelect = (student: AdminStudent) => {
     setFormData({ ...formData, studentId: student.id });
     setStudentSearch(student.name);
     setShowStudentDropdown(false);
@@ -173,12 +147,12 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
   const openConfirmModal = () => {
     // Validate all required fields
     if (mode === 'add' && (!formData.studentId || !formData.amount || !formData.date || !formData.reference)) {
-      alert("Please fill in all required fields");
+      alert("Lengkapi semua field yang wajib diisi");
       return;
     }
     
     if (mode === 'edit' && (!formData.amount || !formData.date || !formData.reference)) {
-      alert("Please fill in all required fields");
+      alert("Lengkapi semua field yang wajib diisi");
       return;
     }
     
@@ -196,23 +170,23 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
       <dialog className="modal modal-open">
         <div className="modal-box">
           <h3 className="font-bold text-lg mb-4">
-            {mode === 'add' ? 'Add New Payment' : 'Edit Payment'}
+            {mode === 'add' ? 'Tambah Pembayaran' : 'Ubah Pembayaran'}
           </h3>
           <div className="space-y-3">
             {mode === 'edit' && payment && (
               <div className="alert alert-info text-sm">
-                <span>Editing payment for: <strong>{payment.kindyStudentName}</strong></span>
+                <span>Mengubah pembayaran untuk: <strong>{payment.kindyStudentName}</strong></span>
               </div>
             )}
-            
+
             {mode === 'add' && (
               <div className="relative">
                 <label className="label">
-                  <span className="label-text">Student Name <span className="text-error">*</span></span>
+                  <span className="label-text">Nama Siswa <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Search student name..."
+                  placeholder="Cari nama siswa..."
                   className="input input-bordered w-full"
                   value={studentSearch}
                   onChange={(e) => handleStudentSearch(e.target.value)}
@@ -242,7 +216,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                 )}
                 {studentSearch && !formData.studentId && (
                   <div className="label">
-                    <span className="label-text-alt text-warning">Please select a student from the list</span>
+                    <span className="label-text-alt text-warning">Pilih siswa dari daftar</span>
                   </div>
                 )}
               </div>
@@ -250,9 +224,9 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             
             <div>
               <label className="label">
-                <span className="label-text">Amount (Rp) <span className="text-error">*</span></span>
+                <span className="label-text">Jumlah (Rp) <span className="text-error">*</span></span>
               </label>
-              
+
               {/* Quick Amount Buttons */}
               <div className="flex gap-2 mb-2">
                 <button
@@ -260,7 +234,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                   className={`btn btn-sm flex-1 ${formData.amount === '300000' ? 'btn-primary' : 'btn-active'}`}
                   onClick={() => setFormData({ ...formData, amount: '300000' })}
                 >
-                  Regular 300K
+                  Reguler 300K
                 </button>
                 <button
                   type="button"
@@ -289,7 +263,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             
             <div>
               <label className="label">
-                <span className="label-text">Date <span className="text-error">*</span></span>
+                <span className="label-text">Tanggal <span className="text-error">*</span></span>
               </label>
               <input
                 type="date"
@@ -303,7 +277,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             
             <div>
               <label className="label">
-                <span className="label-text">Reference <span className="text-error">*</span></span>
+                <span className="label-text">Referensi <span className="text-error">*</span></span>
               </label>
               <input
                 type="text"
@@ -319,9 +293,9 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             {formData.studentId && (
               <div>
                 <label className="label">
-                  <span className="label-text">Attach to Invoice (Optional)</span>
+                  <span className="label-text">Lampirkan ke Tagihan (Opsional)</span>
                 </label>
-                
+
                 {mode === 'edit' && payment?.invoiceName && !shouldFetchInvoices ? (
                   // In edit mode, show current invoice with option to change
                   <div className="space-y-2">
@@ -329,7 +303,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                       <div className="badge badge-primary badge-sm">📋</div>
                       <div className="flex-1">
                         <div className="text-sm font-semibold">{payment.invoiceName}</div>
-                        <div className="text-xs text-base-content/60">Current invoice attachment</div>
+                        <div className="text-xs text-base-content/60">Tagihan terlampir saat ini</div>
                       </div>
                     </div>
                     <button
@@ -337,13 +311,13 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                       className="btn btn-sm btn-ghost btn-block"
                       onClick={() => setShouldFetchInvoices(true)}
                     >
-                      Change or Remove Invoice
+                      Ubah atau Hapus Tagihan
                     </button>
                   </div>
                 ) : loadingInvoices ? (
                   <div className="flex items-center gap-2 px-4 py-3 bg-base-200 rounded-lg">
                     <span className="loading loading-spinner loading-sm"></span>
-                    <span className="text-sm text-base-content/60">Loading invoices...</span>
+                    <span className="text-sm text-base-content/60">Memuat tagihan...</span>
                   </div>
                 ) : (mode === 'add' || shouldFetchInvoices) && unpaidInvoices.length > 0 ? (
                   <div className="space-y-2">
@@ -354,7 +328,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                         setFormData({ ...formData, invoiceId: e.target.value })
                       }
                     >
-                      <option value="">-- No invoice attachment --</option>
+                      <option value="">-- Tanpa tagihan --</option>
                       {unpaidInvoices.map((invoice) => (
                         <option key={invoice.id} value={invoice.id}>
                           {invoice.name} | {formatCurrency(invoice.outstanding)} | {invoice.daysLate} hari
@@ -370,7 +344,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                           setFormData({ ...formData, invoiceId: payment?.invoiceId || "" });
                         }}
                       >
-                        ← Cancel
+                        ← Batal
                       </button>
                     )}
                   </div>
@@ -378,7 +352,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                   <div className="space-y-2">
                     <div className="alert alert-sm text-xs">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info shrink-0 w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <span>No unpaid invoices available for this student</span>
+                      <span>Tidak ada tagihan belum lunas untuk siswa ini</span>
                     </div>
                     {mode === 'edit' && (
                       <button
@@ -389,7 +363,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                           setFormData({ ...formData, invoiceId: payment?.invoiceId || "" });
                         }}
                       >
-                        ← Cancel
+                        ← Batal
                       </button>
                     )}
                   </div>
@@ -400,7 +374,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                     className="btn btn-sm btn-outline btn-block"
                     onClick={() => setShouldFetchInvoices(true)}
                   >
-                    + Attach to Invoice
+                    + Lampirkan ke Tagihan
                   </button>
                 ) : null}
               </div>
@@ -412,7 +386,7 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
             <div className={`mt-4 rounded-lg border p-3 transition-colors ${isSaving ? 'border-primary bg-primary/5' : 'border-base-300'}`}>
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <span className="text-sm font-medium">Student Saving ?</span>
+                  <span className="text-sm font-medium">Bayar dari Tabungan?</span>
                   {formData.studentId && (
                     <div className="text-xs text-base-content/60 mt-0.5">
                       {loadingSavingBalance ? (
@@ -442,10 +416,10 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
 
           <div className="modal-action">
             <button onClick={onClose} className="btn btn-ghost">
-              Cancel
+              Batal
             </button>
             <button onClick={openConfirmModal} className="btn btn-primary">
-              Continue →
+              Lanjut →
             </button>
           </div>
         </div>
@@ -458,35 +432,35 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
           <div className="modal-box max-w-lg">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <span className="text-2xl">✓</span>
-              Confirm {mode === 'add' ? 'New Payment' : 'Changes'}
+              Konfirmasi {mode === 'add' ? 'Pembayaran Baru' : 'Perubahan'}
             </h3>
-            
+
             <div className="alert alert-warning mb-4 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span>Please review the information carefully before proceeding</span>
+              <span>Periksa kembali informasi dengan teliti sebelum melanjutkan</span>
             </div>
 
             <div className="bg-base-200 rounded-lg p-4 space-y-3">
               {/* Student Name */}
               {mode === 'add' && (
                 <div>
-                  <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Siswa</div>
                   <div className="text-base font-semibold">
-                    {students.find(s => s.id === formData.studentId)?.name || 'Unknown'}
+                    {students.find(s => s.id === formData.studentId)?.name || 'Tidak diketahui'}
                   </div>
                 </div>
               )}
-              
+
               {mode === 'edit' && payment && (
                 <div>
-                  <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Siswa</div>
                   <div className="text-base font-semibold">{payment.kindyStudentName}</div>
                 </div>
               )}
 
               {/* Amount */}
               <div className="border-t border-base-300 pt-3">
-                <div className="text-xs text-base-content/60 font-medium mb-2">Payment Amount</div>
+                <div className="text-xs text-base-content/60 font-medium mb-2">Jumlah Pembayaran</div>
                 <div className="badge badge-success badge-lg font-bold text-lg px-4 py-4">
                   {formatCurrency(parseFloat(formData.amount || '0'))}
                 </div>
@@ -494,13 +468,13 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
 
               {/* Date */}
               <div className="border-t border-base-300 pt-3">
-                <div className="text-xs text-base-content/60 font-medium mb-1">Payment Date</div>
+                <div className="text-xs text-base-content/60 font-medium mb-1">Tanggal Pembayaran</div>
                 <div className="text-sm font-medium">{formatDate(formData.date)}</div>
               </div>
 
               {/* Reference */}
               <div className="border-t border-base-300 pt-3">
-                <div className="text-xs text-base-content/60 font-medium mb-1">Reference Number</div>
+                <div className="text-xs text-base-content/60 font-medium mb-1">Nomor Referensi</div>
                 <div className="text-sm font-mono bg-base-300/50 px-2 py-1 rounded">
                   {formData.reference}
                 </div>
@@ -509,18 +483,18 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
               {/* Attached Invoice (if selected) */}
               {formData.invoiceId && (
                 <div className="border-t border-base-300 pt-3">
-                  <div className="text-xs text-base-content/60 font-medium mb-1">Attached to Invoice</div>
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Dilampirkan ke Tagihan</div>
                   <div className="flex items-start gap-2">
                     <div className="badge badge-primary badge-sm mt-1">📋</div>
                     <div>
                       <div className="text-sm font-semibold">
-                        {unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.name || 
-                         payment?.invoiceName || 
-                         'Unknown Invoice'}
+                        {unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.name ||
+                         payment?.invoiceName ||
+                         'Tagihan tidak diketahui'}
                       </div>
                       {unpaidInvoices.find(inv => inv.id === formData.invoiceId) && (
                         <div className="text-xs text-base-content/60">
-                          Outstanding: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.outstanding || 0)}
+                          Tunggakan: {formatCurrency(unpaidInvoices.find(inv => inv.id === formData.invoiceId)?.outstanding || 0)}
                         </div>
                       )}
                     </div>
@@ -542,13 +516,13 @@ export default function PaymentFormModal({ mode, payment, students, onClose, onS
                 onClick={() => setShowConfirmModal(false)}
                 className="btn btn-ghost"
               >
-                ← Go Back
+                ← Kembali
               </button>
-              <button 
-                onClick={handleSubmit} 
+              <button
+                onClick={handleSubmit}
                 className="btn btn-primary"
               >
-                {mode === 'add' ? 'Confirm & Add Payment' : 'Confirm & Save Changes'}
+                {mode === 'add' ? 'Konfirmasi & Tambah' : 'Konfirmasi & Simpan'}
               </button>
             </div>
           </div>

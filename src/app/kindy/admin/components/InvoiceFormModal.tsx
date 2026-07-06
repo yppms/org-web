@@ -2,38 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-interface Invoice {
-  id: string;
-  kindyStudentName: string;
-  name: string;
-  amountFull: number;
-  discount: number;
-  amount: number;
-  startDate: string;
-  dueDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface InvoiceFormData {
-  studentId: string;
-  name: string;
-  amount: string;
-  discount: string;
-  startDate: string;
-  dueDate: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-}
+import type { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
 
 interface InvoiceFormModalProps {
   mode: 'add' | 'edit' | null;
-  invoice: Invoice | null;
-  students: Student[];
+  invoice: AdminInvoice | null;
+  students: AdminStudent[];
   onClose: () => void;
   onSubmit: (formData: InvoiceFormData) => void;
 }
@@ -54,7 +28,7 @@ export default function InvoiceFormModal({
     dueDate: new Date().toISOString().split("T")[0],
   });
   const [studentSearch, setStudentSearch] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<AdminStudent[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -100,7 +74,7 @@ export default function InvoiceFormModal({
     }
   };
 
-  const handleStudentSelect = (student: Student) => {
+  const handleStudentSelect = (student: AdminStudent) => {
     setFormData({ ...formData, studentId: student.id });
     setStudentSearch(student.name);
     setShowStudentDropdown(false);
@@ -109,12 +83,12 @@ export default function InvoiceFormModal({
   const handleContinue = () => {
     // Validate all required fields before showing confirmation
     if (mode === 'add' && (!formData.studentId || !formData.name || !formData.amount || !formData.discount || !formData.startDate || !formData.dueDate)) {
-      alert("Please fill in all required fields");
+      alert("Lengkapi semua field yang wajib diisi");
       return;
     }
     
     if (mode === 'edit' && (!formData.name || !formData.amount || !formData.discount || !formData.startDate || !formData.dueDate)) {
-      alert("Please fill in all required fields");
+      alert("Lengkapi semua field yang wajib diisi");
       return;
     }
     
@@ -139,24 +113,24 @@ export default function InvoiceFormModal({
       <dialog className="modal modal-open">
         <div className="modal-box">
           <h3 className="font-bold text-lg mb-4">
-            {mode === 'add' ? 'Add New Invoice' : 'Edit Invoice'}
+            {mode === 'add' ? 'Tambah Tagihan' : 'Ubah Tagihan'}
           </h3>
-          
+
           <div className="space-y-3">
             {mode === 'edit' && invoice && (
               <div className="alert alert-info text-sm">
-                <span>Editing invoice for: <strong>{invoice.kindyStudentName}</strong></span>
+                <span>Mengubah tagihan untuk: <strong>{invoice.kindyStudentName}</strong></span>
               </div>
             )}
 
             {mode === 'add' && (
               <div className="relative">
                 <label className="label">
-                  <span className="label-text">Student Name <span className="text-error">*</span></span>
+                  <span className="label-text">Nama Siswa <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Search student name..."
+                  placeholder="Cari nama siswa..."
                   className="input input-bordered w-full"
                   value={studentSearch}
                   onChange={(e) => handleStudentSearch(e.target.value)}
@@ -184,7 +158,7 @@ export default function InvoiceFormModal({
                 )}
                 {studentSearch && !formData.studentId && (
                   <div className="label">
-                    <span className="label-text-alt text-warning">Please select a student from the list</span>
+                    <span className="label-text-alt text-warning">Pilih siswa dari daftar</span>
                   </div>
                 )}
               </div>
@@ -192,11 +166,11 @@ export default function InvoiceFormModal({
 
             <div>
               <label className="label">
-                <span className="label-text">Invoice Name <span className="text-error">*</span></span>
+                <span className="label-text">Nama Tagihan <span className="text-error">*</span></span>
               </label>
               <input
                 type="text"
-                placeholder="e.g., Custom Fee for Field Trip"
+                placeholder="mis. Biaya Khusus Karyawisata"
                 className="input input-bordered w-full"
                 value={formData.name}
                 onChange={(e) =>
@@ -208,7 +182,7 @@ export default function InvoiceFormModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">
-                  <span className="label-text">Amount (Rp) <span className="text-error">*</span></span>
+                  <span className="label-text">Jumlah (Rp) <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="text"
@@ -226,7 +200,7 @@ export default function InvoiceFormModal({
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Discount (Rp) <span className="text-error">*</span></span>
+                  <span className="label-text">Diskon (Rp) <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="text"
@@ -247,7 +221,7 @@ export default function InvoiceFormModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">
-                  <span className="label-text">Start Date <span className="text-error">*</span></span>
+                  <span className="label-text">Tanggal Mulai <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="date"
@@ -260,7 +234,7 @@ export default function InvoiceFormModal({
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Due Date <span className="text-error">*</span></span>
+                  <span className="label-text">Jatuh Tempo <span className="text-error">*</span></span>
                 </label>
                 <input
                   type="date"
@@ -276,10 +250,10 @@ export default function InvoiceFormModal({
 
           <div className="modal-action">
             <button onClick={handleClose} className="btn btn-ghost">
-              Cancel
+              Batal
             </button>
             <button onClick={handleContinue} className="btn btn-primary">
-              Continue →
+              Lanjut →
             </button>
           </div>
         </div>
@@ -292,58 +266,58 @@ export default function InvoiceFormModal({
           <div className="modal-box max-w-lg">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <span className="text-2xl">✓</span>
-              Confirm {mode === 'add' ? 'New Invoice' : 'Changes'}
+              Konfirmasi {mode === 'add' ? 'Tagihan Baru' : 'Perubahan'}
             </h3>
-            
+
             <div className="alert alert-warning mb-4 text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span>Please review the information carefully before proceeding</span>
+              <span>Periksa kembali informasi dengan teliti sebelum melanjutkan</span>
             </div>
 
             <div className="bg-base-200 rounded-lg p-4 space-y-3">
               {/* Student Name */}
               {mode === 'add' && (
                 <div>
-                  <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Siswa</div>
                   <div className="text-base font-semibold">
-                    {students.find(s => s.id === formData.studentId)?.name || 'Unknown'}
+                    {students.find(s => s.id === formData.studentId)?.name || 'Tidak diketahui'}
                   </div>
                 </div>
               )}
-              
+
               {mode === 'edit' && invoice && (
                 <div>
-                  <div className="text-xs text-base-content/60 font-medium mb-1">Student</div>
+                  <div className="text-xs text-base-content/60 font-medium mb-1">Siswa</div>
                   <div className="text-base font-semibold">{invoice.kindyStudentName}</div>
                 </div>
               )}
 
               {/* Invoice Name */}
               <div>
-                <div className="text-xs text-base-content/60 font-medium mb-1">Invoice Name</div>
+                <div className="text-xs text-base-content/60 font-medium mb-1">Nama Tagihan</div>
                 <div className="text-sm">{formData.name}</div>
               </div>
 
               {/* Amount Details */}
               <div className="border-t border-base-300 pt-3">
-                <div className="text-xs text-base-content/60 font-medium mb-2">Amount Breakdown</div>
+                <div className="text-xs text-base-content/60 font-medium mb-2">Rincian Jumlah</div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-base-content/70">Full Amount</span>
+                    <span className="text-sm text-base-content/70">Jumlah Penuh</span>
                     <span className="badge badge-warning font-semibold">
                       {formatCurrency(parseFloat(formData.amount || '0'))}
                     </span>
                   </div>
                   {parseFloat(formData.discount || '0') > 0 && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-base-content/70">Discount</span>
-                      <span className="badge bg-red-100 text-red-700 border-red-200 font-semibold">
+                      <span className="text-sm text-base-content/70">Diskon</span>
+                      <span className="badge badge-error badge-outline font-semibold">
                         − {formatCurrency(parseFloat(formData.discount || '0'))}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-2 border-t border-base-300">
-                    <span className="text-sm font-semibold">Final Amount</span>
+                    <span className="text-sm font-semibold">Total Akhir</span>
                     <span className="badge badge-success badge-lg font-bold">
                       {formatCurrency(
                         parseFloat(formData.amount || '0') - parseFloat(formData.discount || '0')
@@ -355,15 +329,15 @@ export default function InvoiceFormModal({
 
               {/* Period */}
               <div className="border-t border-base-300 pt-3">
-                <div className="text-xs text-base-content/60 font-medium mb-2">Invoice Period</div>
+                <div className="text-xs text-base-content/60 font-medium mb-2">Periode Tagihan</div>
                 <div className="flex items-center justify-between text-sm">
                   <div>
-                    <div className="text-base-content/60 text-xs">Start Date</div>
+                    <div className="text-base-content/60 text-xs">Tanggal Mulai</div>
                     <div className="font-medium">{formatDate(formData.startDate)}</div>
                   </div>
                   <div className="text-base-content/40">→</div>
                   <div>
-                    <div className="text-base-content/60 text-xs">Due Date</div>
+                    <div className="text-base-content/60 text-xs">Jatuh Tempo</div>
                     <div className="font-medium">{formatDate(formData.dueDate)}</div>
                   </div>
                 </div>
@@ -375,13 +349,13 @@ export default function InvoiceFormModal({
                 onClick={() => setShowConfirmModal(false)}
                 className="btn btn-ghost"
               >
-                ← Go Back
+                ← Kembali
               </button>
-              <button 
-                onClick={handleConfirm} 
+              <button
+                onClick={handleConfirm}
                 className="btn btn-primary"
               >
-                {mode === 'add' ? 'Confirm & Add Invoice' : 'Confirm & Save Changes'}
+                {mode === 'add' ? 'Konfirmasi & Tambah' : 'Konfirmasi & Simpan'}
               </button>
             </div>
           </div>

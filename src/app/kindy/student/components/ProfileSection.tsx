@@ -41,7 +41,7 @@ export default function ProfileSection({
   // Check if user is enrolled in full day program
   const isFullDayEnrolled =
     profile.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
     ) || false;
 
   // Check if bank information exists
@@ -74,12 +74,12 @@ export default function ProfileSection({
 
     // Close bank modal and open confirmation
     const bankModal = document.getElementById(
-      "bank_modal"
+      "bank_modal",
     ) as HTMLDialogElement;
     bankModal?.close();
 
     const confirmModal = document.getElementById(
-      "bank_confirm_modal"
+      "bank_confirm_modal",
     ) as HTMLDialogElement;
     confirmModal?.showModal();
   };
@@ -95,7 +95,7 @@ export default function ProfileSection({
       await kindyStudentApi.setFinancialInfo(
         pendingBankData.finEnt,
         pendingBankData.finNum,
-        pendingBankData.finName
+        pendingBankData.finName,
       );
 
       // Update profile locally
@@ -111,7 +111,7 @@ export default function ProfileSection({
       setBankSuccess(
         hasBankInfo
           ? "Informasi rekening penerimaan berhasil diperbarui!"
-          : "Informasi rekening penerimaan berhasil ditambahkan!"
+          : "Informasi rekening penerimaan berhasil ditambahkan!",
       );
       setPendingBankData(null);
 
@@ -168,7 +168,7 @@ export default function ProfileSection({
     setError(null);
     setFullDaySuccess(null);
     const modal = document.getElementById(
-      "fullday_profile_modal"
+      "fullday_profile_modal",
     ) as HTMLDialogElement;
     modal?.showModal();
   };
@@ -177,7 +177,7 @@ export default function ProfileSection({
     <>
       <div className="space-y-6">
         {/* Student Info Card */}
-        <div className="card bg-base-100 shadow-md border border-primary/20">
+        <div className="card bg-base-100 shadow-sm border border-primary/20">
           <div className="card-body p-0">
             {/* Header Section */}
             <div className="bg-primary/5 border-b border-primary/15 px-4 py-3">
@@ -229,7 +229,9 @@ export default function ProfileSection({
                           Jenis Kelamin
                         </p>
                         <p className="text-sm font-bold text-primary">
-                          {profile.gender === "MALE" ? "LAKI LAKI" : "PEREMPUAN"}
+                          {profile.gender === "MALE"
+                            ? "LAKI LAKI"
+                            : "PEREMPUAN"}
                         </p>
                       </div>
                     </div>
@@ -278,85 +280,85 @@ export default function ProfileSection({
         </div>
 
         {/* Insurance Information Card - Only show if insurance number exists */}
-        {(!isLoadingInsurance && insuranceInfo && insuranceInfo.num) && (
-        <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
-          <div className="card-body p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-base-content flex items-center gap-2">
-                <div className="w-2 h-2 bg-info rounded-full"></div>
-                Asuransi
-              </h3>
-              <div className="text-2xl">🛡️</div>
-            </div>
-
-            {insuranceInfo && (
-              <div className="space-y-4">
-                {/* Insurance Provider */}
-                <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg border border-info/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-30 h-30 flex items-center">
-                      <Image
-                        src={insuranceInfo.image}
-                        alt={insuranceInfo.ent}
-                        width={70}
-                        height={70}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-base-content text-sm">
-                        {insuranceInfo.ent}
-                      </p>
-                      <p className="font-medium text-base-content text-sm">
-                        {insuranceInfo.type}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Policy Information */}
-                <div className="space-y-2">
-                  <div className="py-2 px-3 bg-base-200/30 rounded">
-                    <span className="text-sm font-medium text-base-content block mb-1">
-                      Tertanggung:
-                    </span>
-                    <span className="text-base-content/80">
-                      {insuranceInfo.beneficiary}
-                    </span>
-                  </div>
-                  <div className="py-2 px-3 bg-base-200/30 rounded">
-                    <span className="text-sm font-medium text-base-content block mb-1">
-                      Polis:
-                    </span>
-                    <span className="text-base-content/80">
-                      {insuranceInfo.num}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Benefits */}
-                <div>
-                  <p className="font-medium text-base-content text-sm py-2 px-3">
-                    Manfaat:
-                  </p>
-                  <div className="space-y-1">
-                    {insuranceInfo.benefit.map((benefit, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-2 p-2 px-3 rounded text-xs"
-                      >
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
-                        <span className="text-base-content/80 leading-relaxed">
-                          {benefit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        {!isLoadingInsurance && insuranceInfo && insuranceInfo.num && (
+          <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
+            <div className="card-body p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-base-content flex items-center gap-2">
+                  <div className="w-2 h-2 bg-info rounded-full"></div>
+                  Asuransi
+                </h3>
+                <div className="text-2xl">🛡️</div>
               </div>
-            )}
+
+              {insuranceInfo && (
+                <div className="space-y-4">
+                  {/* Insurance Provider */}
+                  <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg border border-info/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-30 h-30 flex items-center">
+                        <Image
+                          src={insuranceInfo.image}
+                          alt={insuranceInfo.ent}
+                          width={70}
+                          height={70}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-base-content text-sm">
+                          {insuranceInfo.ent}
+                        </p>
+                        <p className="font-medium text-base-content text-sm">
+                          {insuranceInfo.type}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Policy Information */}
+                  <div className="space-y-2">
+                    <div className="py-2 px-3 bg-base-200/30 rounded">
+                      <span className="text-sm font-medium text-base-content block mb-1">
+                        Tertanggung:
+                      </span>
+                      <span className="text-base-content/80">
+                        {insuranceInfo.beneficiary}
+                      </span>
+                    </div>
+                    <div className="py-2 px-3 bg-base-200/30 rounded">
+                      <span className="text-sm font-medium text-base-content block mb-1">
+                        Polis:
+                      </span>
+                      <span className="text-base-content/80">
+                        {insuranceInfo.num}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Benefits */}
+                  <div>
+                    <p className="font-medium text-base-content text-sm py-2 px-3">
+                      Manfaat:
+                    </p>
+                    <div className="space-y-1">
+                      {insuranceInfo.benefit.map((benefit, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-2 p-2 px-3 rounded text-xs"
+                        >
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
+                          <span className="text-base-content/80 leading-relaxed">
+                            {benefit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Full Day Program */}
@@ -389,9 +391,7 @@ export default function ProfileSection({
         <div className="card bg-base-100 shadow-sm border border-base-300">
           <div className="card-body p-0">
             <div className="border-b border-base-300 px-6 py-4">
-              <h3 className="font-semibold text-base-content">
-                Skema Biaya
-              </h3>
+              <h3 className="font-semibold text-base-content">Skema Biaya</h3>
             </div>
 
             <div className="p-6 space-y-6">
@@ -471,9 +471,9 @@ export default function ProfileSection({
 
             <div className="p-6">
               <p className="text-xs text-base-content/60 mb-4 leading-relaxed">
-                Rekening penerimaan digunakan untuk penarikan tabungan
-                atau refund. Kami akan selalu melakukan verifikasi sebelum
-                melakukan transfer. Anda dapat mengubah rekening kapan saja.
+                Rekening penerimaan digunakan untuk penarikan tabungan atau
+                refund. Kami akan selalu melakukan verifikasi sebelum melakukan
+                transfer. Anda dapat mengubah rekening kapan saja.
               </p>
 
               {hasBankInfo ? (
@@ -530,7 +530,7 @@ export default function ProfileSection({
                   className="btn btn-success"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "fullday_profile_modal"
+                      "fullday_profile_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setFullDaySuccess(null);
@@ -561,7 +561,7 @@ export default function ProfileSection({
                     className="btn"
                     onClick={() => {
                       const modal = document.getElementById(
-                        "fullday_profile_modal"
+                        "fullday_profile_modal",
                       ) as HTMLDialogElement;
                       modal?.close();
                       setError(null);
@@ -592,7 +592,7 @@ export default function ProfileSection({
                   className="btn"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "fullday_profile_modal"
+                      "fullday_profile_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setError(null);
@@ -690,7 +690,7 @@ export default function ProfileSection({
               className="btn"
               onClick={() => {
                 const modal = document.getElementById(
-                  "bank_modal"
+                  "bank_modal",
                 ) as HTMLDialogElement;
                 modal?.close();
                 setError(null);
@@ -699,9 +699,7 @@ export default function ProfileSection({
               Batal
             </button>
             <button
-              className={`btn ${
-                hasBankInfo ? "btn-primary" : "btn-success"
-              }`}
+              className={`btn ${hasBankInfo ? "btn-primary" : "btn-success"}`}
               onClick={handleBankSave}
             >
               {hasBankInfo ? "Ubah rekening" : "Tambah rekening"}
@@ -726,7 +724,7 @@ export default function ProfileSection({
                     className="btn btn-primary"
                     onClick={() => {
                       const modal = document.getElementById(
-                        "bank_confirm_modal"
+                        "bank_confirm_modal",
                       ) as HTMLDialogElement;
                       modal?.close();
                       setBankSuccess(null);
@@ -755,7 +753,7 @@ export default function ProfileSection({
                     className="btn btn-primary"
                     onClick={() => {
                       const modal = document.getElementById(
-                        "bank_confirm_modal"
+                        "bank_confirm_modal",
                       ) as HTMLDialogElement;
                       modal?.close();
                       setPendingBankData(null);
@@ -817,7 +815,7 @@ export default function ProfileSection({
                   className="btn"
                   onClick={() => {
                     const modal = document.getElementById(
-                      "bank_confirm_modal"
+                      "bank_confirm_modal",
                     ) as HTMLDialogElement;
                     modal?.close();
                     setPendingBankData(null);

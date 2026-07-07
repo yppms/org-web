@@ -12,9 +12,9 @@ const config: Config = {
         // The mobile app frame width. Use `max-w-app` instead of `max-w-[425px]`.
         app: "425px",
       },
-      // fontFamily: {
-      //   sans: ["var(--font-plus-jakarta-sans)", "system-ui", "sans-serif"],
-      // },
+      fontFamily: {
+        sans: ["var(--font-plus-jakarta-sans)", "system-ui", "sans-serif"],
+      },
       // animation: {
       //   gradient: "gradient 4s ease infinite",
       // },

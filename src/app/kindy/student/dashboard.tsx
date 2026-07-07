@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
-import { KindyStudent, StudentStats, OrgFinancialInfo, Saving, Infaq } from "@/lib/types";
+import {
+  KindyStudent,
+  StudentStats,
+  OrgFinancialInfo,
+  Saving,
+  Infaq,
+} from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Spinner, ErrorAlert } from "@/components/ui";
 import Navigation from "./components/Navigation";
@@ -61,9 +67,9 @@ export default function Dashboard() {
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [orgFinInfo, setOrgFinInfo] = useState<OrgFinancialInfo | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
-  const [currentTab, setCurrentTab] = useState<"invoices" | "payment" | "saving" | "infaq">(
-    "invoices"
-  );
+  const [currentTab, setCurrentTab] = useState<
+    "invoices" | "payment" | "saving" | "infaq"
+  >("invoices");
 
   const [savingData, setSavingData] = useState<Saving[]>([]);
   const [infaqData, setInfaqData] = useState<Infaq[]>([]);
@@ -78,9 +84,13 @@ export default function Dashboard() {
   const [paymentFinEnt, setPaymentFinEnt] = useState("");
   const [paymentFinNumName, setPaymentFinNumName] = useState("");
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
-  const [paymentFilePreview, setPaymentFilePreview] = useState<string | null>(null);
+  const [paymentFilePreview, setPaymentFilePreview] = useState<string | null>(
+    null,
+  );
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
-  const [paymentChoice, setPaymentChoice] = useState<"receipt" | "no_receipt" | "">("");
+  const [paymentChoice, setPaymentChoice] = useState<
+    "receipt" | "no_receipt" | ""
+  >("");
   const [isCopied, setIsCopied] = useState(false);
   const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
 
@@ -88,12 +98,14 @@ export default function Dashboard() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null);
 
-  const [bankInfoIntent, setBankInfoIntent] = useState<"withdraw" | "standalone">("standalone");
+  const [bankInfoIntent, setBankInfoIntent] = useState<
+    "withdraw" | "standalone"
+  >("standalone");
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const isFullDayEnrolled =
     profile?.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
     ) || false;
 
   const showGlobalError = (err: unknown) => {
@@ -101,7 +113,9 @@ export default function Dashboard() {
     if (err instanceof ApiError) errorMessage = err.message;
     else if (typeof err === "string") errorMessage = err;
     setGlobalError(errorMessage);
-    (document.getElementById("global_error_modal") as HTMLDialogElement | null)?.showModal();
+    (
+      document.getElementById("global_error_modal") as HTMLDialogElement | null
+    )?.showModal();
   };
 
   const handleFullDayToggle = async () => {
@@ -116,7 +130,7 @@ export default function Dashboard() {
       setFullDaySuccess(
         wasEnrolled
           ? "Ananda dapat mendaftar kembali kapan saja di bulan berikutnya."
-          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan."
+          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan.",
       );
     } catch (err) {
       showGlobalError(err);
@@ -128,18 +142,28 @@ export default function Dashboard() {
   const handleWithdrawClick = () => {
     const hasBankInfo = profile?.finEnt && profile?.finNum && profile?.finName;
     if (!hasBankInfo) {
-      (document.getElementById("bank_required_modal") as HTMLDialogElement | null)?.showModal();
+      (
+        document.getElementById(
+          "bank_required_modal",
+        ) as HTMLDialogElement | null
+      )?.showModal();
       return;
     }
-    (document.getElementById("withdraw_modal") as HTMLDialogElement | null)?.showModal();
+    (
+      document.getElementById("withdraw_modal") as HTMLDialogElement | null
+    )?.showModal();
   };
 
   const handleAddBankInfo = () => {
     setBankInfoIntent("withdraw");
-    (document.getElementById("bank_required_modal") as HTMLDialogElement | null)?.close();
+    (
+      document.getElementById("bank_required_modal") as HTMLDialogElement | null
+    )?.close();
     setActiveSection("profile");
     setTimeout(() => {
-      (document.getElementById("bank_modal") as HTMLDialogElement | null)?.showModal();
+      (
+        document.getElementById("bank_modal") as HTMLDialogElement | null
+      )?.showModal();
     }, 200);
   };
 
@@ -149,7 +173,11 @@ export default function Dashboard() {
       setTimeout(() => {
         setCurrentTab("saving");
         setTimeout(() => {
-          (document.getElementById("withdraw_modal") as HTMLDialogElement | null)?.showModal();
+          (
+            document.getElementById(
+              "withdraw_modal",
+            ) as HTMLDialogElement | null
+          )?.showModal();
         }, 200);
       }, 300);
     }
@@ -166,14 +194,20 @@ export default function Dashboard() {
     setPaymentChoice("");
     setError(null);
     setPaymentSuccess(null);
-    (document.getElementById("payment_confirm_modal") as HTMLDialogElement | null)?.showModal();
+    (
+      document.getElementById(
+        "payment_confirm_modal",
+      ) as HTMLDialogElement | null
+    )?.showModal();
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPaymentAmount(e.target.value.replace(/[Rp.]/g, ""));
   };
 
-  const handleWithdrawAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWithdrawAmountChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setWithdrawAmount(e.target.value.replace(/[Rp.]/g, ""));
   };
 
@@ -190,7 +224,12 @@ export default function Dashboard() {
       e.target.value = "";
       return;
     }
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "application/pdf",
+    ];
     if (!allowedTypes.includes(file.type)) {
       setError("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
       e.target.value = "";
@@ -212,7 +251,10 @@ export default function Dashboard() {
       const statsResponse = await kindyStudentApi.getStats();
       if (statsResponse?.data) setStats(statsResponse.data);
     } catch (refreshErr) {
-      console.warn("Failed to refresh data after payment confirmation:", refreshErr);
+      console.warn(
+        "Failed to refresh data after payment confirmation:",
+        refreshErr,
+      );
     }
   };
 
@@ -227,9 +269,10 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append("file", paymentFile);
       const response = await kindyStudentApi.confirmPayment(formData);
-      if (!response || response.status !== "success") throw new Error("Respon server tidak valid");
+      if (!response || response.status !== "success")
+        throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
       );
       await refreshStats();
     } catch (err) {
@@ -240,7 +283,12 @@ export default function Dashboard() {
   };
 
   const handlePaymentWithForm = async () => {
-    if (!paymentDate || !paymentAmount.trim() || !paymentFinEnt.trim() || !paymentFinNumName.trim()) {
+    if (
+      !paymentDate ||
+      !paymentAmount.trim() ||
+      !paymentFinEnt.trim() ||
+      !paymentFinNumName.trim()
+    ) {
       showGlobalError("Semua field wajib diisi");
       return;
     }
@@ -261,9 +309,10 @@ export default function Dashboard() {
       };
       formData.append("message", JSON.stringify(message));
       const response = await kindyStudentApi.confirmPayment(formData);
-      if (!response || response.status !== "success") throw new Error("Respon server tidak valid");
+      if (!response || response.status !== "success")
+        throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala."
+        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
       );
       await refreshStats();
     } catch (err) {
@@ -315,8 +364,8 @@ export default function Dashboard() {
       setStats(statsResponse.data);
       setWithdrawSuccess(
         `Berhasil mengirimkan permintaan penarikan dana sebesar ${formatCurrency(
-          amount
-        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`
+          amount,
+        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`,
       );
       setWithdrawAmount("");
     } catch (err) {
@@ -330,19 +379,24 @@ export default function Dashboard() {
     setIsClient(true);
     const fetchData = async () => {
       try {
-        const [profileResponse, statsResponse, orgFinResponse, savingsResponse, infaqResponse] =
-          await Promise.all([
-            kindyStudentApi.getProfile(),
-            kindyStudentApi.getStats(),
-            orgApi.getFinancialInfo(),
-            kindyStudentApi.getSavings(),
-            kindyStudentApi.getInfaq(),
-          ]);
+        const [
+          profileResponse,
+          statsResponse,
+          orgFinResponse,
+          savingsResponse,
+          infaqResponse,
+        ] = await Promise.all([
+          kindyStudentApi.getProfile(),
+          kindyStudentApi.getStats(),
+          orgApi.getFinancialInfo(),
+          kindyStudentApi.getSavings(),
+          kindyStudentApi.getInfaq(),
+        ]);
         setProfile(profileResponse.data);
         setStats(statsResponse.data);
         setOrgFinInfo(orgFinResponse.data);
         const saveTransactions = (savingsResponse.data || []).filter(
-          (s: Saving) => s.type === "SAVE" && s.status === "SUCCESS"
+          (s: Saving) => s.type === "SAVE" && s.status === "SUCCESS",
         );
         setSavingData(saveTransactions);
         setInfaqData(infaqResponse.data || []);
@@ -408,14 +462,17 @@ export default function Dashboard() {
         return (
           <div className="space-y-6">
             {/* Outstanding Payment */}
-            <div className="card bg-gradient-to-br from-error/5 to-error/10 shadow-sm border border-error/20">
+            <div className="card bg-base-100 shadow-sm border">
               <div className="card-body p-6">
                 <div className="text-center space-y-4">
                   <div>
                     <p className="text-md font-medium text-base-content/60 mb-1">
                       Tagihan saat ini
                     </p>
-                    <div className="text-2xl font-bold" suppressHydrationWarning>
+                    <div
+                      className="text-2xl font-bold"
+                      suppressHydrationWarning
+                    >
                       {formatCurrency(Math.max(0, stats.outstanding))}
                     </div>
                     {stats.outstanding > 0 ? (
@@ -437,60 +494,79 @@ export default function Dashboard() {
                       <div className="alert p-2 text-xs text-left">
                         <span>
                           Tagihan biaya masuk{" "}
-                          <strong>{formatCurrency(admission.outstanding)}.</strong>
+                          <strong>
+                            {formatCurrency(admission.outstanding)}.
+                          </strong>
                           <br />
-                          Bayar hanya <strong>{formatCurrency(admission.discount)}</strong> jika
-                          lunas sebelum <strong>13 Juli.</strong>
+                          Bayar hanya{" "}
+                          <strong>
+                            {formatCurrency(admission.discount)}
+                          </strong>{" "}
+                          jika lunas sebelum <strong>13 Juli.</strong>
                         </span>
                       </div>
                       <div className="alert p-2 text-xs text-left">
                         <span>
-                          Pembayaran <strong>{formatCurrency(admission.minimum)}</strong> lagi untuk{" "}
-                          <strong>50%</strong>
+                          Pembayaran{" "}
+                          <strong>{formatCurrency(admission.minimum)}</strong>{" "}
+                          lagi untuk <strong>50%</strong>
                         </span>
                       </div>
                     </div>
                   )}
 
-                  {stats.outstandingInvoice && stats.outstandingInvoice.length > 0 && (
-                    <div className="rounded-lg border border-base-300 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="table table-sm">
-                          <thead className="bg-base-200">
-                            <tr className="border-b border-base-300">
-                              <th className="text-xs font-semibold">Tagihan</th>
-                              <th className="text-xs font-semibold text-center">Jumlah</th>
-                              <th className="text-xs font-semibold text-center">Terlambat</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {stats.outstandingInvoice.map((invoice, idx) => (
-                              <tr key={idx} className="border-b border-base-300">
-                                <td className="text-base-content/60 font-medium">{invoice.name}</td>
-                                <td className="text-base-content/60 text-right font-medium">
-                                  {formatCurrency(invoice.outstanding)}
-                                </td>
-                                <td
-                                  className={`text-center font-medium ${
-                                    invoice.daysLate > 0
-                                      ? "text-error font-extrabold"
-                                      : "text-base-content/60"
-                                  }`}
-                                >
-                                  {invoice.daysLate} hari
-                                </td>
+                  {stats.outstandingInvoice &&
+                    stats.outstandingInvoice.length > 0 && (
+                      <div className="rounded-lg border border-base-300 overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="table table-sm">
+                            <thead className="bg-base-200">
+                              <tr className="border-b border-base-300">
+                                <th className="text-xs font-semibold">
+                                  Tagihan
+                                </th>
+                                <th className="text-xs font-semibold text-center">
+                                  Jumlah
+                                </th>
+                                <th className="text-xs font-semibold text-center">
+                                  Terlambat
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {stats.outstandingInvoice.map((invoice, idx) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-base-300"
+                                >
+                                  <td className="text-base-content/60 font-medium">
+                                    {invoice.name}
+                                  </td>
+                                  <td className="text-base-content/60 text-right font-medium">
+                                    {formatCurrency(invoice.outstanding)}
+                                  </td>
+                                  <td
+                                    className={`text-center font-medium ${
+                                      invoice.daysLate > 0
+                                        ? "text-error font-extrabold"
+                                        : "text-base-content/60"
+                                    }`}
+                                  >
+                                    {invoice.daysLate} hari
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <div className="w-full mt-4 text-xs">
                     <div className="flex justify-between">
                       <span className="text-base-content/60 font-medium">
-                        Semua Tagihan (<strong>{stats.countInvoice ?? 0}</strong>)
+                        Semua Tagihan (
+                        <strong>{stats.countInvoice ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
                         {formatCurrency(stats.totalInvoice)}
@@ -498,7 +574,8 @@ export default function Dashboard() {
                     </div>
                     <div className="flex justify-between mt-1">
                       <span className="text-base-content/60 font-medium">
-                        Semua Pembayaran (<strong>{stats.countPayment ?? 0}</strong>)
+                        Semua Pembayaran (
+                        <strong>{stats.countPayment ?? 0}</strong>)
                       </span>
                       <span className="text-base-content/60 font-medium">
                         {formatCurrency(stats.totalPayment)}
@@ -530,11 +607,15 @@ export default function Dashboard() {
                           {orgFinInfo.ent.replace(/-/g, " ")}
                         </p>
                         <div className="flex items-center justify-center gap-2">
-                          <p className="text-xs font-medium text-center">{orgFinInfo.num}</p>
+                          <p className="text-xs font-medium text-center">
+                            {orgFinInfo.num}
+                          </p>
                           <button
                             onClick={copyBankNumber}
                             className={`btn btn-xs ${isCopied ? "btn-success" : "btn-primary"}`}
-                            title={isCopied ? "Disalin!" : "Salin nomor rekening"}
+                            title={
+                              isCopied ? "Disalin!" : "Salin nomor rekening"
+                            }
                           >
                             {isCopied ? "Disalin!" : "Salin"}
                           </button>
@@ -555,7 +636,10 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  <button className="btn btn-success w-full" onClick={openPaymentConfirmModal}>
+                  <button
+                    className="btn btn-success w-full"
+                    onClick={openPaymentConfirmModal}
+                  >
                     Konfirmasi Pembayaran
                   </button>
                 </div>
@@ -567,8 +651,13 @@ export default function Dashboard() {
               <div className="card bg-gradient-to-br from-success/5 to-success/10 shadow-sm border border-success/20">
                 <div className="card-body p-4">
                   <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">Total Tabungan</p>
-                    <p className="text-lg font-bold mb-3" suppressHydrationWarning>
+                    <p className="text-xs font-medium text-base-content/60 mb-2">
+                      Total Tabungan
+                    </p>
+                    <p
+                      className="text-lg font-bold mb-3"
+                      suppressHydrationWarning
+                    >
                       {formatCurrency(stats.saving)}
                     </p>
                     <button
@@ -581,7 +670,10 @@ export default function Dashboard() {
 
                     <ContributionGraph
                       tone="primary"
-                      items={savingData.map((s) => ({ amount: s.amount, date: s.date }))}
+                      items={savingData.map((s) => ({
+                        amount: s.amount,
+                        date: s.date,
+                      }))}
                     />
                   </div>
                 </div>
@@ -590,15 +682,23 @@ export default function Dashboard() {
               <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
                 <div className="card-body p-4">
                   <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">Total Infaq</p>
-                    <p className="text-lg font-bold mb-2" suppressHydrationWarning>
+                    <p className="text-xs font-medium text-base-content/60 mb-2">
+                      Total Infaq
+                    </p>
+                    <p
+                      className="text-lg font-bold mb-2"
+                      suppressHydrationWarning
+                    >
                       {formatCurrency(stats.infaq)}
                     </p>
                     <span className="text-2xl mb-3 block">🤲</span>
 
                     <ContributionGraph
                       tone="info"
-                      items={infaqData.map((i) => ({ amount: i.amount, date: i.date }))}
+                      items={infaqData.map((i) => ({
+                        amount: i.amount,
+                        date: i.date,
+                      }))}
                     />
                   </div>
                 </div>
@@ -608,8 +708,10 @@ export default function Dashboard() {
             {/* Activity Tabs */}
             <div className="card bg-base-100 shadow-sm border border-base-300">
               <div className="card-body p-0">
-                <div className="border-b border-base-300 px-6 py-4">
-                  <h3 className="font-semibold text-base-content">Aktivitas Terbaru</h3>
+                <div className="border-base-300 px-6 py-4">
+                  <h3 className="font-semibold text-base-content">
+                    Aktivitas Terbaru
+                  </h3>
                   <div className="alert mt-2 border border-base-300 bg-base-200">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -625,7 +727,8 @@ export default function Dashboard() {
                       ></path>
                     </svg>
                     <span className="text-xs">
-                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam. Cek berkala.
+                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam.
+                      Cek berkala.
                     </span>
                   </div>
                 </div>
@@ -643,7 +746,7 @@ export default function Dashboard() {
                       key={key}
                       className={`tab tab-lifted font-medium text-sm transition-all ${
                         currentTab === key
-                          ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold underline decoration-2 underline-offset-8"
+                          ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold decoration-2 underline-offset-8"
                           : "text-base-content/60 hover:text-base-content"
                       }`}
                       onClick={() => setCurrentTab(key)}
@@ -734,7 +837,10 @@ export default function Dashboard() {
         }}
       />
 
-      <GlobalErrorModal message={globalError} onClose={() => setGlobalError(null)} />
+      <GlobalErrorModal
+        message={globalError}
+        onClose={() => setGlobalError(null)}
+      />
     </div>
   );
 }
@@ -756,7 +862,9 @@ function ContributionGraph({
             {Array.from({ length: 10 }).map((_, col) => {
               const index = row * 10 + col;
               const item = items[index];
-              const colorClass = item ? cellColor(item.amount, max, tone) : "bg-base-300/60";
+              const colorClass = item
+                ? cellColor(item.amount, max, tone)
+                : "bg-base-300/60";
               return (
                 <div
                   key={col}
@@ -781,7 +889,9 @@ function ContributionGraph({
         ))}
       </div>
       <div className="flex items-center justify-center gap-2 mt-2">
-        <span className="text-xs font-bold text-base-content">{items.length}/40</span>
+        <span className="text-xs font-bold text-base-content">
+          {items.length}/40
+        </span>
         <span className="text-xs text-base-content/40">•</span>
         <span className="text-xs font-bold text-base-content">
           {Math.round((items.length / 40) * 100)}%

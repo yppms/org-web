@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -n web,server -c magenta,blue \"npm run dev:web\" \"npm run dev:server\"",
+    "dev:web": "next dev",
+    "dev:server": "npm --prefix ../org-server run dev:server",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -25,6 +27,7 @@
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^10.0.3",
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.2",
     "postcss": "^8.5.6",

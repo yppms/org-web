@@ -28,7 +28,7 @@ export default function AmountBadge({
 }: AmountBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-bold tabular-nums ${toneClass[tone]} ${className}`}
+      className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-bold ${toneClass[tone]} ${className}`}
     >
       {children}
     </span>

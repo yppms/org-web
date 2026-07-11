@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Badge } from "./badge";
 
 interface SectionHeaderProps {
   title: ReactNode;
@@ -11,9 +12,7 @@ interface SectionHeaderProps {
 }
 
 /**
- * Standard section heading. Standardises the section-header typography to the
- * `heading` role (text-lg font-bold) so the previous font-bold/font-semibold
- * split can't recur. Replaces the hand-written <h2> + badge in every section.
+ * Standard section heading — title (18/600) + optional count badge + actions.
  */
 export default function SectionHeader({
   title,
@@ -22,14 +21,14 @@ export default function SectionHeader({
   actions,
 }: SectionHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-lg font-bold">{title}</h2>
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-lg font-semibold">{title}</h2>
       <div className="flex items-center gap-2">
         {count !== undefined && (
-          <span className="badge badge-outline text-base-content text-xs rounded-full">
+          <Badge variant="outline" className="rounded-full">
             {count}
             {countLabel ? ` ${countLabel}` : ""}
-          </span>
+          </Badge>
         )}
         {actions}
       </div>

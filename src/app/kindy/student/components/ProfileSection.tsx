@@ -1,25 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KindyStudent, InsuranceInfo } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import kindyStudentApi, { ApiError } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import Image from "next/image";
+import { Loader2 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Badge,
+  Button,
+  Input,
+  Label,
+  ErrorAlert,
+  Modal,
+} from "@/components/ui";
 
 interface ProfileSectionProps {
   profile: KindyStudent;
   onUpdate: (profile: KindyStudent) => void;
-  onBankInfoAdded?: () => void; // Optional callback when bank info is successfully added
-  onError?: (error: unknown) => void; // Optional global error handler
+  onBankInfoAdded?: () => void;
+  onError?: (error: unknown) => void;
+  /** Incrementing signal from the parent to open the bank dialog (withdraw flow). */
+  openBankSignal?: number;
 }
+
+/** A label / value row with a bottom divider (last row can drop it). */
+function Row({
+  label,
+  value,
+  mono = false,
+  last = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 py-2.5 ${
+        last ? "" : "border-b border-border"
+      }`}
+    >
+      <span className="text-[13px] text-muted-foreground">{label}</span>
+      <span
+        className={`text-sm font-medium text-right ${mono ? "font-mono" : ""}`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+const MicroLabel = ({ children }: { children: React.ReactNode }) => (
+  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+    {children}
+  </p>
+);
 
 export default function ProfileSection({
   profile,
   onUpdate,
   onBankInfoAdded,
   onError,
+  openBankSignal = 0,
 }: ProfileSectionProps) {
+  const [modal, setModal] = useState<null | "fullday" | "bank">(null);
   const [finEnt, setFinEnt] = useState(profile.finEnt || "");
   const [finNum, setFinNum] = useState(profile.finNum || "");
   const [finName, setFinName] = useState(profile.finName || "");
@@ -27,106 +77,73 @@ export default function ProfileSection({
   const [isChangingFullDay, setIsChangingFullDay] = useState(false);
   const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
   const [isSavingBank, setIsSavingBank] = useState(false);
-  const [pendingBankData, setPendingBankData] = useState<{
-    finEnt: string;
-    finNum: string;
-    finName: string;
-  } | null>(null);
-  const [bankSuccess, setBankSuccess] = useState<string | null>(null);
 
-  // Insurance is non-critical — errors are ignored (card just doesn't render).
   const { data: insuranceInfo, isLoading: isLoadingInsurance } =
     useApi<InsuranceInfo>(() => kindyStudentApi.getInsurance());
 
-  // Check if user is enrolled in full day program
   const isFullDayEnrolled =
     profile.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
     ) || false;
 
-  // Check if bank information exists
-  const hasBankInfo = profile.finEnt && profile.finNum && profile.finName;
+  const hasBankInfo = !!(profile.finEnt && profile.finNum && profile.finName);
+  const enrollment = profile.KindyEnrollment[0];
 
   const openBankModal = () => {
-    // Reset form with current values
     setFinEnt(profile.finEnt || "");
     setFinNum(profile.finNum || "");
     setFinName(profile.finName || "");
     setError(null);
-    setBankSuccess(null);
+    setModal("bank");
+  };
 
-    const modal = document.getElementById("bank_modal") as HTMLDialogElement;
-    modal?.showModal();
+  // External trigger (from the withdraw flow) to open the bank dialog.
+  useEffect(() => {
+    if (openBankSignal > 0) openBankModal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openBankSignal]);
+
+  const openFullDayModal = () => {
+    setError(null);
+    setFullDaySuccess(null);
+    setModal("fullday");
+  };
+
+  const closeModal = () => {
+    setModal(null);
+    setError(null);
+    setFullDaySuccess(null);
   };
 
   const handleBankSave = async () => {
     if (!finEnt.trim() || !finNum.trim() || !finName.trim()) {
-      setError("Semua informasi bank dibutuhkan");
+      setError("Semua informasi rekening dibutuhkan");
       return;
     }
-
-    // Store pending data and show confirmation
-    setPendingBankData({
-      finEnt: finEnt.trim(),
-      finNum: finNum.trim(),
-      finName: finName.trim(),
-    });
-
-    // Close bank modal and open confirmation
-    const bankModal = document.getElementById(
-      "bank_modal",
-    ) as HTMLDialogElement;
-    bankModal?.close();
-
-    const confirmModal = document.getElementById(
-      "bank_confirm_modal",
-    ) as HTMLDialogElement;
-    confirmModal?.showModal();
-  };
-
-  const handleBankConfirm = async () => {
-    if (!pendingBankData) return;
-
     setIsSavingBank(true);
     setError(null);
-    setBankSuccess(null);
-
     try {
       await kindyStudentApi.setFinancialInfo(
-        pendingBankData.finEnt,
-        pendingBankData.finNum,
-        pendingBankData.finName,
+        finEnt.trim(),
+        finNum.trim(),
+        finName.trim()
       );
-
-      // Update profile locally
-      const updatedProfile = {
+      onUpdate({
         ...profile,
-        finEnt: pendingBankData.finEnt,
-        finNum: pendingBankData.finNum,
-        finName: pendingBankData.finName,
-      };
-      onUpdate(updatedProfile);
-
-      // Set success state and clear pending data
-      setBankSuccess(
-        hasBankInfo
-          ? "Informasi rekening penerimaan berhasil diperbarui!"
-          : "Informasi rekening penerimaan berhasil ditambahkan!",
-      );
-      setPendingBankData(null);
-
-      // Call the optional callback to notify parent that bank info was added
+        finEnt: finEnt.trim(),
+        finNum: finNum.trim(),
+        finName: finName.trim(),
+      });
+      setModal(null);
       onBankInfoAdded?.();
     } catch (err) {
-      if (onError) {
-        onError(err);
-      } else {
-        if (err instanceof ApiError) {
-          setError(err.message);
-        } else {
-          setError("Gagal memperbarui informasi rekening penerimaan!");
-        }
-      }
+      if (onError) onError(err);
+      else
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Gagal memperbarui rekening penerimaan"
+        );
     } finally {
       setIsSavingBank(false);
     }
@@ -136,715 +153,310 @@ export default function ProfileSection({
     setIsChangingFullDay(true);
     setError(null);
     setFullDaySuccess(null);
-
     try {
-      // Call API to change full day status
       const wasEnrolled = isFullDayEnrolled;
       await kindyStudentApi.changeFullDay(!isFullDayEnrolled);
-
-      // Refresh profile data to get updated status
       const profileResponse = await kindyStudentApi.getProfile();
       onUpdate(profileResponse.data);
-
-      // Show success message
-      const action = wasEnrolled ? "keluar dari" : "mengikuti";
-      setFullDaySuccess(`Berhasil ${action} program full day!`);
+      setFullDaySuccess(
+        wasEnrolled
+          ? "Ananda dapat mendaftar kembali kapan saja bulan berikutnya."
+          : "Ananda dapat mengikuti Full Day mulai bulan depan."
+      );
     } catch (err) {
-      if (onError) {
-        onError(err);
-      } else {
-        if (err instanceof ApiError) {
-          setError(err.message);
-        } else {
-          setError("Gagal memperbarui program full day");
-        }
-      }
+      if (onError) onError(err);
+      else
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Gagal memperbarui program full day"
+        );
     } finally {
       setIsChangingFullDay(false);
     }
   };
 
-  const openFullDayModal = () => {
-    setError(null);
-    setFullDaySuccess(null);
-    const modal = document.getElementById(
-      "fullday_profile_modal",
-    ) as HTMLDialogElement;
-    modal?.showModal();
-  };
+  const genderLabel =
+    profile.gender === "MALE"
+      ? "Laki-laki"
+      : profile.gender === "FEMALE"
+        ? "Perempuan"
+        : "—";
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Student Info Card */}
-        <div className="card bg-base-100 shadow-sm border border-primary/20">
-          <div className="card-body p-0">
-            {/* Header Section */}
-            <div className="bg-primary/5 border-b border-primary/15 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-primary/15 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🎓</span>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-base-content">
-                      {profile.name}
-                    </h2>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="flex flex-col gap-4">
+        {/* Data Siswa */}
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle>Data Siswa</CardTitle>
+          </CardHeader>
+          <CardContent className="py-2">
+            <Row label="Nama" value={profile.name} />
+            {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
+            {profile.gender && <Row label="Jenis Kelamin" value={genderLabel} />}
+            {enrollment && (
+              <Row label="Kelompok" value={enrollment.KindyGroup.name} />
+            )}
+            <Row
+              label="Tahun Ajaran"
+              value={enrollment ? enrollment.KindyGroup.kindyYearName : "—"}
+              last
+            />
+          </CardContent>
+        </Card>
 
-            {/* Content Section */}
-            <div className="px-4 py-3">
-              {profile.KindyEnrollment[0] ? (
-                <div className="space-y-2">
-                  {/* NISN */}
-                  {profile.nisn && (
-                    <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
-                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                        <span className="text-sm">🆔</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-base-content/60">
-                          NISN
-                        </p>
-                        <p className="text-sm font-bold text-primary">
-                          {profile.nisn}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Gender */}
-                  {profile.gender && (
-                    <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
-                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                        <span className="text-sm">
-                          {profile.gender === "MALE" ? "👦" : "👧"}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-base-content/60">
-                          Jenis Kelamin
-                        </p>
-                        <p className="text-sm font-bold text-primary">
-                          {profile.gender === "MALE"
-                            ? "LAKI LAKI"
-                            : "PEREMPUAN"}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Class Information */}
-                  <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
-                    <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                      <span className="text-sm">📚</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-base-content/60">
-                        Kelompok
-                      </p>
-                      <p className="text-sm font-bold text-primary">
-                        {profile.KindyEnrollment[0].KindyGroup.name.toUpperCase()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Academic Year */}
-                  <div className="flex items-center gap-3 p-3 bg-base-200/40 rounded-lg border border-primary/10">
-                    <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                      <span className="text-sm">📅</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-base-content/60">
-                        Tahun Ajaran
-                      </p>
-                      <p className="text-sm font-bold text-primary">
-                        {profile.KindyEnrollment[0].KindyGroup.kindyYearName}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <div className="text-2xl mb-2 opacity-50">📝</div>
-                  <p className="text-base-content/70 text-xs">
-                    Informasi pendaftaran tidak tersedia
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Insurance Information Card - Only show if insurance number exists */}
-        {!isLoadingInsurance && insuranceInfo && insuranceInfo.num && (
-          <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
-            <div className="card-body p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-base-content flex items-center gap-2">
-                  <div className="w-2 h-2 bg-info rounded-full"></div>
-                  Asuransi
-                </h3>
-                <div className="text-2xl">🛡️</div>
-              </div>
-
-              {insuranceInfo && (
-                <div className="space-y-4">
-                  {/* Insurance Provider */}
-                  <div className="flex items-center justify-between p-3 bg-info/10 rounded-lg border border-info/20">
-                    <div className="flex items-center gap-3">
-                      <div className="w-30 h-30 flex items-center">
-                        <Image
-                          src={insuranceInfo.image}
-                          alt={insuranceInfo.ent}
-                          width={70}
-                          height={70}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium text-base-content text-sm">
-                          {insuranceInfo.ent}
-                        </p>
-                        <p className="font-medium text-base-content text-sm">
-                          {insuranceInfo.type}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Policy Information */}
-                  <div className="space-y-2">
-                    <div className="py-2 px-3 bg-base-200/30 rounded">
-                      <span className="text-sm font-medium text-base-content block mb-1">
-                        Tertanggung:
-                      </span>
-                      <span className="text-base-content/80">
-                        {insuranceInfo.beneficiary}
-                      </span>
-                    </div>
-                    <div className="py-2 px-3 bg-base-200/30 rounded">
-                      <span className="text-sm font-medium text-base-content block mb-1">
-                        Polis:
-                      </span>
-                      <span className="text-base-content/80">
-                        {insuranceInfo.num}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Benefits */}
-                  <div>
-                    <p className="font-medium text-base-content text-sm py-2 px-3">
-                      Manfaat:
-                    </p>
-                    <div className="space-y-1">
-                      {insuranceInfo.benefit.map((benefit, index) => (
-                        <div
-                          key={index}
-                          className="flex items-start gap-2 p-2 px-3 rounded text-xs"
-                        >
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
-                          <span className="text-base-content/80 leading-relaxed">
-                            {benefit}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Full Day Program */}
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-          <div className="card-body p-6">
+        {/* Program Full Day */}
+        <Card>
+          <CardContent>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 className="font-semibold text-base-content mb-1">
-                  Program Full Day
-                </h3>
-                <p className="text-sm text-base-content/60 leading-relaxed">
+                <h3 className="text-base font-semibold">Program Full Day</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
                   {isFullDayEnrolled
-                    ? "Ananda mengikuti program full day"
-                    : "Ananda belum mengikuti program full day. Daftar untuk mengikuti program full day bulan depan."}
+                    ? "Ananda mengikuti program full day."
+                    : "Ananda belum mengikuti program full day. Pendaftaran berlaku mulai bulan depan."}
                 </p>
               </div>
-              <button
+              <Button
+                size="sm"
+                variant={isFullDayEnrolled ? "destructive" : "default"}
                 onClick={openFullDayModal}
-                className={`btn btn-sm ${
-                  isFullDayEnrolled ? "btn-error" : "btn-primary"
-                }`}
+                className="shrink-0"
               >
                 {isFullDayEnrolled ? "Berhenti" : "Daftar"}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Payment Scheme */}
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-          <div className="card-body p-0">
-            <div className="border-b border-base-300 px-6 py-4">
-              <h3 className="font-semibold text-base-content">Skema Biaya</h3>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* One Time Fee */}
-              <div>
-                <h4 className="font-medium text-base-content mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-warning rounded-full"></div>
-                  Biaya 1x
-                </h4>
-                <div className="space-y-2">
-                  {profile.KindyStudentOneTimeFee?.map((fee, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center py-2 px-3 bg-base-200/50 rounded-lg"
-                    >
-                      <span className="text-sm font-medium text-base-content">
-                        {fee.KindyOneTimeFee.name}
-                      </span>
-                      <span
-                        className="text-sm font-bold text-base-content"
-                        suppressHydrationWarning
-                      >
-                        {formatCurrency(fee.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recurring Fee */}
-              <div>
-                <h4 className="font-medium text-base-content mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-info rounded-full"></div>
-                  Biaya berulang
-                </h4>
-                <div className="space-y-2">
-                  {profile.KindyStudentRecurringFee?.map((fee, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center py-2 px-3 bg-base-200/50 rounded-lg"
-                    >
-                      <span className="text-sm font-medium text-base-content">
-                        {fee.KindyRecurringFee.name}
-                      </span>
-                      <span
-                        className="text-sm font-bold text-base-content"
-                        suppressHydrationWarning
-                      >
-                        {formatCurrency(fee.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bank Information */}
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-          <div className="card-body p-0">
-            <div className="border-b border-base-300 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-base-content">
-                  Rekening Penerimaan
-                </h3>
-                <button
-                  className={`btn btn-sm ${
-                    hasBankInfo ? "btn-primary" : "btn-success"
-                  }`}
-                  onClick={openBankModal}
+        {/* Skema Biaya */}
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle>Skema Biaya</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-3">
+            <div>
+              <MicroLabel>Biaya satu kali</MicroLabel>
+              {profile.KindyStudentOneTimeFee?.map((fee) => (
+                <div
+                  key={fee.id}
+                  className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
                 >
-                  {hasBankInfo ? "Ubah" : "Tambah"}
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <p className="text-xs text-base-content/60 mb-4 leading-relaxed">
-                Rekening penerimaan digunakan untuk penarikan tabungan atau
-                refund. Kami akan selalu melakukan verifikasi sebelum melakukan
-                transfer. Anda dapat mengubah rekening kapan saja.
-              </p>
-
-              {hasBankInfo ? (
-                <div className=" border-2 rounded-lg">
-                  <div className="flex justify-between items-center py-2 px-3 bg-base-200/50 border-b-2">
-                    <span className="text-sm font-medium text-base-content">
-                      Bank / E-Wallet:
-                    </span>
-                    <span className="text-sm text-base-content">
-                      {profile.finEnt}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 px-3 bg-base-200/50 border-b-2">
-                    <span className="text-sm font-medium text-base-content">
-                      Nomor:
-                    </span>
-                    <span className="text-sm text-base-content">
-                      {profile.finNum}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 px-3 bg-base-200/50 rounded-lg">
-                    <span className="text-sm font-medium text-base-content">
-                      Atas Nama:
-                    </span>
-                    <span className="text-sm text-base-content">
-                      {profile.finName}
-                    </span>
-                  </div>
+                  <span className="text-sm">{fee.KindyOneTimeFee.name}</span>
+                  <span
+                    className="font-mono text-[13px] font-semibold"
+                    suppressHydrationWarning
+                  >
+                    {formatCurrency(fee.amount)}
+                  </span>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">🏦</div>
-                  <p className="text-base-content/70 mb-2">
-                    Tidak ada informasi rekening penerimaan
-                  </p>
+              ))}
+            </div>
+            <div>
+              <MicroLabel>Biaya bulanan</MicroLabel>
+              {profile.KindyStudentRecurringFee?.map((fee) => (
+                <div
+                  key={fee.id}
+                  className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
+                >
+                  <span className="text-sm">{fee.KindyRecurringFee.name}</span>
+                  <span
+                    className="font-mono text-[13px] font-semibold"
+                    suppressHydrationWarning
+                  >
+                    {formatCurrency(fee.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rekening Penerimaan */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between border-b border-border">
+            <CardTitle>Rekening Penerimaan</CardTitle>
+            <Button size="sm" variant="outline" onClick={openBankModal}>
+              {hasBankInfo ? "Ubah" : "Tambah"}
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-3">
+            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
+              Digunakan untuk penarikan tabungan atau refund. Verifikasi selalu
+              dilakukan sebelum transfer.
+            </p>
+            {hasBankInfo ? (
+              <>
+                <Row label="Bank / E-Wallet" value={profile.finEnt} />
+                <Row label="Nomor" value={profile.finNum} mono />
+                <Row label="Atas Nama" value={profile.finName} last />
+              </>
+            ) : (
+              <p className="py-4 text-center text-[13px] text-muted-foreground">
+                Belum ada rekening penerimaan.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Asuransi */}
+        {!isLoadingInsurance && insuranceInfo && insuranceInfo.num && (
+          <Card>
+            <CardHeader className="flex-row items-center justify-between border-b border-border">
+              <CardTitle>Asuransi</CardTitle>
+              <Badge variant="info">Aktif</Badge>
+            </CardHeader>
+            <CardContent className="pt-3">
+              <Row label="Penyedia" value={insuranceInfo.ent} />
+              <Row label="Jenis" value={insuranceInfo.type} />
+              <Row label="Tertanggung" value={insuranceInfo.beneficiary} />
+              <Row label="Polis" value={insuranceInfo.num} mono last />
+              {insuranceInfo.benefit?.length > 0 && (
+                <div className="pt-3">
+                  <MicroLabel>Manfaat</MicroLabel>
+                  <div className="flex flex-col gap-1.5">
+                    {insuranceInfo.benefit.map((b, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-primary" />
+                        <span className="text-[13px] leading-relaxed text-muted-foreground">
+                          {b}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Full Day Confirmation Modal */}
-      <dialog id="fullday_profile_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          {fullDaySuccess ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-success mb-4">
-                  Kepesertaan program diperbarui!
-                </h3>
-                <p className="text-base-content/70 mb-6">{fullDaySuccess}</p>
-                <button
-                  className="btn btn-success"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "fullday_profile_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setFullDaySuccess(null);
-                    setError(null);
-                  }}
-                >
-                  Selesai
-                </button>
-              </div>
-            </>
-          ) : error ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-error mb-4">
-                  Update gagal
-                </h3>
-                <p className="text-base-content/70 mb-6">{error}</p>
-                <div className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setError(null);
-                    }}
-                  >
-                    Ulangi lagi
-                  </button>
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      const modal = document.getElementById(
-                        "fullday_profile_modal",
-                      ) as HTMLDialogElement;
-                      modal?.close();
-                      setError(null);
-                      setFullDaySuccess(null);
-                    }}
-                  >
-                    Keluar
-                  </button>
-                </div>
-              </div>
-            </>
+      {/* Full Day dialog */}
+      <Modal
+        open={modal === "fullday"}
+        onClose={closeModal}
+        dismissable={!isChangingFullDay}
+        title={
+          fullDaySuccess
+            ? undefined
+            : isFullDayEnrolled
+              ? "Berhenti Full Day"
+              : "Daftar Full Day"
+        }
+        actions={
+          fullDaySuccess ? (
+            <Button size="sm" onClick={closeModal}>
+              Selesai
+            </Button>
           ) : (
             <>
-              <h3 className="font-bold text-lg">
-                {isFullDayEnrolled ? "Berhenti Full Day" : "Daftar Full Day"}
-              </h3>
-
-              <div className="py-4">
-                <p className="text-base-content/70 mb-4">
-                  {isFullDayEnrolled
-                    ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan-bulan berikutnya"
-                    : "Ananda akan mengikuti full day mulai bulan depan. Konfirmasi."}
-                </p>
-              </div>
-
-              <div className="modal-action">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "fullday_profile_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setError(null);
-                    setFullDaySuccess(null);
-                  }}
-                  disabled={isChangingFullDay}
-                >
-                  Keluar
-                </button>
-                <button
-                  className={`btn ${
-                    isFullDayEnrolled ? "btn-error" : "btn-primary"
-                  }`}
-                  onClick={handleFullDayToggle}
-                  disabled={isChangingFullDay}
-                >
-                  {isChangingFullDay && (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  )}
-                  {isFullDayEnrolled ? "Berhenti Full Day" : "Daftar Full Day"}
-                </button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={closeModal}
+                disabled={isChangingFullDay}
+              >
+                Batal
+              </Button>
+              <Button
+                size="sm"
+                variant={isFullDayEnrolled ? "destructive" : "default"}
+                onClick={handleFullDayToggle}
+                disabled={isChangingFullDay}
+              >
+                {isChangingFullDay && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {isFullDayEnrolled ? "Ya, berhenti" : "Ya, daftarkan"}
+              </Button>
             </>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
-
-      {/* Bank Information Modal */}
-      <dialog id="bank_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          <h3 className="font-bold text-lg">
-            {hasBankInfo
-              ? "Ubah Rekening Penerimaan"
-              : "Tambah Rekening Penerimaan"}
-          </h3>
-
-          <div className="py-4">
+          )
+        }
+      >
+        {fullDaySuccess ? (
+          <div className="py-2 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-lg font-bold text-primary">
+              ✓
+            </div>
+            <h3 className="mb-2 text-base font-semibold">
+              Kepesertaan diperbarui
+            </h3>
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {fullDaySuccess}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {isFullDayEnrolled
+                ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan berikutnya."
+                : "Ananda akan mengikuti program full day mulai bulan depan. Biaya bulanan akan bertambah."}
+            </p>
             {error && (
-              <div className="alert alert-error mb-4">
-                <span>{error}</span>
+              <div className="mt-3">
+                <ErrorAlert message={error} />
               </div>
             )}
+          </>
+        )}
+      </Modal>
 
-            <div className="space-y-4">
-              <div>
-                <label className="label">
-                  <span className="label-text text-sm font-medium py-2">
-                    Bank / E-Wallet
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={finEnt}
-                  onChange={(e) => setFinEnt(e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="BCA, BRI, Shopee, Gopay"
-                />
-              </div>
-              <div>
-                <label className="label">
-                  <span className="label-text text-sm font-medium py-2">
-                    Nomor
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={finNum}
-                  onChange={(e) => setFinNum(e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="123456 / 08123456"
-                />
-              </div>
-              <div>
-                <label className="label">
-                  <span className="label-text text-sm font-medium py-2">
-                    Atas Nama
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={finName}
-                  onChange={(e) => setFinName(e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Nama sesuai rekening"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="modal-action">
-            <button
-              className="btn"
-              onClick={() => {
-                const modal = document.getElementById(
-                  "bank_modal",
-                ) as HTMLDialogElement;
-                modal?.close();
-                setError(null);
-              }}
+      {/* Bank dialog */}
+      <Modal
+        open={modal === "bank"}
+        onClose={closeModal}
+        dismissable={!isSavingBank}
+        title={hasBankInfo ? "Ubah Rekening Penerimaan" : "Tambah Rekening Penerimaan"}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={closeModal}
+              disabled={isSavingBank}
             >
               Batal
-            </button>
-            <button
-              className={`btn ${hasBankInfo ? "btn-primary" : "btn-success"}`}
-              onClick={handleBankSave}
-            >
-              {hasBankInfo ? "Ubah rekening" : "Tambah rekening"}
-            </button>
+            </Button>
+            <Button size="sm" onClick={handleBankSave} disabled={isSavingBank}>
+              {isSavingBank && <Loader2 className="h-4 w-4 animate-spin" />}
+              Simpan
+            </Button>
+          </>
+        }
+      >
+        <p className="mb-3 text-[13px] text-muted-foreground">
+          Dana penarikan dan refund dikirim ke rekening ini.
+        </p>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label>Bank / E-Wallet</Label>
+            <Input
+              value={finEnt}
+              onChange={(e) => setFinEnt(e.target.value)}
+              placeholder="BCA, BRI, Shopee, GoPay"
+            />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Nomor</Label>
+            <Input
+              value={finNum}
+              onChange={(e) => setFinNum(e.target.value)}
+              placeholder="123456 / 08123456"
+              className="font-mono"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Atas Nama</Label>
+            <Input
+              value={finName}
+              onChange={(e) => setFinName(e.target.value)}
+              placeholder="Nama sesuai rekening"
+            />
+          </div>
+          {error && <ErrorAlert message={error} />}
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
-
-      {/* Bank Information Confirmation Modal */}
-      <dialog id="bank_confirm_modal" className="modal">
-        <div className="modal-box w-full max-w-sm mx-2">
-          {bankSuccess ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-success mb-4">Sukses!</h3>
-                <p className="text-base-content/70 mb-6">{bankSuccess}</p>
-                <div className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      const modal = document.getElementById(
-                        "bank_confirm_modal",
-                      ) as HTMLDialogElement;
-                      modal?.close();
-                      setBankSuccess(null);
-                    }}
-                  >
-                    Lanjut
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : error ? (
-            <>
-              <div className="text-center py-8">
-                <h3 className="font-bold text-lg text-error mb-4">Gagal!</h3>
-                <p className="text-base-content/70 mb-6">{error}</p>
-                <div className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setError(null);
-                    }}
-                  >
-                    Ulangi lagi
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      const modal = document.getElementById(
-                        "bank_confirm_modal",
-                      ) as HTMLDialogElement;
-                      modal?.close();
-                      setPendingBankData(null);
-                      setError(null);
-                    }}
-                  >
-                    Keluar
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="font-bold text-lg">
-                {hasBankInfo
-                  ? "Ubah rekening penerimaan"
-                  : "Tambah rekening penerimaan"}
-              </h3>
-
-              <div className="py-4">
-                <p className="text-base-content/70 mb-4">
-                  {hasBankInfo
-                    ? "Konfirmasi pengubahan rekening penerimaan."
-                    : "Konfirmasi penambahan rekening penerimaan."}
-                </p>
-
-                {pendingBankData && (
-                  <div className="space-y-3 mb-4 p-3 bg-base-200/50 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-base-content">
-                        Bank / E-Wallet:
-                      </span>
-                      <span className="text-sm text-base-content">
-                        {pendingBankData.finEnt}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-base-content">
-                        Nomor:
-                      </span>
-                      <span className="text-sm text-base-content">
-                        {pendingBankData.finNum}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-base-content">
-                        Atas Nama:
-                      </span>
-                      <span className="text-sm text-base-content">
-                        {pendingBankData.finName}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-action">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    const modal = document.getElementById(
-                      "bank_confirm_modal",
-                    ) as HTMLDialogElement;
-                    modal?.close();
-                    setPendingBankData(null);
-                    setError(null);
-                  }}
-                  disabled={isSavingBank}
-                >
-                  Keluar
-                </button>
-                <button
-                  className={`btn ${
-                    hasBankInfo ? "btn-primary" : "btn-success"
-                  }`}
-                  onClick={handleBankConfirm}
-                  disabled={isSavingBank}
-                >
-                  {isSavingBank && (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  )}
-                  {hasBankInfo ? "Ubah Rekening" : "Tambah Rekening"}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>keluar</button>
-        </form>
-      </dialog>
+      </Modal>
     </>
   );
 }

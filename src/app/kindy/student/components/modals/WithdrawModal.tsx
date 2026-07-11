@@ -1,8 +1,11 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { formatCurrency, formatRupiah } from "@/lib/utils";
+import { Modal, Button, Input, Label } from "@/components/ui";
 
 interface WithdrawModalProps {
+  open: boolean;
   balance: number;
   amount: string;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -13,15 +16,8 @@ interface WithdrawModalProps {
   onClose: () => void;
 }
 
-const closeDialog = () => {
-  (document.getElementById("withdraw_modal") as HTMLDialogElement | null)?.close();
-};
-
-/**
- * Savings withdrawal request. Opened via
- * document.getElementById("withdraw_modal").showModal().
- */
 export default function WithdrawModal({
+  open,
   balance,
   amount,
   onAmountChange,
@@ -31,98 +27,97 @@ export default function WithdrawModal({
   onWithdraw,
   onClose,
 }: WithdrawModalProps) {
-  const handleClose = () => {
-    closeDialog();
-    onClose();
-  };
-
   return (
-    <dialog id="withdraw_modal" className="modal">
-      <div className="modal-box w-full max-w-sm mx-2">
-        {success ? (
-          <div className="text-center py-8">
-            <h3 className="font-bold text-lg text-success mb-4">
-              Permintaan penarikan berhasil dikirim
-            </h3>
-            <p className="text-base-content/70 mb-6">{success}</p>
-            <button
-              className="btn btn-success"
-              onClick={() => {
-                closeDialog();
-                onClose();
-              }}
-            >
-              Selesai
-            </button>
-          </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      dismissable={!isSubmitting}
+      title={success ? undefined : "Tarik Tabungan"}
+      actions={
+        success ? (
+          <Button size="sm" onClick={onClose}>
+            Selesai
+          </Button>
         ) : (
           <>
-            <h3 className="font-bold text-lg">Tarik Tabungan</h3>
-            <div className="py-4">
-              <div className="mb-4">
-                <p className="text-base-content/70 mb-2">
-                  Saldo tersedia:{" "}
-                  <span className="font-semibold text-success">{formatCurrency(balance)}</span>
-                </p>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-sm font-medium py-2">Jumlah penarikan</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="contoh: 50000"
-                  value={formatRupiah(amount)}
-                  onChange={onAmountChange}
-                />
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => onSetAmount(Math.floor(balance / 4).toString())}
-                  disabled={balance <= 0}
-                >
-                  25%
-                </button>
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => onSetAmount(Math.floor(balance / 2).toString())}
-                  disabled={balance <= 0}
-                >
-                  50%
-                </button>
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => onSetAmount(balance.toString())}
-                  disabled={balance <= 0}
-                >
-                  Semua
-                </button>
-              </div>
-            </div>
-
-            <div className="modal-action">
-              <button className="btn" onClick={handleClose} disabled={isSubmitting}>
-                Keluar
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={onWithdraw}
-                disabled={isSubmitting || !amount}
-              >
-                {isSubmitting && <span className="loading loading-spinner loading-sm" />}
-                Tarik sekarang
-              </button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              onClick={onWithdraw}
+              disabled={isSubmitting || !amount}
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Tarik sekarang
+            </Button>
           </>
-        )}
-      </div>
-      <form method="dialog" className="modal-backdrop">
-        <button>keluar</button>
-      </form>
-    </dialog>
+        )
+      }
+    >
+      {success ? (
+        <div className="py-2 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-lg font-bold text-primary">
+            ✓
+          </div>
+          <h3 className="mb-2 text-base font-semibold">
+            Permintaan penarikan terkirim
+          </h3>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {success}
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="mb-4 text-[13px] text-muted-foreground">
+            Saldo tersedia{" "}
+            <strong className="font-mono text-foreground">
+              {formatCurrency(balance)}
+            </strong>
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <Label>Jumlah penarikan</Label>
+            <Input
+              type="text"
+              placeholder="Rp50.000"
+              value={formatRupiah(amount)}
+              onChange={onAmountChange}
+              className="font-mono"
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => onSetAmount(Math.floor(balance / 4).toString())}
+              disabled={balance <= 0}
+            >
+              25%
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => onSetAmount(Math.floor(balance / 2).toString())}
+              disabled={balance <= 0}
+            >
+              50%
+            </Button>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => onSetAmount(balance.toString())}
+              disabled={balance <= 0}
+            >
+              Semua
+            </Button>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -13,61 +14,74 @@ const config: Config = {
         app: "425px",
       },
       fontFamily: {
-        sans: ["var(--font-plus-jakarta-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
-      // animation: {
-      //   gradient: "gradient 4s ease infinite",
-      // },
-      // keyframes: {
-      //   gradient: {
-      //     "0%": {
-      //       "background-position": "0% 50%",
-      //     },
-      //     "50%": {
-      //       "background-position": "100% 50%",
-      //     },
-      //     "100%": {
-      //       "background-position": "0% 50%",
-      //     },
-      //   },
-      // },
-    },
-  },
-  plugins: [require("daisyui")],
-  daisyui: {
-    themes: [
-      {
-        miftahussalam: {
-          // Strict semantic palette: exactly one green and one blue.
-          // primary = brand / positive / paid / money. success is rethemed to
-          // equal primary so there is a single green token (see ui/README.md).
-          primary: "#22c55e",
-          "primary-focus": "#16a34a",
-          "primary-content": "#ffffff",
-          secondary: "#6b7280",
-          "secondary-focus": "#4b5563",
-          "secondary-content": "#ffffff",
-          // accent is rethemed to equal info so there is a single blue token.
-          accent: "#0ea5e9",
-          "accent-focus": "#0284c7",
-          "accent-content": "#ffffff",
-          neutral: "#374151",
-          "neutral-focus": "#1f2937",
-          "neutral-content": "#f9fafb",
-          "base-100": "#ffffff",
-          "base-200": "#f8fafc",
-          "base-300": "#f1f5f9",
-          "base-content": "#0f172a",
-          info: "#0ea5e9",
-          success: "#22c55e",
-          warning: "#f59e0b",
-          error: "#ef4444",
+      colors: {
+        // shadcn/ui semantic tokens — CSS variables hold space-separated RGB
+        // channels so `/opacity` utilities (bg-primary/25, text-muted-foreground/60)
+        // resolve correctly and the whole app re-themes (light/dark) together.
+        // `-soft` tokens are pre-baked rgba tints (used without an opacity modifier).
+        background: "rgb(var(--background) / <alpha-value>)",
+        foreground: "rgb(var(--foreground) / <alpha-value>)",
+        border: "rgb(var(--border) / <alpha-value>)",
+        input: "rgb(var(--input) / <alpha-value>)",
+        ring: "rgb(var(--ring) / <alpha-value>)",
+        card: {
+          DEFAULT: "rgb(var(--card) / <alpha-value>)",
+          foreground: "rgb(var(--foreground) / <alpha-value>)",
+        },
+        muted: {
+          DEFAULT: "rgb(var(--muted) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
+        },
+        primary: {
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
+          soft: "var(--primary-soft)",
+        },
+        destructive: {
+          DEFAULT: "rgb(var(--destructive) / <alpha-value>)",
+          foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
+          soft: "var(--destructive-soft)",
+        },
+        warning: {
+          DEFAULT: "rgb(var(--warning) / <alpha-value>)",
+          foreground: "rgb(var(--warning-foreground) / <alpha-value>)",
+          soft: "var(--warning-soft)",
+        },
+        info: {
+          DEFAULT: "rgb(var(--info) / <alpha-value>)",
+          foreground: "rgb(var(--info-foreground) / <alpha-value>)",
+          soft: "var(--info-soft)",
         },
       },
-      "light",
-      "dark",
-    ],
+      borderRadius: {
+        xl: "12px",
+        lg: "8px",
+        md: "6px",
+        sm: "4px",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
   },
-} as any;
+  plugins: [require("tailwindcss-animate")],
+};
 
 export default config;

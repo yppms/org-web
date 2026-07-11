@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { kindyAdminApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert } from "@/components/ui";
+import { Spinner, ErrorAlert, EmptyState, Input, Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface OpenAsStudent {
   id: string;
@@ -44,75 +45,59 @@ export default function OpenAsSection() {
   if (error) return <ErrorAlert message={error} />;
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold mb-3">Buka Sebagai Siswa</h2>
-        <p className="text-sm text-base-content/60 mb-4">
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Buka Sebagai Siswa</h2>
+        <p className="text-[13px] text-muted-foreground">
           Buka dashboard siswa untuk melihat portal mereka
         </p>
-
-        <input
-          type="text"
-          placeholder="Cari nama atau telepon..."
-          className="input input-bordered input-sm w-full"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
       </div>
 
-      <div className="space-y-2">
-        {filteredStudents.length === 0 ? (
-          <div className="text-center py-12 text-base-content/60">
-            {searchQuery ? "Tidak ada siswa ditemukan" : "Tidak ada siswa"}
-          </div>
-        ) : (
-          filteredStudents.map((student) => (
+      <Input
+        placeholder="Cari nama atau telepon…"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
+      {filteredStudents.length === 0 ? (
+        <EmptyState
+          message={searchQuery ? "Tidak ada siswa ditemukan" : "Tidak ada siswa"}
+        />
+      ) : (
+        <div className="bg-card border border-border rounded-xl shadow-card px-4">
+          {filteredStudents.map((student) => (
             <div
               key={student.id}
-              className="card bg-base-100 shadow-sm border border-base-300 hover:border-primary/50 transition-colors"
+              className="flex justify-between items-center gap-3 py-3 border-b border-border last:border-b-0"
             >
-              <div className="card-body p-4">
-                <div className="flex justify-between items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">{student.name}</h3>
-                    {student.phone && (
-                      <p className="text-sm text-base-content/60 mt-1">📱 {student.phone}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => handleCopyForIncognito(student.openas, student.id)}
-                      className="btn btn-sm btn-ghost gap-1"
-                      title="Salin URL"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-4 h-4"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
-                        />
-                      </svg>
-                      <span>{copiedId === student.id ? "Tersalin!" : "Salin"}</span>
-                    </button>
-                  </div>
-                </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{student.name}</p>
+                {student.phone && (
+                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                    {student.phone}
+                  </p>
+                )}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCopyForIncognito(student.openas, student.id)}
+                className={cn(
+                  copiedId === student.id &&
+                    "bg-primary-soft text-primary border-transparent"
+                )}
+              >
+                {copiedId === student.id ? "Tersalin" : "Salin tautan"}
+              </Button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredStudents.length > 0 && (
-        <div className="mt-4 text-center text-sm text-base-content/60">
+        <p className="text-center text-xs text-muted-foreground">
           Menampilkan {filteredStudents.length} dari {students.length} siswa
-        </div>
+        </p>
       )}
     </div>
   );

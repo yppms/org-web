@@ -4,118 +4,98 @@ import { Invoice } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import kindyStudentApi from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import {
-  Spinner,
-  ErrorAlert,
-  EmptyState,
-  SectionHeader,
-  TransactionCard,
-} from "@/components/ui";
+import { Spinner, ErrorAlert, EmptyState } from "@/components/ui";
+import type { BadgeProps } from "@/components/ui/badge";
+import ActivityRow from "./ActivityRow";
 
-const statusMap: Record<string, { icon: string; text: string; color: string }> = {
-  issued: { icon: "⏳", text: "Terbit", color: "text-warning" },
-  paid: { icon: "✓", text: "Lunas", color: "text-success" },
-  partial: { icon: "◐", text: "Sebagian", color: "text-warning" },
-  overdue: { icon: "⚠", text: "Terlambat", color: "text-error" },
+const statusMap: Record<
+  string,
+  { text: string; variant: BadgeProps["variant"] }
+> = {
+  issued: { text: "Terbit", variant: "warning" },
+  paid: { text: "Lunas", variant: "default" },
+  partial: { text: "Sebagian", variant: "warning" },
+  overdue: { text: "Terlambat", variant: "destructive" },
 };
-
-function StatusBadge({ status }: { status: string }) {
-  const info = statusMap[status] || { icon: "•", text: status, color: "text-base-content" };
-  return (
-    <span className={`text-xs font-semibold ${info.color}`}>
-      {info.icon} {info.text}
-    </span>
-  );
-}
 
 export default function InvoicesSection() {
   const { data, isLoading, error } = useApi<Invoice[]>(
     () => kindyStudentApi.getInvoices(),
-    { fallbackMessage: "Gagal memuat data tagihan" }
+    { fallbackMessage: "Gagal memuat data tagihan" },
   );
   const invoices = data ?? [];
 
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
+  if (invoices.length === 0) return <EmptyState />;
 
   return (
-    <div className="space-y-6">
-      <SectionHeader title="Tagihan" count={invoices.length} countLabel="tagihan" />
+    <div>
+      {invoices
+        .sort((a, b) => b.no - a.no)
+        .map((invoice) => {
+          const status = statusMap[invoice.status] || {
+            text: invoice.status,
+            variant: "secondary" as const,
+          };
 
-      {invoices.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="space-y-4">
-          {invoices
-            .sort((a, b) => b.no - a.no)
-            .map((invoice) => (
-              <TransactionCard
-                key={invoice.id}
-                header={
-                  <>
-                    <span className="font-medium text-base-content/60">{invoice.no}</span>
-                    <span className="font-medium text-base-content/60">
-                      {formatDate(invoice.startDate)}
+          const rows: { label: string; value: string; className?: string }[] =
+            [];
+          if (invoice.discount > 0) {
+            rows.push({
+              label: "Total",
+              value: formatCurrency(invoice.amountFull),
+            });
+            rows.push({
+              label: "Dibayar Ponpes",
+              value: `−${formatCurrency(invoice.discount)}`,
+              className: "text-warning",
+            });
+          }
+          // Only when partially paid: some payment made, but still outstanding.
+          if (invoice.paid > 0 && invoice.outstanding > 0) {
+            rows.push({
+              label: "Terbayar",
+              value: formatCurrency(invoice.paid),
+            });
+            rows.push({
+              label: "Belum terbayar",
+              value: formatCurrency(invoice.outstanding),
+              className: "text-destructive",
+            });
+          }
+
+          const extra =
+            rows.length > 0 ? (
+              <div className="rounded-lg bg-muted px-3 py-1">
+                {rows.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-3 py-1"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {r.label}
                     </span>
-                  </>
-                }
-                footer={
-                  <>
-                    <span className="text-xs text-base-content/50">
-                      #{invoice.id.toString().toUpperCase()}
-                    </span>
-                    <StatusBadge status={invoice.status} />
-                  </>
-                }
-              >
-                <div className="font-bold text-base">{invoice.name}</div>
-                <div className="space-y-2 text-xs">
-                  {invoice.discount > 0 ? (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-base-content/60">Jumlah</span>
-                        <span className="font-medium">{formatCurrency(invoice.amountFull)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-base-content/60">Diskon</span>
-                        <span className="font-medium text-warning">
-                          {formatCurrency(invoice.discount)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-base-content/60 font-medium">Total</span>
-                        <span className="font-bold underline decoration-2 underline-offset-4">
-                          {formatCurrency(invoice.amount)}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex justify-between items-center">
-                      <span className="text-base-content/60 font-medium">Total</span>
-                      <span className="font-bold underline decoration-2 underline-offset-4">
-                        {formatCurrency(invoice.amount)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-base-content/60">Terbayar</span>
-                    <span className="font-semibold">{formatCurrency(invoice.paid)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-base-content/60">Belum Terbayar</span>
-                    <span className="font-bold text-error">
-                      {formatCurrency(invoice.outstanding)}
+                    <span className={`font-mono text-xs ${r.className ?? ""}`}>
+                      {r.value}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-base-content/60">Jatuh Tempo</span>
-                    <span className="font-medium">{formatDate(invoice.dueDate)}</span>
-                  </div>
-                </div>
-              </TransactionCard>
-            ))}
-        </div>
-      )}
+                ))}
+              </div>
+            ) : undefined;
+
+          return (
+            <ActivityRow
+              key={invoice.id}
+              title={invoice.name}
+              date={formatDate(invoice.startDate)}
+              amount={formatCurrency(invoice.amount)}
+              badge={status.text}
+              badgeVariant={status.variant}
+              extra={extra}
+            />
+          );
+        })}
     </div>
   );
 }

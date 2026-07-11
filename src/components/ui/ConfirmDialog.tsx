@@ -1,7 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import Modal from "./Modal";
+import { Button } from "./button";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -18,10 +20,13 @@ interface ConfirmDialogProps {
   loading?: boolean;
 }
 
-const confirmClass = {
-  primary: "btn-primary",
-  error: "btn-error",
-  warning: "btn-warning",
+const confirmVariant: Record<
+  NonNullable<ConfirmDialogProps["tone"]>,
+  "default" | "destructive"
+> = {
+  primary: "default",
+  error: "destructive",
+  warning: "default",
 };
 
 /**
@@ -47,17 +52,23 @@ export default function ConfirmDialog({
       dismissable={!loading}
       actions={
         <>
-          <button className="btn btn-ghost" onClick={onClose} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            disabled={loading}
+          >
             {cancelLabel}
-          </button>
-          <button
-            className={`btn ${confirmClass[tone]}`}
+          </Button>
+          <Button
+            variant={confirmVariant[tone]}
+            size="sm"
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading && <span className="loading loading-spinner loading-sm" />}
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {confirmLabel}
-          </button>
+          </Button>
         </>
       }
     >

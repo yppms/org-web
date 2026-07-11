@@ -1,88 +1,72 @@
 "use client";
 
-type Section =
-  | "dashboard"
-  | "profile"
-  | "invoices"
-  | "savings"
-  | "infaq"
-  | "fullday"
-  | "laporan-harian"
-  | "perkembangan-anak";
+import ThemeToggle from "@/components/ThemeToggle";
+
+export type StudentSection = "dashboard" | "profile";
 
 interface NavigationProps {
-  activeSection: Section;
-  onSectionChange: (section: Section) => void;
+  activeSection: StudentSection;
+  onSectionChange: (section: StudentSection) => void;
   studentName: string;
+  subtitle?: string;
 }
+
+const navItems: { key: StudentSection; label: string }[] = [
+  { key: "dashboard", label: "Keuangan" },
+  { key: "profile", label: "Profil" },
+];
 
 export default function Navigation({
   activeSection,
   onSectionChange,
   studentName,
+  subtitle = "TK IT Miftahussalam",
 }: NavigationProps) {
-  const mainItems = [
-    { key: "dashboard", label: "Dashboard", icon: "🏠" },
-    { key: "laporan-harian", label: "Harian", icon: "📋" },
-    { key: "perkembangan-anak", label: "Tumbuh", icon: "🌱" },
-    { key: "profile", label: "Profil", icon: "👨‍🦲" },
-  ];
-
   return (
     <>
-      {/* Top Header */}
-      <div className="bg-base-100 border-b border-base-300 sticky top-0 z-40 rounded-b-lg">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border-2 rounded-lg flex items-center justify-center">
-                <span className="text-sm font-bold text-primary">
-                  {studentName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <h1 className="text-xs">
-                  Miftahussalam Kindy Portal 👋
-                </h1>
-                <p className="text-base-content/60 font-semibold text-sm leading-none mt-1">
-                  {studentName}
-                </p>
-              </div>
+      {/* Sticky header */}
+      <header className="sticky top-0 z-40 border-b border-border bg-card">
+        <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft">
+              <span className="text-sm font-semibold text-primary">
+                {studentName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold leading-tight">
+                {studentName}
+              </p>
+              <p className="truncate text-xs leading-tight text-muted-foreground">
+                {subtitle}
+              </p>
             </div>
           </div>
+          <ThemeToggle />
         </div>
-      </div>
+      </header>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-app">
-        <div className="px-4 py-2 safe-area-bottom">
-          <div className="flex justify-center">
-            <div className="flex bg-base-100 rounded-2xl p-1 gap-1 border-2">
-              {mainItems.map((item) => {
-                const isActive = activeSection === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => onSectionChange(item.key as Section)}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? "bg-primary text-primary-content shadow-sm"
-                        : "text-base-content/60 hover:text-base-content hover:bg-base-300/50"
-                    }`}
-                  >
-                    <span className="text-lg leading-none">{item.icon}</span>
-                    {isActive && (
-                      <span className="text-xs font-medium leading-none whitespace-nowrap">
-                        {item.label}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* Fixed bottom nav */}
+      <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-app -translate-x-1/2 border-t border-border bg-card">
+        <div className="flex gap-1 px-3 pb-3 pt-2">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => onSectionChange(item.key)}
+                className={`h-9 flex-1 rounded-lg text-[13px] transition-colors ${
+                  isActive
+                    ? "bg-muted font-semibold text-foreground"
+                    : "font-medium text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </nav>
     </>
   );
 }

@@ -10,34 +10,38 @@ import {
   Saving,
   Infaq,
 } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { Spinner, ErrorAlert } from "@/components/ui";
-import Navigation from "./components/Navigation";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  Spinner,
+  ErrorAlert,
+  Button,
+  Badge,
+  Card,
+  CardContent,
+  Separator,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui";
+import Navigation, { type StudentSection } from "./components/Navigation";
 import ProfileSection from "./components/ProfileSection";
 import InvoicesSection from "./components/InvoicesSection";
 import PaymentSection from "./components/PaymentSection";
 import SavingsSection from "./components/SavingsSection";
 import InfaqSection from "./components/InfaqSection";
-import FullDayModal from "./components/modals/FullDayModal";
 import BankRequiredModal from "./components/modals/BankRequiredModal";
 import PaymentConfirmModal from "./components/modals/PaymentConfirmModal";
 import WithdrawModal from "./components/modals/WithdrawModal";
 import GlobalErrorModal from "./components/modals/GlobalErrorModal";
 
-type Section =
-  | "dashboard"
-  | "profile"
-  | "invoices"
-  | "savings"
-  | "infaq"
-  | "fullday"
-  | "laporan-harian"
-  | "perkembangan-anak";
-
-// GitHub-style contribution intensity: each cell is shaded by its amount
-// relative to the largest amount (ratio-to-max), so bigger contributions read
-// darker. Uses opacity ramps of a theme token (no raw palette) so it re-themes.
 type GraphTone = "primary" | "info";
+type ModalKind = null | "pay" | "withdraw" | "bank_required";
 
 const RAMP: Record<GraphTone, string[]> = {
   primary: ["bg-primary/25", "bg-primary/45", "bg-primary/70", "bg-primary"],
@@ -54,7 +58,6 @@ const cellColor = (amount: number, max: number, tone: GraphTone): string => {
   return ramp[0];
 };
 
-// Tooltip date format (long-ish) — distinct from lib/utils' compact formatDate.
 const formatTooltipDate = (dateString: string): string =>
   new Date(dateString).toLocaleDateString("id-ID", {
     day: "numeric",
@@ -66,7 +69,8 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<KindyStudent | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [orgFinInfo, setOrgFinInfo] = useState<OrgFinancialInfo | null>(null);
-  const [activeSection, setActiveSection] = useState<Section>("dashboard");
+  const [activeSection, setActiveSection] =
+    useState<StudentSection>("dashboard");
   const [currentTab, setCurrentTab] = useState<
     "invoices" | "payment" | "saving" | "infaq"
   >("invoices");
@@ -77,7 +81,10 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [isChangingFullDay, setIsChangingFullDay] = useState(false);
+
+  const [modal, setModal] = useState<ModalKind>(null);
+  const [bankSignal, setBankSignal] = useState(0);
+
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentDate, setPaymentDate] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -92,7 +99,6 @@ export default function Dashboard() {
     "receipt" | "no_receipt" | ""
   >("");
   const [isCopied, setIsCopied] = useState(false);
-  const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
 
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -103,83 +109,38 @@ export default function Dashboard() {
   >("standalone");
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const isFullDayEnrolled =
-    profile?.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
-    ) || false;
-
   const showGlobalError = (err: unknown) => {
     let errorMessage = "Terjadi kesalahan. Mohon ulangi berkala.";
     if (err instanceof ApiError) errorMessage = err.message;
     else if (typeof err === "string") errorMessage = err;
     setGlobalError(errorMessage);
-    (
-      document.getElementById("global_error_modal") as HTMLDialogElement | null
-    )?.showModal();
-  };
-
-  const handleFullDayToggle = async () => {
-    setIsChangingFullDay(true);
-    setError(null);
-    setFullDaySuccess(null);
-    try {
-      const wasEnrolled = isFullDayEnrolled;
-      await kindyStudentApi.changeFullDay(!isFullDayEnrolled);
-      const profileResponse = await kindyStudentApi.getProfile();
-      setProfile(profileResponse.data);
-      setFullDaySuccess(
-        wasEnrolled
-          ? "Ananda dapat mendaftar kembali kapan saja di bulan berikutnya."
-          : "Pendaftaran berhasil. Ananda dapat mengikuti Full Day mulai bulan depan.",
-      );
-    } catch (err) {
-      showGlobalError(err);
-    } finally {
-      setIsChangingFullDay(false);
-    }
   };
 
   const handleWithdrawClick = () => {
     const hasBankInfo = profile?.finEnt && profile?.finNum && profile?.finName;
     if (!hasBankInfo) {
-      (
-        document.getElementById(
-          "bank_required_modal",
-        ) as HTMLDialogElement | null
-      )?.showModal();
+      setModal("bank_required");
       return;
     }
-    (
-      document.getElementById("withdraw_modal") as HTMLDialogElement | null
-    )?.showModal();
+    setWithdrawAmount("");
+    setWithdrawSuccess(null);
+    setModal("withdraw");
   };
 
   const handleAddBankInfo = () => {
     setBankInfoIntent("withdraw");
-    (
-      document.getElementById("bank_required_modal") as HTMLDialogElement | null
-    )?.close();
+    setModal(null);
     setActiveSection("profile");
-    setTimeout(() => {
-      (
-        document.getElementById("bank_modal") as HTMLDialogElement | null
-      )?.showModal();
-    }, 200);
+    setBankSignal((n) => n + 1);
   };
 
   const handleBankInfoAdded = () => {
     if (bankInfoIntent === "withdraw") {
       setActiveSection("dashboard");
-      setTimeout(() => {
-        setCurrentTab("saving");
-        setTimeout(() => {
-          (
-            document.getElementById(
-              "withdraw_modal",
-            ) as HTMLDialogElement | null
-          )?.showModal();
-        }, 200);
-      }, 300);
+      setCurrentTab("saving");
+      setWithdrawAmount("");
+      setWithdrawSuccess(null);
+      setModal("withdraw");
     }
     setBankInfoIntent("standalone");
   };
@@ -194,11 +155,7 @@ export default function Dashboard() {
     setPaymentChoice("");
     setError(null);
     setPaymentSuccess(null);
-    (
-      document.getElementById(
-        "payment_confirm_modal",
-      ) as HTMLDialogElement | null
-    )?.showModal();
+    setModal("pay");
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,7 +177,7 @@ export default function Dashboard() {
     }
     const maxSizeInBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
-      setError("Ukuran file terlalu besar. Maksimal 5MB.");
+      showGlobalError("Ukuran file terlalu besar. Maksimal 5MB.");
       e.target.value = "";
       return;
     }
@@ -231,12 +188,13 @@ export default function Dashboard() {
       "application/pdf",
     ];
     if (!allowedTypes.includes(file.type)) {
-      setError("Format file tidak didukung. Gunakan JPG, PNG, atau PDF.");
+      showGlobalError(
+        "Format file tidak didukung. Gunakan JPG, PNG, atau PDF.",
+      );
       e.target.value = "";
       return;
     }
     setPaymentFile(file);
-    setError(null);
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = () => setPaymentFilePreview(reader.result as string);
@@ -272,7 +230,7 @@ export default function Dashboard() {
       if (!response || response.status !== "success")
         throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
+        "Verifikasi membutuhkan waktu hingga 1×24 jam. Jika berhasil, pembayaran diperbarui otomatis.",
       );
       await refreshStats();
     } catch (err) {
@@ -312,7 +270,7 @@ export default function Dashboard() {
       if (!response || response.status !== "success")
         throw new Error("Respon server tidak valid");
       setPaymentSuccess(
-        "Verifikasi segera dilakukan. Mungkin membutuhkan waktu hingga 1 x 24 Jam. Jika berhasil, pembayaran diperbarui otomatis. Cek berkala.",
+        "Verifikasi membutuhkan waktu hingga 1×24 jam. Jika berhasil, pembayaran diperbarui otomatis.",
       );
       await refreshStats();
     } catch (err) {
@@ -363,9 +321,9 @@ export default function Dashboard() {
       const statsResponse = await kindyStudentApi.getStats();
       setStats(statsResponse.data);
       setWithdrawSuccess(
-        `Berhasil mengirimkan permintaan penarikan dana sebesar ${formatCurrency(
+        `Penarikan ${formatCurrency(
           amount,
-        )} dari tabungan. Dana otomatis akan dikirim ke rekening penerimaan apabila pengecekan berhasil.`,
+        )} akan dikirim ke rekening penerimaan setelah pengecekan berhasil.`,
       );
       setWithdrawAmount("");
     } catch (err) {
@@ -415,387 +373,295 @@ export default function Dashboard() {
 
   if (error || !profile || !stats || !orgFinInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex min-h-[100dvh] items-center justify-center p-4">
         <ErrorAlert message={error || "Terjadi kesalahan"} />
       </div>
     );
   }
 
   const admission = stats.admission;
+  const groupName = profile.KindyEnrollment[0]?.KindyGroup.name;
+  const subtitle = groupName ? `TK IT Miftahussalam` : "TK IT Miftahussalam";
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case "profile":
-        return (
+  const outstandingRows = stats.outstandingInvoice ?? [];
+  const isLunas = stats.outstanding <= 0;
+  const savingPct = Math.round((savingData.length / 40) * 100);
+  const infaqPct = Math.round((infaqData.length / 40) * 100);
+
+  const renderDashboard = () => (
+    <div className="flex flex-col gap-4">
+      {/* Hero card */}
+      <Card>
+        <CardContent className="flex flex-col gap-4">
+          <div>
+            <p className="mb-1.5 text-[13px] text-muted-foreground">
+              Tagihan saat ini
+            </p>
+            <div className="flex flex-wrap items-baseline gap-2.5">
+              <span
+                className="font-mono text-3xl font-bold tracking-[-0.02em]"
+                suppressHydrationWarning
+              >
+                {formatCurrency(Math.max(0, stats.outstanding))}
+              </span>
+              {isLunas ? (
+                <Badge variant="default">Lunas — terima kasih</Badge>
+              ) : (
+                <Badge variant="destructive">
+                  {outstandingRows.length || stats.countInvoice} tagihan
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {admission && (
+            <div className="rounded-lg border border-border p-3 text-[13px] leading-relaxed text-muted-foreground">
+              Tagihan biaya masuk{" "}
+              <strong className="text-foreground">
+                {formatCurrency(admission.outstanding)}
+              </strong>{" "}
+              — bayar hanya{" "}
+              <strong className="text-foreground">
+                {formatCurrency(admission.discount)}
+              </strong>{" "}
+              jika lunas sebelum{" "}
+              <strong className="text-foreground">13 Juli</strong>. Pembayaran{" "}
+              <strong className="text-foreground">
+                {formatCurrency(admission.minimum)}
+              </strong>{" "}
+              lagi untuk mencapai{" "}
+              <strong className="text-foreground">50%</strong>.
+            </div>
+          )}
+
+          {outstandingRows.length > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-t-0">
+                  <TableHead>Tagihan</TableHead>
+                  <TableHead className="text-right">Jumlah</TableHead>
+                  <TableHead className="text-right">Terakhir</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {outstandingRows.map((inv, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="font-medium">{inv.name}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatCurrency(inv.outstanding)}
+                    </TableCell>
+                    {inv.daysLate > 0 ? (
+                      <TableCell className="text-right font-semibold text-destructive">
+                        Terlambat {inv.daysLate} hari
+                      </TableCell>
+                    ) : (
+                      <TableCell className="text-right font-mono text-muted-foreground">
+                        {formatDate(inv.dueDate)}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="flex flex-col gap-1.5 text-[13px]">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Semua tagihan ({stats.countInvoice ?? 0})
+              </span>
+              <span className="font-mono">
+                {formatCurrency(stats.totalInvoice)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Semua pembayaran ({stats.countPayment ?? 0})
+              </span>
+              <span className="font-mono">
+                {formatCurrency(stats.totalPayment)}
+              </span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between">
+              <span className="font-semibold">Selisih</span>
+              <span
+                className={`font-mono font-semibold ${
+                  stats.outstanding > 0 ? "text-destructive" : "text-primary"
+                }`}
+              >
+                {stats.outstanding > 0 ? "−" : stats.outstanding < 0 ? "+" : ""}
+                {formatCurrency(Math.abs(stats.outstanding))}
+              </span>
+            </div>
+          </div>
+
+          {/* Bank panel */}
+          <div className="flex flex-col gap-2.5 rounded-lg bg-muted p-3.5">
+            <p className="text-xs text-muted-foreground">
+              Pembayaran melalui transfer
+            </p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                {orgFinInfo.img && (
+                  <Image
+                    src={orgFinInfo.img}
+                    alt={orgFinInfo.ent.replace(/-/g, " ")}
+                    width={100}
+                    height={40}
+                    className="mb-1 h-6 w-auto object-contain"
+                  />
+                )}
+                <p className="text-sm font-semibold">
+                  {orgFinInfo.ent.replace(/-/g, " ")}
+                </p>
+                <p className="mt-0.5 font-mono text-[13px] text-muted-foreground">
+                  {orgFinInfo.num}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  a.n.{" "}
+                  {orgFinInfo.name
+                    .replace(/-/g, " ")
+                    .toLowerCase()
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </p>
+              </div>
+              <Button
+                variant={isCopied ? "default" : "outline"}
+                size="sm"
+                onClick={copyBankNumber}
+                className="shrink-0"
+              >
+                {isCopied ? "Tersalin" : "Salin"}
+              </Button>
+            </div>
+          </div>
+
+          <Button className="w-full" onClick={openPaymentConfirmModal}>
+            Konfirmasi Pembayaran
+          </Button>
+          <p className="-mt-1.5 text-center text-xs text-muted-foreground">
+            Verifikasi hingga 1×24 jam — data diperbarui otomatis.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="flex flex-col gap-2.5 p-4">
+            <div>
+              <p className="mb-1 text-xs text-muted-foreground">Tabungan</p>
+              <p
+                className="font-mono text-lg font-bold tracking-[-0.02em]"
+                suppressHydrationWarning
+              >
+                {formatCurrency(stats.saving)}
+              </p>
+            </div>
+            <ContributionGraph
+              tone="primary"
+              items={savingData.map((s) => ({
+                amount: s.amount,
+                date: s.date,
+              }))}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              {savingData.length} dari 40 · {savingPct}%
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleWithdrawClick}
+              disabled={stats.saving <= 0}
+            >
+              Tarik
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex flex-col gap-2.5 p-4">
+            <div>
+              <p className="mb-1 text-xs text-muted-foreground">Infaq</p>
+              <p
+                className="font-mono text-lg font-bold tracking-[-0.02em]"
+                suppressHydrationWarning
+              >
+                {formatCurrency(stats.infaq)}
+              </p>
+            </div>
+            <ContributionGraph
+              tone="info"
+              items={infaqData.map((i) => ({ amount: i.amount, date: i.date }))}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              {infaqData.length} dari 40 · {infaqPct}%
+            </p>
+            <div className="h-8" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Activity card */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="mb-3 text-base font-semibold">Aktivitas</h3>
+          <Tabs
+            value={currentTab}
+            onValueChange={(v) => setCurrentTab(v as typeof currentTab)}
+          >
+            <TabsList>
+              <TabsTrigger value="invoices">Tagihan</TabsTrigger>
+              <TabsTrigger value="payment">Bayar</TabsTrigger>
+              <TabsTrigger value="saving">Tabungan</TabsTrigger>
+              <TabsTrigger value="infaq">Infaq</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="mt-1 min-h-[200px]">
+            {currentTab === "invoices" && <InvoicesSection />}
+            {currentTab === "payment" && <PaymentSection />}
+            {currentTab === "saving" && (
+              <SavingsSection stats={stats} onStatsUpdate={setStats} />
+            )}
+            {currentTab === "infaq" && <InfaqSection />}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className="min-h-[100dvh]">
+      <Navigation
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        studentName={profile.name}
+        subtitle={subtitle}
+      />
+      <main className="px-5 pb-24 pt-5">
+        {activeSection === "profile" ? (
           <ProfileSection
             profile={profile}
             onUpdate={setProfile}
             onBankInfoAdded={handleBankInfoAdded}
             onError={showGlobalError}
+            openBankSignal={bankSignal}
           />
-        );
-      case "laporan-harian":
-        return (
-          <div className="space-y-4 p-4">
-            <h2 className="text-lg font-bold">Laporan Harian</h2>
-            <div className="card bg-base-100 shadow-sm border border-base-300">
-              <div className="card-body items-center text-center py-12">
-                <span className="text-4xl">📋</span>
-                <p className="text-base-content/50 mt-3">Belum ada data</p>
-              </div>
-            </div>
-          </div>
-        );
-      case "perkembangan-anak":
-        return (
-          <div className="space-y-4 p-4">
-            <h2 className="text-lg font-bold">Perkembangan Anak</h2>
-            <div className="card bg-base-100 shadow-sm border border-base-300">
-              <div className="card-body items-center text-center py-12">
-                <span className="text-4xl">🌱</span>
-                <p className="text-base-content/50 mt-3">Belum ada data</p>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="space-y-6">
-            {/* Outstanding Payment */}
-            <div className="card bg-base-100 shadow-sm border">
-              <div className="card-body p-6">
-                <div className="text-center space-y-4">
-                  <div>
-                    <p className="text-md font-medium text-base-content/60 mb-1">
-                      Tagihan saat ini
-                    </p>
-                    <div
-                      className="text-2xl font-bold"
-                      suppressHydrationWarning
-                    >
-                      {formatCurrency(Math.max(0, stats.outstanding))}
-                    </div>
-                    {stats.outstanding > 0 ? (
-                      <div className="flex items-center justify-center gap-2 mt-2">
-                        <span className="text-sm text-error font-medium">
-                          Mohon segera lunasi tagihan
-                        </span>
-                        <span className="text-lg animate-bounce">🙏</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-success font-medium mt-2">
-                        <strong>Lunas! Terima Kasih 🤩</strong>
-                      </p>
-                    )}
-                  </div>
+        ) : (
+          renderDashboard()
+        )}
+      </main>
 
-                  {admission && (
-                    <div className="flex flex-col gap-2">
-                      <div className="alert p-2 text-xs text-left">
-                        <span>
-                          Tagihan biaya masuk{" "}
-                          <strong>
-                            {formatCurrency(admission.outstanding)}.
-                          </strong>
-                          <br />
-                          Bayar hanya{" "}
-                          <strong>
-                            {formatCurrency(admission.discount)}
-                          </strong>{" "}
-                          jika lunas sebelum <strong>13 Juli.</strong>
-                        </span>
-                      </div>
-                      <div className="alert p-2 text-xs text-left">
-                        <span>
-                          Pembayaran{" "}
-                          <strong>{formatCurrency(admission.minimum)}</strong>{" "}
-                          lagi untuk <strong>50%</strong>
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {stats.outstandingInvoice &&
-                    stats.outstandingInvoice.length > 0 && (
-                      <div className="rounded-lg border border-base-300 overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="table table-sm">
-                            <thead className="bg-base-200">
-                              <tr className="border-b border-base-300">
-                                <th className="text-xs font-semibold">
-                                  Tagihan
-                                </th>
-                                <th className="text-xs font-semibold text-center">
-                                  Jumlah
-                                </th>
-                                <th className="text-xs font-semibold text-center">
-                                  Terlambat
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {stats.outstandingInvoice.map((invoice, idx) => (
-                                <tr
-                                  key={idx}
-                                  className="border-b border-base-300"
-                                >
-                                  <td className="text-base-content/60 font-medium">
-                                    {invoice.name}
-                                  </td>
-                                  <td className="text-base-content/60 text-right font-medium">
-                                    {formatCurrency(invoice.outstanding)}
-                                  </td>
-                                  <td
-                                    className={`text-center font-medium ${
-                                      invoice.daysLate > 0
-                                        ? "text-error font-extrabold"
-                                        : "text-base-content/60"
-                                    }`}
-                                  >
-                                    {invoice.daysLate} hari
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                  <div className="w-full mt-4 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-base-content/60 font-medium">
-                        Semua Tagihan (
-                        <strong>{stats.countInvoice ?? 0}</strong>)
-                      </span>
-                      <span className="text-base-content/60 font-medium">
-                        {formatCurrency(stats.totalInvoice)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-base-content/60 font-medium">
-                        Semua Pembayaran (
-                        <strong>{stats.countPayment ?? 0}</strong>)
-                      </span>
-                      <span className="text-base-content/60 font-medium">
-                        {formatCurrency(stats.totalPayment)}
-                      </span>
-                    </div>
-                    <hr className="my-2 border-t border-base-300" />
-                    <div className="flex justify-end">
-                      <span className="text-sm font-bold">
-                        {stats.outstanding < 0 ? "+" : "-"}
-                        {formatCurrency(Math.abs(stats.outstanding))}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="card bg-base-100 border-2 py-4 px-1">
-                    {orgFinInfo ? (
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className="text-xs font-medium text-center">
-                          Pembayaran dapat dilakukan melalui:
-                        </div>
-                        <Image
-                          src={orgFinInfo.img}
-                          alt={orgFinInfo.ent.replace(/-/g, " ")}
-                          width={100}
-                          height={100}
-                          className="h-10 w-auto object-contain"
-                        />
-                        <p className="text-xs font-medium text-center">
-                          {orgFinInfo.ent.replace(/-/g, " ")}
-                        </p>
-                        <div className="flex items-center justify-center gap-2">
-                          <p className="text-xs font-medium text-center">
-                            {orgFinInfo.num}
-                          </p>
-                          <button
-                            onClick={copyBankNumber}
-                            className={`btn btn-xs ${isCopied ? "btn-success" : "btn-primary"}`}
-                            title={
-                              isCopied ? "Disalin!" : "Salin nomor rekening"
-                            }
-                          >
-                            {isCopied ? "Disalin!" : "Salin"}
-                          </button>
-                        </div>
-                        <p className="text-xs font-medium text-center">
-                          a.n.{" "}
-                          {orgFinInfo.name
-                            .replace(/-/g, " ")
-                            .toLowerCase()
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-base-content/60 space-y-1">
-                        <p className="font-medium">Informasi pembayaran:</p>
-                        <p>• Memuat informasi bank...</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    className="btn btn-success w-full"
-                    onClick={openPaymentConfirmModal}
-                  >
-                    Konfirmasi Pembayaran
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Balance Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="card bg-gradient-to-br from-success/5 to-success/10 shadow-sm border border-success/20">
-                <div className="card-body p-4">
-                  <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">
-                      Total Tabungan
-                    </p>
-                    <p
-                      className="text-lg font-bold mb-3"
-                      suppressHydrationWarning
-                    >
-                      {formatCurrency(stats.saving)}
-                    </p>
-                    <button
-                      className="btn btn-warning btn-sm w-full mb-3"
-                      onClick={handleWithdrawClick}
-                      disabled={stats.saving <= 0}
-                    >
-                      Tarik
-                    </button>
-
-                    <ContributionGraph
-                      tone="primary"
-                      items={savingData.map((s) => ({
-                        amount: s.amount,
-                        date: s.date,
-                      }))}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="card bg-gradient-to-br from-info/5 to-info/10 shadow-sm border border-info/20">
-                <div className="card-body p-4">
-                  <div className="text-center">
-                    <p className="text-xs font-medium text-base-content/60 mb-2">
-                      Total Infaq
-                    </p>
-                    <p
-                      className="text-lg font-bold mb-2"
-                      suppressHydrationWarning
-                    >
-                      {formatCurrency(stats.infaq)}
-                    </p>
-                    <span className="text-2xl mb-3 block">🤲</span>
-
-                    <ContributionGraph
-                      tone="info"
-                      items={infaqData.map((i) => ({
-                        amount: i.amount,
-                        date: i.date,
-                      }))}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Tabs */}
-            <div className="card bg-base-100 shadow-sm border border-base-300">
-              <div className="card-body p-0">
-                <div className="border-base-300 px-6 py-4">
-                  <h3 className="font-semibold text-base-content">
-                    Aktivitas Terbaru
-                  </h3>
-                  <div className="alert mt-2 border border-base-300 bg-base-200">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="stroke-current shrink-0 w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                    <span className="text-xs">
-                      Pembaruan data mungkin memerlukan waktu hingga 1 x 24 Jam.
-                      Cek berkala.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="tabs tabs-lifted -mb-px justify-evenly">
-                  {(
-                    [
-                      ["invoices", "Tagihan"],
-                      ["payment", "Pembayaran"],
-                      ["saving", "Tabungan"],
-                      ["infaq", "Infaq"],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <button
-                      key={key}
-                      className={`tab tab-lifted font-medium text-sm transition-all ${
-                        currentTab === key
-                          ? "tab-active [--tab-bg:theme(colors.base-100)] text-base-content font-bold decoration-2 underline-offset-8"
-                          : "text-base-content/60 hover:text-base-content"
-                      }`}
-                      onClick={() => setCurrentTab(key)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="p-6 min-h-[200px]">
-                  {currentTab === "invoices" && <InvoicesSection />}
-                  {currentTab === "payment" && <PaymentSection />}
-                  {currentTab === "saving" && (
-                    <SavingsSection stats={stats} onStatsUpdate={setStats} />
-                  )}
-                  {currentTab === "infaq" && <InfaqSection />}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-base-200/50">
-      <Navigation
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        studentName={profile.name}
+      <BankRequiredModal
+        open={modal === "bank_required"}
+        onClose={() => setModal(null)}
+        onAddBankInfo={handleAddBankInfo}
       />
-      <main className="px-4 py-6 pb-24 w-full">{renderContent()}</main>
-
-      <FullDayModal
-        isEnrolled={isFullDayEnrolled}
-        isSubmitting={isChangingFullDay}
-        success={fullDaySuccess}
-        error={error}
-        onToggle={handleFullDayToggle}
-        onClearError={() => setError(null)}
-        onClose={() => {
-          setError(null);
-          setFullDaySuccess(null);
-        }}
-      />
-
-      <BankRequiredModal onAddBankInfo={handleAddBankInfo} />
 
       <PaymentConfirmModal
+        open={modal === "pay"}
         choice={paymentChoice}
         onChoiceChange={setPaymentChoice}
         file={paymentFile}
@@ -815,6 +681,7 @@ export default function Dashboard() {
         onSubmitFile={handlePaymentWithFile}
         onSubmitForm={handlePaymentWithForm}
         onClose={() => {
+          setModal(null);
           setError(null);
           setPaymentSuccess(null);
           setPaymentFile(null);
@@ -824,6 +691,7 @@ export default function Dashboard() {
       />
 
       <WithdrawModal
+        open={modal === "withdraw"}
         balance={stats.saving}
         amount={withdrawAmount}
         onAmountChange={handleWithdrawAmountChange}
@@ -832,6 +700,7 @@ export default function Dashboard() {
         success={withdrawSuccess}
         onWithdraw={handleWithdraw}
         onClose={() => {
+          setModal(null);
           setWithdrawAmount("");
           setWithdrawSuccess(null);
         }}
@@ -845,7 +714,7 @@ export default function Dashboard() {
   );
 }
 
-/** 40-cell contribution graph shared by the savings and infaq balance cards. */
+/** 40-cell contribution graph shared by the savings and infaq stat cards. */
 function ContributionGraph({
   items,
   tone,
@@ -855,48 +724,24 @@ function ContributionGraph({
 }) {
   const max = items.length ? Math.max(...items.map((i) => i.amount)) : 0;
   return (
-    <div className="pt-3">
-      <div className="flex flex-col gap-1">
-        {Array.from({ length: 4 }).map((_, row) => (
-          <div key={row} className="flex gap-1">
-            {Array.from({ length: 10 }).map((_, col) => {
-              const index = row * 10 + col;
-              const item = items[index];
-              const colorClass = item
-                ? cellColor(item.amount, max, tone)
-                : "bg-base-300/60";
-              return (
-                <div
-                  key={col}
-                  className={`flex-1 aspect-square rounded-sm transition-all duration-300 ${colorClass} hover:ring-2 hover:ring-base-content/20 cursor-pointer relative group`}
-                  title={
-                    item
-                      ? `${formatTooltipDate(item.date)}: ${formatCurrency(item.amount)}`
-                      : `${index + 1}/40`
-                  }
-                >
-                  {item && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-base-content text-base-100 text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      {formatTooltipDate(item.date)}
-                      <br />
-                      {formatCurrency(item.amount)}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-2 mt-2">
-        <span className="text-xs font-bold text-base-content">
-          {items.length}/40
-        </span>
-        <span className="text-xs text-base-content/40">•</span>
-        <span className="text-xs font-bold text-base-content">
-          {Math.round((items.length / 40) * 100)}%
-        </span>
-      </div>
+    <div className="grid grid-cols-10 gap-[3px]">
+      {Array.from({ length: 40 }).map((_, index) => {
+        const item = items[index];
+        const colorClass = item
+          ? cellColor(item.amount, max, tone)
+          : "bg-border/60";
+        return (
+          <div
+            key={index}
+            className={`aspect-square rounded-sm ${colorClass}`}
+            title={
+              item
+                ? `${formatTooltipDate(item.date)}: ${formatCurrency(item.amount)}`
+                : `${index + 1}/40`
+            }
+          />
+        );
+      })}
     </div>
   );
 }

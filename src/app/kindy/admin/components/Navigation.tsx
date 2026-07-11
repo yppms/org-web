@@ -1,6 +1,16 @@
 "use client";
 
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor";
+import ThemeToggle from "@/components/ThemeToggle";
+
+type Section =
+  | "payment"
+  | "invoice"
+  | "stamp"
+  | "openas"
+  | "saving"
+  | "infaq"
+  | "outstanding"
+  | "setor";
 
 interface NavigationProps {
   activeSection: Section;
@@ -8,59 +18,57 @@ interface NavigationProps {
   accessibleSections: Section[];
 }
 
-interface NavItem {
-  key: Section;
-  label: string;
-  icon: string;
-}
+const allItems: { key: Section; label: string }[] = [
+  { key: "payment", label: "Bayar" },
+  { key: "invoice", label: "Tagihan" },
+  { key: "outstanding", label: "Tunggakan" },
+  { key: "saving", label: "Tabungan" },
+  { key: "infaq", label: "Infaq" },
+  { key: "setor", label: "Setor" },
+  { key: "stamp", label: "Stamp" },
+  { key: "openas", label: "Buka" },
+];
 
 export default function Navigation({
   activeSection,
   onSectionChange,
   accessibleSections,
 }: NavigationProps) {
-  const allItems: NavItem[] = [
-    { key: "payment", label: "Bayar", icon: "💰" },
-    { key: "invoice", label: "Tagihan", icon: "📄" },
-    { key: "outstanding", label: "Tunggakan", icon: "📊" },
-    { key: "saving", label: "Tabungan", icon: "🏦" },
-    { key: "infaq", label: "Infaq", icon: "🤲" },
-    { key: "setor", label: "Setor", icon: "💵" },
-    { key: "stamp", label: "Stamp", icon: "📨" },
-    { key: "openas", label: "Buka", icon: "👤" },
-  ];
-
-  // Filter items to only show accessible sections
-  const items = allItems.filter(item => accessibleSections.includes(item.key));
+  const items = allItems.filter((item) =>
+    accessibleSections.includes(item.key)
+  );
 
   return (
-    <div className="bg-base-100 border-b border-base-300 sticky top-0 z-40">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-        {/* Header */}
-        <div className="mb-3">
-          <h1 className="text-base font-semibold">Portal Admin Kindy</h1>
-          <p className="text-xs text-base-content/60">Miftahussalam Islamic Kindy</p>
+    <header className="sticky top-0 z-40 border-b border-border bg-card">
+      <div className="px-5 pt-3.5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-base font-semibold">Portal Admin Kindy</h1>
+            <p className="text-xs text-muted-foreground">
+              Miftahussalam Islamic Kindy
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
-
-        {/* Navigation Tabs */}
-        <div className="flex gap-1.5 flex-wrap">
-          {items.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => onSectionChange(item.key as Section)}
-              className={`btn btn-sm gap-1.5 flex-1 min-w-[90px] ${
-                activeSection === item.key
-                  ? "btn-primary"
-                  : "btn-ghost"
-              }`}
-            >
-              <span>{item.icon}</span>
-              <span className="text-xs">{item.label}</span>
-            </button>
-          ))}
+        <div className="no-scrollbar flex gap-1 overflow-x-auto pb-2.5">
+          {items.map((item) => {
+            const isActive = activeSection === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => onSectionChange(item.key)}
+                className={`h-[30px] shrink-0 whitespace-nowrap rounded-lg px-3 text-[13px] transition-colors ${
+                  isActive
+                    ? "bg-muted font-semibold text-foreground"
+                    : "font-medium text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </header>
   );
 }
-

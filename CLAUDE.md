@@ -25,7 +25,8 @@ There is no test suite. Verify changes by running `npm run dev` and exercising t
 
 ## Architecture
 
-- **Next.js 15 App Router + React 19**, TypeScript, Tailwind + **daisyUI** for all styling.
+- **Next.js 15 App Router + React 19**, TypeScript, Tailwind + **shadcn/ui** for all styling
+  (daisyUI was removed in the 2026-07 redesign).
 - **Client-heavy**: pages are `"use client"`. Data is fetched in `useEffect` on the client,
   not in server components. Route entry pages (`page.tsx`) wrap a `PageContent` component in
   `<Suspense>`; that content component handles auth, then renders a `dashboard.tsx`.
@@ -72,11 +73,21 @@ abbreviations, `d-Mmm-yy`). Use these for all money and dates — the audience i
 
 ## Styling conventions
 
-- Use **daisyUI** component classes (`card`, `btn`, `input`, `loading`, `alert`, `hero`,
-  etc.) plus Tailwind utilities. Avoid hand-rolled CSS.
-- The active theme is the custom **`miftahussalam`** daisyUI theme defined in
-  [tailwind.config.ts](tailwind.config.ts) (`primary` green `#22c55e`). Set on `<html data-theme>`.
-- Loading state is a centered `loading loading-spinner`; errors render in an `alert alert-error`.
+- Use **shadcn/ui** components from [src/components/ui](src/components/ui) (`Button`, `Card`,
+  `Badge`, `Dialog`, `Input`, `Tabs`, `Switch`, `Table`, `Chip`, …) plus Tailwind utilities.
+  Avoid hand-rolled CSS. See [src/components/ui/README.md](src/components/ui/README.md).
+- Theming is **CSS variables** on `:root` / `.dark` in [globals.css](src/app/globals.css),
+  mapped to semantic Tailwind tokens (`bg-card`, `text-foreground`, `text-muted-foreground`,
+  `bg-muted`, `border-border`, `text-primary`, `bg-primary-soft`, `text-destructive`,
+  `text-warning`, `text-info`, `*-soft`). Brand green primary `#16a34a`/`#22c55e`. **Never**
+  use daisyUI classes (`btn`, `card`, `bg-base-*`, `text-base-content`, `modal`, `badge-*`)
+  or raw palette utilities.
+- **Light + dark mode**: the `dark` class on `<html>` (`darkMode: "class"`), persisted to
+  `localStorage['yppms-theme']`, toggled by [ThemeToggle](src/components/ThemeToggle.tsx);
+  a no-FOUC inline script in [layout.tsx](src/app/layout.tsx) applies it before paint.
+- Fonts: **Geist** (UI) + **Geist Mono** (all money/account numbers/phones/IDs — `font-mono`).
+- Loading state is `<Spinner />`; errors render via `<ErrorAlert message={...} />`. All modals
+  are React-state shadcn `Dialog`/`AlertDialog` (no `document.getElementById().showModal()`).
 
 ## Environment & config
 

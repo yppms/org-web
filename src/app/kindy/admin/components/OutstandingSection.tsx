@@ -5,7 +5,7 @@ import { kindyAdminApi } from "@/lib/api";
 import { StudentOutstanding } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, StatCard } from "@/components/ui";
+import { Spinner, ErrorAlert, StatCard, Input, Chip, Badge } from "@/components/ui";
 
 type SortKey = "no" | "name" | "outstanding" | "totalInvoice";
 
@@ -67,201 +67,128 @@ export default function OutstandingSection() {
   const totalOverpaid = Math.abs(outstandingData.reduce((sum, s) => sum + (s.outstanding < 0 ? s.outstanding : 0), 0));
   const studentsWithOutstanding = outstandingData.filter((s) => s.outstanding > 0).length;
   const studentsOverpaid = outstandingData.filter((s) => s.outstanding < 0).length;
-  const totalInvoice = outstandingData.reduce((sum, s) => sum + s.totalInvoice, 0);
-  const totalPayment = outstandingData.reduce((sum, s) => sum + s.totalPayment, 0);
 
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold mb-3">Tunggakan Siswa</h2>
-        <p className="text-sm text-base-content/60 mb-4">
-          Saldo tunggakan pembayaran siswa, diurutkan dari yang terbesar
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Tunggakan</h2>
+        <p className="text-[13px] text-muted-foreground">
+          Saldo tunggakan pembayaran siswa
         </p>
-
-        <input
-          type="text"
-          placeholder="Cari nama siswa..."
-          className="input input-bordered input-sm w-full mb-4"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        {/* Statistics */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <StatCard
-            tone="error"
-            label="Total Tunggakan"
-            value={formatCurrency(totalOutstanding)}
-            hint={`${studentsWithOutstanding} siswa`}
-          />
-          <StatCard
-            tone="info"
-            label="Lebih Bayar"
-            value={formatCurrency(totalOverpaid)}
-            hint={`${studentsOverpaid} siswa`}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <StatCard label="Total Tagihan" value={formatCurrency(totalInvoice)} />
-          <StatCard label="Total Pembayaran" value={formatCurrency(totalPayment)} />
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-4">
-          <button
-            className={`btn btn-sm ${filterType === "all" ? "btn-primary" : "btn-ghost"}`}
-            onClick={() => setFilterType("all")}
-          >
-            Semua ({outstandingData.length})
-          </button>
-          <button
-            className={`btn btn-sm ${filterType === "outstanding" ? "btn-error" : "btn-ghost"}`}
-            onClick={() => setFilterType("outstanding")}
-          >
-            Tunggakan ({studentsWithOutstanding})
-          </button>
-          <button
-            className={`btn btn-sm ${filterType === "overpaid" ? "btn-info" : "btn-ghost"}`}
-            onClick={() => setFilterType("overpaid")}
-          >
-            Lebih Bayar ({studentsOverpaid})
-          </button>
-        </div>
-
-        {/* Sort Controls */}
-        <div className="flex items-center gap-2 flex-wrap mb-4">
-          <span className="text-sm text-base-content/70 font-medium">Urutkan:</span>
-          <div className="btn-group">
-            <button
-              className={`btn btn-xs ${sortBy === "outstanding" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => toggleSort("outstanding")}
-            >
-              Tunggakan{arrow("outstanding")}
-            </button>
-            <button
-              className={`btn btn-xs ${sortBy === "totalInvoice" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => toggleSort("totalInvoice")}
-            >
-              Tagihan{arrow("totalInvoice")}
-            </button>
-            <button
-              className={`btn btn-xs ${sortBy === "name" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => toggleSort("name")}
-            >
-              Nama{arrow("name")}
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* Student List */}
-      <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          tone="error"
+          label="Total tunggakan"
+          value={formatCurrency(totalOutstanding)}
+          hint={`${studentsWithOutstanding} siswa`}
+        />
+        <StatCard
+          tone="info"
+          label="Lebih bayar"
+          value={formatCurrency(totalOverpaid)}
+          hint={`${studentsOverpaid} siswa`}
+        />
+      </div>
+
+      <Input
+        type="text"
+        placeholder="Cari nama siswa…"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
+      <div className="flex gap-1.5 flex-wrap">
+        <Chip active={filterType === "all"} onClick={() => setFilterType("all")}>
+          Semua
+        </Chip>
+        <Chip active={filterType === "outstanding"} onClick={() => setFilterType("outstanding")}>
+          Tunggakan
+        </Chip>
+        <Chip active={filterType === "overpaid"} onClick={() => setFilterType("overpaid")}>
+          Lebih bayar
+        </Chip>
+      </div>
+
+      <div className="flex flex-col gap-2">
         {filteredAndSorted.length === 0 ? (
-          <div className="text-center py-12 text-base-content/60">
+          <p className="text-center text-xs text-muted-foreground py-8">
             {searchQuery
               ? `Tidak ada siswa dengan nama "${searchQuery}"`
               : "Tidak ada data tunggakan"}
-          </div>
+          </p>
         ) : (
           filteredAndSorted.map((student) => (
             <div
               key={student.id}
-              className={`card bg-base-100 shadow-sm border transition-colors ${
-                student.outstanding > 0
-                  ? "border-error/30 hover:border-error/50"
-                  : student.outstanding < 0
-                  ? "border-info/30 hover:border-info/50"
-                  : "border-base-300 hover:border-base-300"
-              }`}
+              className="bg-card border border-border rounded-xl shadow-card px-4 py-3.5"
             >
-              <div className="card-body p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-base truncate">{student.name}</h3>
-                  {student.outstanding > 0 && (
-                    <span className="badge badge-error badge-sm flex-shrink-0 whitespace-nowrap">
-                      Belum Lunas
-                    </span>
-                  )}
-                  {student.outstanding < 0 && (
-                    <span className="badge badge-info badge-sm flex-shrink-0 whitespace-nowrap">
-                      Lebih Bayar
-                    </span>
-                  )}
-                  {student.outstanding === 0 && (
-                    <span className="badge badge-success badge-sm flex-shrink-0 whitespace-nowrap">
-                      Lunas
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-base-content/60">Tagihan:</span>
-                    <span className="ml-2 font-semibold">{formatCurrency(student.totalInvoice)}</span>
-                    <span className="ml-1 text-sm font-bold text-base-content">
-                      ({student.invoiceCount})
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-base-content/60">Pembayaran:</span>
-                    <span className="ml-2 font-semibold">{formatCurrency(student.totalPayment)}</span>
-                    <span className="ml-1 text-sm font-bold text-base-content">
-                      ({student.paymentCount})
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-base-content/60">Tunggakan:</span>
-                    <span
-                      className={`ml-2 font-bold text-base ${
-                        student.outstanding > 0
-                          ? "text-error"
-                          : student.outstanding < 0
-                          ? "text-info"
-                          : "text-success"
-                      }`}
-                    >
-                      {student.outstanding < 0 ? "+" : ""}
-                      {formatCurrency(Math.abs(student.outstanding))}
-                    </span>
-                  </div>
-
-                  {student.unpaidInvoiceCount && student.unpaidInvoice && student.unpaidInvoice.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-base-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-base-content/70">
-                          Tagihan Belum Lunas:
-                        </span>
-                        <span className="badge badge-error badge-sm font-bold">
-                          {student.unpaidInvoiceCount}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5 pl-2">
-                        {student.unpaidInvoice.map((inv, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-sm gap-3">
-                            <div className="truncate text-base-content/80 flex-1">{inv.name}</div>
-                            <div className="font-semibold text-error whitespace-nowrap">
-                              {formatCurrency(inv.outstanding)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-between items-center gap-2 mb-2">
+                <p className="text-sm font-semibold truncate">{student.name}</p>
+                {student.outstanding > 0 ? (
+                  <Badge variant="destructive">Tertunggak</Badge>
+                ) : student.outstanding < 0 ? (
+                  <Badge variant="info">Lebih bayar</Badge>
+                ) : (
+                  <Badge variant="default">Lunas</Badge>
+                )}
               </div>
+
+              <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
+                <span>
+                  Tagihan{" "}
+                  <strong className="text-foreground font-mono">
+                    {formatCurrency(student.totalInvoice)}
+                  </strong>
+                </span>
+                <span>
+                  Bayar{" "}
+                  <strong className="text-foreground font-mono">
+                    {formatCurrency(student.totalPayment)}
+                  </strong>
+                </span>
+                <span>
+                  Selisih{" "}
+                  <strong
+                    className={`font-mono ${
+                      student.outstanding > 0
+                        ? "text-destructive"
+                        : student.outstanding < 0
+                        ? "text-info"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {student.outstanding > 0 ? "−" : student.outstanding < 0 ? "+" : ""}
+                    {formatCurrency(Math.abs(student.outstanding))}
+                  </strong>
+                </span>
+              </div>
+
+              {student.unpaidInvoiceCount && student.unpaidInvoice && student.unpaidInvoice.length > 0 && (
+                <div className="mt-2.5 pt-2.5 border-t border-border flex flex-col gap-1.5">
+                  {student.unpaidInvoice.map((inv, idx) => (
+                    <div key={idx} className="flex justify-between gap-3 text-[13px]">
+                      <span className="text-muted-foreground truncate">{inv.name}</span>
+                      <span className="font-mono text-destructive whitespace-nowrap">
+                        {formatCurrency(inv.outstanding)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
 
       {filteredAndSorted.length > 0 && (
-        <div className="mt-4 text-center text-sm text-base-content/60">
+        <p className="text-center text-xs text-muted-foreground">
           Menampilkan {filteredAndSorted.length} dari {outstandingData.length} siswa
-        </div>
+        </p>
       )}
     </div>
   );

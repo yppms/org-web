@@ -1,6 +1,10 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { Modal, Button } from "@/components/ui";
+
 interface FullDayModalProps {
+  open: boolean;
   isEnrolled: boolean;
   isSubmitting: boolean;
   success: string | null;
@@ -10,15 +14,8 @@ interface FullDayModalProps {
   onClose: () => void;
 }
 
-const closeDialog = () => {
-  (document.getElementById("fullday_modal") as HTMLDialogElement | null)?.close();
-};
-
-/**
- * Full Day enrollment confirmation. Opened imperatively via
- * document.getElementById("fullday_modal").showModal() from the dashboard.
- */
 export default function FullDayModal({
+  open,
   isEnrolled,
   isSubmitting,
   success,
@@ -27,66 +24,83 @@ export default function FullDayModal({
   onClearError,
   onClose,
 }: FullDayModalProps) {
-  const handleClose = () => {
-    closeDialog();
-    onClose();
-  };
+  const title = success
+    ? undefined
+    : error
+      ? undefined
+      : isEnrolled
+        ? "Berhenti Full Day"
+        : "Daftar Full Day";
 
   return (
-    <dialog id="fullday_modal" className="modal">
-      <div className="modal-box w-full max-w-sm mx-2">
-        {success ? (
-          <div className="text-center py-8">
-            <h3 className="font-bold text-lg text-success mb-4">Sukses!</h3>
-            <p className="text-base-content/70 mb-6">{success}</p>
-            <button className="btn btn-success" onClick={handleClose}>
-              Selesai
-            </button>
-          </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      dismissable={!isSubmitting}
+      title={title}
+      actions={
+        success ? (
+          <Button size="sm" onClick={onClose}>
+            Selesai
+          </Button>
         ) : error ? (
-          <div className="text-center py-8">
-            <h3 className="font-bold text-lg text-error mb-4">Update gagal</h3>
-            <p className="text-base-content/70 mb-6">{error}</p>
-            <div className="flex gap-2 justify-center">
-              <button className="btn btn-outline" onClick={onClearError}>
-                Ulangi lagi
-              </button>
-              <button className="btn" onClick={handleClose}>
-                Keluar
-              </button>
-            </div>
-          </div>
+          <>
+            <Button variant="outline" size="sm" onClick={onClearError}>
+              Ulangi
+            </Button>
+            <Button size="sm" onClick={onClose}>
+              Tutup
+            </Button>
+          </>
         ) : (
           <>
-            <h3 className="font-bold text-lg">
-              {isEnrolled ? "Berhenti Full Day" : "Daftar Full Day"}
-            </h3>
-            <div className="py-4">
-              <p className="text-base-content/70 mb-4">
-                {isEnrolled
-                  ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan berikutnya"
-                  : "Ananda akan mengikuti full day mulai bulan depan. Konfirmasi."}
-              </p>
-            </div>
-            <div className="modal-action">
-              <button className="btn" onClick={handleClose} disabled={isSubmitting}>
-                Keluar
-              </button>
-              <button
-                className={`btn ${isEnrolled ? "btn-error" : "btn-primary"}`}
-                onClick={onToggle}
-                disabled={isSubmitting}
-              >
-                {isSubmitting && <span className="loading loading-spinner loading-sm" />}
-                {isEnrolled ? "Berhenti Full Day" : "Ya. Daftarkan"}
-              </button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              variant={isEnrolled ? "destructive" : "default"}
+              onClick={onToggle}
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isEnrolled ? "Ya, berhenti" : "Ya, daftarkan"}
+            </Button>
           </>
-        )}
-      </div>
-      <form method="dialog" className="modal-backdrop">
-        <button>keluar</button>
-      </form>
-    </dialog>
+        )
+      }
+    >
+      {success ? (
+        <div className="py-2 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-lg font-bold text-primary">
+            ✓
+          </div>
+          <h3 className="mb-2 text-base font-semibold">Pendaftaran berhasil</h3>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {success}
+          </p>
+        </div>
+      ) : error ? (
+        <div className="py-2 text-center">
+          <h3 className="mb-2 text-base font-semibold text-destructive">
+            Pembaruan gagal
+          </h3>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {error}
+          </p>
+        </div>
+      ) : (
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          {isEnrolled
+            ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan berikutnya."
+            : "Ananda akan mengikuti program full day mulai bulan depan. Biaya bulanan akan bertambah."}
+        </p>
+      )}
+    </Modal>
   );
 }

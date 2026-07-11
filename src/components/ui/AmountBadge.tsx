@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Badge } from "./badge";
 
 type AmountTone = "primary" | "error" | "info" | "warning";
 
@@ -8,18 +9,19 @@ interface AmountBadgeProps {
   className?: string;
 }
 
-// Full class strings so Tailwind's JIT keeps them.
-const toneClass: Record<AmountTone, string> = {
-  primary: "bg-primary/10 text-primary",
-  error: "bg-error/10 text-error",
-  info: "bg-info/10 text-info",
-  warning: "bg-warning/10 text-warning",
+const toneVariant: Record<
+  AmountTone,
+  "default" | "destructive" | "info" | "warning"
+> = {
+  primary: "default",
+  error: "destructive",
+  info: "info",
+  warning: "warning",
 };
 
 /**
- * Compact tonal chip for a money amount. Replaces the ad-hoc saturated
- * gradient pills — a soft tint + bold token-colored text reads cleaner and
- * re-themes with the brand.
+ * Compact soft chip for a money amount (mono). Maps tone → the badge's soft
+ * status variants so it re-themes with the brand.
  */
 export default function AmountBadge({
   children,
@@ -27,10 +29,11 @@ export default function AmountBadge({
   className = "",
 }: AmountBadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-bold ${toneClass[tone]} ${className}`}
+    <Badge
+      variant={toneVariant[tone]}
+      className={`font-mono font-semibold ${className}`}
     >
       {children}
-    </span>
+    </Badge>
   );
 }

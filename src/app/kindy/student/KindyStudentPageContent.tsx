@@ -62,17 +62,10 @@ export default function KindyStudentPageContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[100dvh]">
-        {/* Hero Section */}
-        <div className="hero min-h-screen">
-          <div className="hero-content text-center">
-            <div className="max-w-md">
-              <h1 className="text-lg font-bold">
-                {error || "Maaf, Anda tidak memiliki akses."}
-              </h1>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-[100dvh] items-center justify-center p-6 text-center">
+        <h1 className="text-lg font-semibold">
+          {error || "Maaf, Anda tidak memiliki akses."}
+        </h1>
       </div>
     );
   }

@@ -12,35 +12,19 @@ interface StatCardProps {
   tone?: StatTone;
 }
 
-// Full class strings so Tailwind's JIT can see them (no dynamic construction).
-const toneClass: Record<StatTone, { card: string; value: string }> = {
-  primary: {
-    card: "bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20",
-    value: "text-primary",
-  },
-  error: {
-    card: "bg-gradient-to-br from-error/10 to-error/5 border border-error/20",
-    value: "text-error",
-  },
-  warning: {
-    card: "bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20",
-    value: "text-warning",
-  },
-  info: {
-    card: "bg-gradient-to-br from-info/10 to-info/5 border border-info/20",
-    value: "text-info",
-  },
-  neutral: {
-    card: "bg-base-100 border border-base-300",
-    value: "text-base-content",
-  },
+// Value text color per tone (card chrome is the same neutral card everywhere).
+const valueClass: Record<StatTone, string> = {
+  primary: "text-primary",
+  error: "text-destructive",
+  warning: "text-warning",
+  info: "text-info",
+  neutral: "text-foreground",
 };
 
 /**
- * Gradient stat/summary card. Replaces the per-color hardcoded stat cards in
- * the admin sections — pick a `tone` by MEANING (primary=positive/money,
- * error=outstanding, warning=pending, info=informational) and the colors come
- * from the theme, so the whole app re-themes together.
+ * Stat/summary tile. Pick a `tone` by MEANING (primary=positive/money,
+ * error=outstanding, warning=pending, info=informational) — the value color
+ * comes from the theme so the whole app re-themes together.
  */
 export default function StatCard({
   label,
@@ -48,14 +32,17 @@ export default function StatCard({
   hint,
   tone = "neutral",
 }: StatCardProps) {
-  const t = toneClass[tone];
   return (
-    <div className={`card ${t.card}`}>
-      <div className="card-body p-4">
-        <div className="text-xs text-base-content/60">{label}</div>
-        <div className={`text-xl font-bold ${t.value}`}>{value}</div>
-        {hint && <div className="text-xs text-base-content/50 mt-1">{hint}</div>}
+    <div className="rounded-xl border border-border bg-card px-4 py-3.5 shadow-card">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div
+        className={`mt-1 font-mono text-lg font-bold tracking-[-0.02em] ${valueClass[tone]}`}
+      >
+        {value}
       </div>
+      {hint && (
+        <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+      )}
     </div>
   );
 }

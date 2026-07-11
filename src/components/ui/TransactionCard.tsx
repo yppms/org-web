@@ -1,19 +1,16 @@
 import { ReactNode } from "react";
 
 interface TransactionCardProps {
-  /** Left/right content of the top strip (bg-base-200/30, border-b). */
+  /** Left/right content of the top strip (muted, border-b). */
   header?: ReactNode;
-  /** Left/right content of the bottom strip (bg-base-200/30, border-t). */
+  /** Left/right content of the bottom strip (muted, border-t). */
   footer?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
 /**
- * The transaction/list card shell: header strip / body / footer strip.
- * Replaces the copy-pasted `card bg-base-100 border-2` markup across the
- * student list sections. Pass any nodes for header/footer; they sit in the
- * standard `flex justify-between` strips.
+ * Transaction/list card shell: header strip / body / footer strip.
  */
 export default function TransactionCard({
   header,
@@ -22,20 +19,20 @@ export default function TransactionCard({
   className = "",
 }: TransactionCardProps) {
   return (
-    <div className={`card bg-base-100 border-2 ${className}`}>
-      <div className="card-body p-0">
-        {header !== undefined && (
-          <div className="flex justify-between items-center px-4 py-3 bg-base-200/30 border-b-2 border-base-300/50 text-xs">
-            {header}
-          </div>
-        )}
-        <div className="space-y-3 px-4 py-3">{children}</div>
-        {footer !== undefined && (
-          <div className="flex justify-between items-center gap-2 px-4 py-3 bg-base-200/30 border-t-2 border-base-300/50">
-            {footer}
-          </div>
-        )}
-      </div>
+    <div
+      className={`overflow-hidden rounded-xl border border-border bg-card shadow-card ${className}`}
+    >
+      {header !== undefined && (
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-4 py-3 text-xs">
+          {header}
+        </div>
+      )}
+      <div className="space-y-3 px-4 py-3">{children}</div>
+      {footer !== undefined && (
+        <div className="flex items-center justify-between gap-2 border-t border-border bg-muted/50 px-4 py-3">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 type SpinnerSize = "sm" | "md" | "lg";
 
@@ -11,9 +12,9 @@ interface SpinnerProps {
 }
 
 const sizeClass: Record<SpinnerSize, string> = {
-  sm: "loading-sm",
-  md: "loading-md",
-  lg: "loading-lg",
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-8 w-8",
 };
 
 /**
@@ -33,9 +34,9 @@ export default function Spinner({
 
   return (
     <div className={wrapper}>
-      <div className="text-center">
-        <span className={`loading loading-spinner ${sizeClass[size]} text-primary`} />
-        {label && <p className="mt-4 text-base-content/70">{label}</p>}
+      <div className="flex flex-col items-center gap-3 text-center">
+        <Loader2 className={`${sizeClass[size]} animate-spin text-primary`} />
+        {label && <p className="text-sm text-muted-foreground">{label}</p>}
       </div>
     </div>
   );

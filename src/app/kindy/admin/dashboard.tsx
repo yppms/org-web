@@ -68,10 +68,10 @@ export default function KindyAdminDashboard() {
   // If no sections are accessible, show error
   if (accessibleSections.length === 0) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+      <div className="flex min-h-[100dvh] items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-bold text-base-content/70">Tidak Ada Akses</p>
-          <p className="mt-2 text-sm text-base-content/60">
+          <p className="text-lg font-semibold">Tidak Ada Akses</p>
+          <p className="mt-2 text-sm text-muted-foreground">
             Anda tidak memiliki akses ke bagian mana pun
           </p>
         </div>
@@ -80,14 +80,14 @@ export default function KindyAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <Navigation 
-        activeSection={activeSection!} 
+    <div className="min-h-[100dvh]">
+      <Navigation
+        activeSection={activeSection!}
         onSectionChange={setActiveSection}
         accessibleSections={accessibleSections}
       />
-      
-      <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
+
+      <main className="w-full overflow-x-hidden p-5">
         {activeSection === "payment" && accessibleSections.includes("payment") && <PaymentSection />}
         {activeSection === "invoice" && accessibleSections.includes("invoice") && <InvoiceSection />}
         {activeSection === "outstanding" && accessibleSections.includes("outstanding") && <OutstandingSection />}
@@ -96,7 +96,7 @@ export default function KindyAdminDashboard() {
         {activeSection === "saving" && accessibleSections.includes("saving") && <SavingSection />}
         {activeSection === "infaq" && accessibleSections.includes("infaq") && <InfaqSection />}
         {activeSection === "setor" && accessibleSections.includes("setor") && <SetorSection />}
-      </div>
+      </main>
     </div>
   );
 }

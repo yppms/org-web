@@ -1,62 +1,68 @@
 # Shared UI foundation (`src/components/ui`)
 
-The reusable, presentational building blocks for the portal. **Build new features
-out of these** instead of hand-writing markup — that's how the app stays consistent.
-They are token-only (no data fetching, no business logic); data comes from
-[`useApi`](../../hooks/useApi.ts) and the API layer in [`src/lib/api.ts`](../../lib/api.ts).
+The reusable building blocks for the portal. **Build new features out of these**
+instead of hand-writing markup. Two layers live here:
 
-## Components
+1. **shadcn/ui primitives** (lowercase files): `button`, `card`, `badge`,
+   `input`, `label`, `chip`, `switch`, `separator`, `tabs`, `table`, `dialog`,
+   `alert-dialog`. CVA + Radix based; styled with the theme tokens below.
+2. **App composites** (PascalCase files): `Spinner`, `ErrorAlert`, `EmptyState`,
+   `SectionHeader`, `TransactionCard`, `StatCard`, `AmountBadge`, `Modal`,
+   `ConfirmDialog`. Token-only (no data fetching); data comes from
+   [`useApi`](../../hooks/useApi.ts) and [`src/lib/api.ts`](../../lib/api.ts).
 
-| Component | Use for | Key props |
-|-----------|---------|-----------|
-| `Spinner` | Loading state | `variant="page" \| "section"`, `label` (e.g. `"Memuat..."`) |
-| `ErrorAlert` | Surfacing an error message | `message` |
-| `EmptyState` | "No data" placeholder | `message`, `icon` |
-| `SectionHeader` | Section title + count badge | `title`, `count`, `countLabel`, `actions` |
-| `TransactionCard` | List/transaction card shell | `header`, `footer`, children (body) |
-| `StatCard` | Gradient summary/stat tile | `label`, `value`, `hint`, `tone` |
-| `Modal` | Any dialog | `open`, `onClose`, `title`, `actions`, `dismissable` |
-| `ConfirmDialog` | Continue → Confirm flows | `open`, `onClose`, `onConfirm`, `tone`, `loading` |
-
-Import from the barrel: `import { Spinner, ErrorAlert } from "@/components/ui";`
+Import from the barrel: `import { Button, Card, Badge, Spinner } from "@/components/ui";`
 
 ## Design tokens — do not hardcode
 
-All color comes from the `miftahussalam` daisyUI theme in
-[`tailwind.config.ts`](../../../tailwind.config.ts). **Never use raw palette
-utilities** (`text-green-600`, `border-blue-500`, `bg-red-100`) or hex values.
+All color comes from CSS variables defined on `:root` / `.dark` in
+[`globals.css`](../../app/globals.css) and wired into Tailwind in
+[`tailwind.config.ts`](../../../tailwind.config.ts). The theme is **zinc neutrals
++ a green brand accent**, with **light + dark** mode (toggle = the `dark` class on
+`<html>`, persisted to `localStorage['yppms-theme']` — see
+[`ThemeToggle`](../ThemeToggle.tsx)). **Never use raw palette utilities**
+(`text-green-600`) or daisyUI classes (`btn`, `card`, `bg-base-100`,
+`text-base-content`, `modal`, …) — daisyUI has been removed.
 
-### Color = meaning (strict semantic palette)
+### Semantic Tailwind tokens
 
-There is exactly **one green** and **one blue** (`success`/`accent` are rethemed
-to equal `primary`/`info`). Pick a token by what it *means*, not by how it looks:
+| Meaning | Token utilities |
+|---------|-----------------|
+| page / surface | `bg-background`, `bg-card`, `text-foreground` |
+| secondary text / dividers | `text-muted-foreground`, `bg-muted`, `border-border` |
+| positive / paid / money / brand | `text-primary`, `bg-primary`, `bg-primary-soft` |
+| unpaid / destructive | `text-destructive`, `bg-destructive-soft` |
+| pending / needs attention | `text-warning`, `bg-warning-soft` |
+| informational / overpaid | `text-info`, `bg-info-soft` |
 
-| Meaning | Token |
-|---------|-------|
-| positive / paid / money / brand / highlight | `primary` (green) |
-| unpaid / outstanding / destructive / negative | `error` (red) |
-| pending / needs attention | `warning` (amber) |
-| informational / overpaid | `info` (blue) |
-| muted text / dividers | `base-content/60`, `neutral` |
+**Color = meaning.** Status is always a **soft badge** (`<Badge variant="…">`):
+soft-tint background + strong-color text. Variants: `default` (primary-soft),
+`secondary` (muted), `destructive`, `warning`, `info`, `outline`.
 
-There is **no purple/orange** — use `primary`/`warning`. On a colored background,
-let daisyUI set the text color (`btn-primary` already implies `primary-content`);
-don't add `text-white`.
+### Typography
 
-### Typography roles
+- **Geist** for UI text, **Geist Mono** (`font-mono`) for every money amount,
+  account number, phone number, and ID.
+- Roles: page/section title `text-lg font-semibold` · card title
+  `text-base font-semibold` · row title `text-sm font-medium` · body `text-[13px]`
+  · caption/label `text-xs text-muted-foreground` · hero amount
+  `text-3xl font-bold font-mono tracking-[-0.02em]` · uppercase micro-labels
+  `text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground`.
 
-Use the default size scale (`text-xs` … `text-lg`) via these roles — no arbitrary
-`text-[10px]`:
+### Shape
 
-| Role | Classes |
-|------|---------|
-| heading (section titles) | `text-lg font-bold` — via `SectionHeader` |
-| subheading | `text-base font-semibold` |
-| body | `text-sm` |
-| label / caption | `text-xs text-base-content/60` |
+Cards `rounded-xl` (12px) + `border border-border` + `shadow-card` (light only);
+buttons/inputs `rounded-lg`; badges/chips `rounded-md`; filter chips are the
+fully-rounded `<Chip>`. Dialogs are centered, `max-w-[400px]`, `p-6`.
 
 ### Layout
 
-The mobile frame width is the `max-w-app` token (425px) — use it, not
-`max-w-[425px]`. The frame itself is applied once in
-[`src/app/layout.tsx`](../../app/layout.tsx).
+Mobile frame width is `max-w-app` (425px), applied once in
+[`layout.tsx`](../../app/layout.tsx).
+
+## Dialogs
+
+All modals are React-state-controlled shadcn `Dialog` / `AlertDialog` (drive with
+`open` / `onOpenChange`) — no native `<dialog>`/`showModal()`/`getElementById`.
+`Modal` and `ConfirmDialog` are thin wrappers over `Dialog` with the legacy
+`open` / `onClose` / `title` / `actions` API.

@@ -30,6 +30,7 @@ export default function InfaqSection() {
       subtitle="Riwayat infaq dan donasi semua siswa"
       fetcher={() => kindyAdminApi.getAllInfaq()}
       mapItem={mapItem}
+      showSearch={false}
       fallbackMessage="Gagal memuat data infaq"
       labels={{
         totalStat: "Total Infaq",

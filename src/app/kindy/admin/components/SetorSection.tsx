@@ -4,7 +4,24 @@ import { useState } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, StatCard } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  StatCard,
+  EmptyState,
+  Badge,
+  Button,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface Setor {
   id: string;
@@ -82,195 +99,164 @@ export default function SetorSection() {
     }
   };
 
+  const formatTimestamp = (value: string) =>
+    new Date(value).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold">Kontrol Setoran</h2>
-          <button onClick={() => setShowAddModal(true)} className="btn btn-sm btn-primary">
-            + Catat
-          </button>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Kontrol Setoran</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Setoran dana terkumpul ke rekening yayasan
+          </p>
         </div>
+        <Button size="sm" onClick={() => setShowAddModal(true)} className="flex-shrink-0">
+          + Catat
+        </Button>
+      </div>
 
-        {/* Delta Statistics */}
-        {deltaData && (
-          <div className="space-y-3 mb-6">
+      {deltaData && (
+        <>
+          <div className="bg-card border border-border rounded-xl shadow-card px-4 py-3.5">
+            <p className="text-xs text-muted-foreground">Sisa untuk disetor</p>
+            <p className="text-2xl font-bold font-mono tracking-[-0.02em] text-warning">
+              {formatCurrency(deltaData.delta)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <StatCard
-              tone={deltaData.delta > 0 ? "warning" : "neutral"}
-              label="Sisa"
-              value={formatCurrency(deltaData.delta)}
+              tone="neutral"
+              label="Total terkumpul"
+              value={formatCurrency(deltaData.totalCollected)}
             />
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard tone="info" label="Total Terkumpul" value={formatCurrency(deltaData.totalCollected)} />
-              <StatCard tone="primary" label="Total Disetor" value={formatCurrency(deltaData.totalSetor)} />
-            </div>
+            <StatCard
+              tone="primary"
+              label="Total disetor"
+              value={formatCurrency(deltaData.totalSetor)}
+            />
           </div>
-        )}
-      </div>
-
-      {/* Setor List */}
-      <div className="space-y-2">
-        {setorData.length === 0 ? (
-          <div className="text-center py-12 text-base-content/60">
-            Belum ada catatan setoran
-          </div>
-        ) : (
-          setorData.map((setor) => (
-            <div key={setor.id} className="card bg-base-100 shadow-sm border border-base-300">
-              <div className="card-body p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`badge badge-sm ${
-                      setor.type === "bank" ? "badge-primary" : "badge-secondary"
-                    }`}
-                  >
-                    {setor.type === "bank" ? "🏦 Bank" : "👤 Amil"}
-                  </span>
-                  <span className="text-xs text-base-content/50">#{setor.no}</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="text-base-content/60">Jumlah:</span>
-                    <span className="ml-2 font-bold text-success">
-                      {formatCurrency(setor.amount)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-base-content/50">
-                    <span className="font-medium">Dicatat:</span>
-                    <span className="ml-1">
-                      {new Date(setor.createdAt).toLocaleString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    {setor.createdAt !== setor.updatedAt && (
-                      <>
-                        <span className="mx-1">•</span>
-                        <span className="font-medium">Diperbarui:</span>
-                        <span className="ml-1">
-                          {new Date(setor.updatedAt).toLocaleString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Add Setor Modal */}
-      {showAddModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Catat Setoran Baru</h3>
-
-            <div className="space-y-4">
-              {formError && <ErrorAlert message={formError} />}
-
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    Jumlah (Rp) <span className="text-error">*</span>
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="100.000"
-                  className="input input-bordered w-full"
-                  value={
-                    formData.amount
-                      ? formatCurrency(parseFloat(formData.amount)).replace("Rp", "").trim()
-                      : ""
-                  }
-                  onChange={(e) => {
-                    const numericValue = e.target.value.replace(/\D/g, "");
-                    setFormData({ ...formData, amount: numericValue });
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    Jenis Setoran <span className="text-error">*</span>
-                  </span>
-                </label>
-                <div className="flex gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer flex-1">
-                    <input
-                      type="radio"
-                      name="type"
-                      className="radio radio-primary"
-                      checked={formData.type === "bank"}
-                      onChange={() => setFormData({ ...formData, type: "bank" })}
-                    />
-                    <span className="label-text">🏦 Transfer Bank</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer flex-1">
-                    <input
-                      type="radio"
-                      name="type"
-                      className="radio radio-primary"
-                      checked={formData.type === "amil"}
-                      onChange={() => setFormData({ ...formData, type: "amil" })}
-                    />
-                    <span className="label-text">👤 Via Amil</span>
-                  </label>
-                </div>
-              </div>
-
-              {deltaData && (
-                <div className="alert alert-info text-sm">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    className="stroke-current shrink-0 w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <div>
-                    <div className="font-medium">Saldo Saat Ini</div>
-                    <div className="text-xs">
-                      Sisa untuk disetor: {formatCurrency(deltaData.delta)}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-action">
-              <button onClick={closeModal} className="btn btn-ghost" disabled={isSubmitting}>
-                Batal
-              </button>
-              <button onClick={handleSubmit} className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting && <span className="loading loading-spinner loading-sm" />}
-                Catat
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={closeModal}></div>
-        </dialog>
+        </>
       )}
+
+      {setorData.length === 0 ? (
+        <EmptyState message="Belum ada catatan setoran" />
+      ) : (
+        <div className="bg-card border border-border rounded-xl shadow-card px-4">
+          {setorData.map((setor) => (
+            <div
+              key={setor.id}
+              className="flex justify-between items-center gap-3 py-3 border-b border-border last:border-b-0"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={setor.type === "bank" ? "default" : "secondary"}>
+                    {setor.type === "bank" ? "Bank" : "Amil"}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">#{setor.no}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatTimestamp(setor.createdAt)}
+                  {setor.createdAt !== setor.updatedAt && (
+                    <> · Diperbarui {formatTimestamp(setor.updatedAt)}</>
+                  )}
+                </p>
+              </div>
+              <span className="text-[13px] font-semibold font-mono">
+                {formatCurrency(setor.amount)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={showAddModal} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Catat Setoran Baru</DialogTitle>
+            <DialogDescription>
+              Sisa untuk disetor:{" "}
+              <strong className="text-foreground font-mono">
+                {formatCurrency(deltaData?.delta ?? 0)}
+              </strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3">
+            {formError && <ErrorAlert message={formError} />}
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="setor-amount">Jumlah (Rp)</Label>
+              <Input
+                id="setor-amount"
+                type="text"
+                inputMode="numeric"
+                placeholder="100.000"
+                className="font-mono"
+                value={
+                  formData.amount
+                    ? formatCurrency(parseFloat(formData.amount)).replace("Rp", "").trim()
+                    : ""
+                }
+                onChange={(e) => {
+                  const numericValue = e.target.value.replace(/\D/g, "");
+                  setFormData({ ...formData, amount: numericValue });
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Jenis setoran</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: "bank" })}
+                  className={cn(
+                    "h-9 rounded-lg border text-sm font-medium transition-colors",
+                    formData.type === "bank"
+                      ? "border-primary bg-primary-soft text-foreground"
+                      : "border-border text-muted-foreground"
+                  )}
+                >
+                  Transfer Bank
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: "amil" })}
+                  className={cn(
+                    "h-9 rounded-lg border text-sm font-medium transition-colors",
+                    formData.type === "amil"
+                      ? "border-primary bg-primary-soft text-foreground"
+                      : "border-border text-muted-foreground"
+                  )}
+                >
+                  Via Amil
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeModal} disabled={isSubmitting}>
+              Batal
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              Catat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

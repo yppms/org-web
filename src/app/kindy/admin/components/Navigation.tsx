@@ -50,7 +50,7 @@ export default function Navigation({
           </div>
           <ThemeToggle />
         </div>
-        <div className="no-scrollbar flex gap-1 overflow-x-auto pb-2.5">
+        <div className="flex flex-wrap gap-1 pb-2.5">
           {items.map((item) => {
             const isActive = activeSection === item.key;
             return (

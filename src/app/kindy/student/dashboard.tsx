@@ -414,7 +414,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {admission && (
+          {/* {admission && (
             <div className="rounded-lg border border-border p-3 text-[13px] leading-relaxed text-muted-foreground">
               Tagihan biaya masuk{" "}
               <strong className="text-foreground">
@@ -432,7 +432,7 @@ export default function Dashboard() {
               lagi untuk mencapai{" "}
               <strong className="text-foreground">50%</strong>.
             </div>
-          )}
+          )} */}
 
           {outstandingRows.length > 0 && (
             <Table>

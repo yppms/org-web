@@ -3,7 +3,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { kindyAdminApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, EmptyState, Input, Chip, Badge, Button } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  EmptyState,
+  Input,
+  Chip,
+  Badge,
+  Button,
+  SectionHeader,
+  Card,
+} from "@/components/ui";
 
 interface WhatsAppTask {
   id: string;
@@ -17,7 +27,7 @@ interface WhatsAppTask {
 export default function StampSection() {
   const { data, isLoading, error } = useApi<WhatsAppTask[]>(
     () => kindyAdminApi.getWhatsAppTasks(),
-    { fallbackMessage: "Gagal memuat tugas WhatsApp" }
+    { fallbackMessage: "Gagal memuat tugas WhatsApp" },
   );
   const tasks = useMemo(() => data ?? [], [data]);
 
@@ -38,7 +48,10 @@ export default function StampSection() {
   }, []);
 
   const saveSentMessages = (next: Set<string>) => {
-    localStorage.setItem("kindy-admin-sent-whatsapp", JSON.stringify(Array.from(next)));
+    localStorage.setItem(
+      "kindy-admin-sent-whatsapp",
+      JSON.stringify(Array.from(next)),
+    );
     setSentMessages(next);
   };
 
@@ -50,7 +63,7 @@ export default function StampSection() {
         (task) =>
           task.name.toLowerCase().includes(term) ||
           task.phone.includes(term) ||
-          task.id.toLowerCase().includes(term)
+          task.id.toLowerCase().includes(term),
       );
     }
     if (!showSent) {
@@ -73,12 +86,10 @@ export default function StampSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">Tugas Pesan WhatsApp</h2>
-        <p className="text-[13px] text-muted-foreground">
-          Kirim tautan akses ke orang tua siswa
-        </p>
-      </div>
+      <SectionHeader
+        title="Tugas Pesan WhatsApp"
+        subtitle="Kirim tautan akses ke orang tua siswa"
+      />
 
       {/* Search + filter */}
       <div className="flex gap-3 items-center">
@@ -100,20 +111,17 @@ export default function StampSection() {
             searchTerm
               ? "Tidak ada siswa yang cocok."
               : !showSent
-              ? 'Semua pesan sudah terkirim! Aktifkan "Terkirim" untuk melihatnya.'
-              : "Tidak ada tugas WhatsApp."
+                ? 'Semua pesan sudah terkirim! Aktifkan "Terkirim" untuk melihatnya.'
+                : "Tidak ada tugas WhatsApp."
           }
         />
       ) : (
         <div className="flex flex-col gap-2">
           {filteredTasks.map((task) => (
-            <div
-              key={task.id}
-              className="bg-card border border-border rounded-xl shadow-card px-4 py-3"
-            >
-              <div className="flex items-center justify-between gap-2">
+            <Card key={task.id} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{task.name}</p>
+                  <p className="text-sm font-medium">{task.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                     {task.phone}
                   </p>
@@ -136,7 +144,7 @@ export default function StampSection() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

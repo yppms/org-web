@@ -20,6 +20,8 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
+  SectionHeader,
+  Card,
 } from "@/components/ui";
 import PaymentFormModal from "./PaymentFormModal";
 
@@ -32,16 +34,24 @@ export default function PaymentSection() {
   } = useApi<AdminPayment[]>(() => kindyAdminApi.getPayments(), {
     fallbackMessage: "Gagal memuat pembayaran",
   });
-  const { data: studentsData } = useApi<AdminStudent[]>(() => kindyAdminApi.getAllStudents());
+  const { data: studentsData } = useApi<AdminStudent[]>(() =>
+    kindyAdminApi.getAllStudents(),
+  );
 
   const payments = useMemo(() => paymentsData ?? [], [paymentsData]);
   const students = studentsData ?? [];
 
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "date">("date");
+  const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(
+    null,
+  );
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
+  const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "date">(
+    "date",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -70,7 +80,9 @@ export default function PaymentSection() {
       setSelectedPayment(null);
     } catch (err) {
       setActionError(
-        err instanceof ApiError ? err.message : "Gagal menyimpan pembayaran. Coba lagi."
+        err instanceof ApiError
+          ? err.message
+          : "Gagal menyimpan pembayaran. Coba lagi.",
       );
     }
   };
@@ -85,7 +97,9 @@ export default function PaymentSection() {
       setSelectedPayment(null);
     } catch (err) {
       setActionError(
-        err instanceof ApiError ? err.message : "Gagal menghapus pembayaran. Coba lagi."
+        err instanceof ApiError
+          ? err.message
+          : "Gagal menghapus pembayaran. Coba lagi.",
       );
       setShowDeleteModal(false);
     }
@@ -116,34 +130,43 @@ export default function PaymentSection() {
     return payments.filter(
       (payment) =>
         payment.kindyStudentName.toLowerCase().includes(query) ||
-        payment.reference.toLowerCase().includes(query)
+        payment.reference.toLowerCase().includes(query),
     );
   }, [payments, searchQuery]);
 
   const groupedPayments = useMemo(() => {
-    return filteredPayments.reduce((groups, payment) => {
-      const dateValue =
-        sortBy === "createdAt"
-          ? payment.createdAt
-          : sortBy === "updatedAt"
-          ? payment.updatedAt
-          : payment.date;
-      const d = new Date(dateValue);
-      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate()
-      ).padStart(2, "0")}`;
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(payment);
-      return groups;
-    }, {} as Record<string, AdminPayment[]>);
+    return filteredPayments.reduce(
+      (groups, payment) => {
+        const dateValue =
+          sortBy === "createdAt"
+            ? payment.createdAt
+            : sortBy === "updatedAt"
+              ? payment.updatedAt
+              : payment.date;
+        const d = new Date(dateValue);
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+          d.getDate(),
+        ).padStart(2, "0")}`;
+        if (!groups[date]) groups[date] = [];
+        groups[date].push(payment);
+        return groups;
+      },
+      {} as Record<string, AdminPayment[]>,
+    );
   }, [filteredPayments, sortBy]);
 
   const sortedDates = useMemo(
-    () => Object.keys(groupedPayments).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()),
-    [groupedPayments]
+    () =>
+      Object.keys(groupedPayments).sort(
+        (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+      ),
+    [groupedPayments],
   );
 
-  const sortOptions: { key: "createdAt" | "updatedAt" | "date"; label: string }[] = [
+  const sortOptions: {
+    key: "createdAt" | "updatedAt" | "date";
+    label: string;
+  }[] = [
     { key: "createdAt", label: "Dibuat" },
     { key: "updatedAt", label: "Diperbarui" },
     { key: "date", label: "Tgl bayar" },
@@ -154,17 +177,15 @@ export default function PaymentSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Pembayaran</h2>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Catat semua transaksi pembayaran siswa
-          </p>
-        </div>
-        <Button size="sm" onClick={() => setFormMode("add")} className="shrink-0">
-          + Tambah
-        </Button>
-      </div>
+      <SectionHeader
+        title="Pembayaran"
+        subtitle="Catat semua transaksi pembayaran siswa"
+        actions={
+          <Button size="sm" onClick={() => setFormMode("add")}>
+            + Tambah
+          </Button>
+        }
+      />
 
       {actionError && <ErrorAlert message={actionError} />}
 
@@ -192,7 +213,9 @@ export default function PaymentSection() {
         {payments.length === 0 ? (
           <EmptyState message="Belum ada pembayaran" />
         ) : filteredPayments.length === 0 ? (
-          <EmptyState message={`Tidak ada pembayaran dengan kata kunci "${searchQuery}"`} />
+          <EmptyState
+            message={`Tidak ada pembayaran dengan kata kunci "${searchQuery}"`}
+          />
         ) : (
           sortedDates.map((date) => {
             const isOpen = !collapsedGroups.has(date);
@@ -221,17 +244,15 @@ export default function PaymentSection() {
 
                 {isOpen &&
                   groupedPayments[date].map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="rounded-xl border border-border bg-card px-4 py-3.5 shadow-card"
-                    >
+                    <Card key={payment.id} className="px-4 py-3.5">
                       <div className="flex justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
+                          <p className="text-sm font-semibold">
                             {payment.kindyStudentName}
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {payment.reference} · dicatat {formatDate(payment.createdAt)}
+                            {payment.reference} · dicatat{" "}
+                            {formatDate(payment.createdAt)}
                           </p>
                           {payment.invoiceName && (
                             <span className="mt-1.5 inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -262,7 +283,7 @@ export default function PaymentSection() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   ))}
               </div>
             );
@@ -313,13 +334,17 @@ export default function PaymentSection() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tanggal</span>
-                <span className="font-medium">{formatDate(selectedPayment.date)}</span>
+                <span className="font-medium">
+                  {formatDate(selectedPayment.date)}
+                </span>
               </div>
             </div>
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePayment}>Hapus</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeletePayment}>
+              Hapus
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

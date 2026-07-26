@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { kindyAdminApi, orgApi, ApiError } from "@/lib/api";
 import { Loader2 } from "lucide-react";
-import { Spinner, ErrorAlert, Button, Input, Label } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  Button,
+  Input,
+  Label,
+  Card,
+} from "@/components/ui";
 import Dashboard from "./dashboard";
 
 export default function KindyAdminPageContent() {
@@ -18,7 +25,7 @@ export default function KindyAdminPageContent() {
       try {
         // Step 1: Server ping check
         await orgApi.ping();
-        
+
         // Try to access userto check if already authenticated
         try {
           await kindyAdminApi.getAllStudents();
@@ -52,7 +59,9 @@ export default function KindyAdminPageContent() {
       await kindyAdminApi.login(password);
       setIsAuthenticated(true);
     } catch (loginErr) {
-      setError(loginErr instanceof ApiError ? loginErr.message : "Kata sandi salah");
+      setError(
+        loginErr instanceof ApiError ? loginErr.message : "Kata sandi salah",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +74,7 @@ export default function KindyAdminPageContent() {
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center p-4">
-        <div className="w-full max-w-[360px] rounded-xl border border-border bg-card p-7 shadow-card">
+        <Card className="w-full max-w-[360px] p-7">
           <h1 className="text-lg font-semibold">Portal Admin Kindy</h1>
           <p className="mb-5 text-[13px] text-muted-foreground">
             Miftahussalam Islamic Kindy
@@ -103,7 +112,7 @@ export default function KindyAdminPageContent() {
               {isLoading ? "Memproses..." : "Masuk"}
             </Button>
           </form>
-        </div>
+        </Card>
       </div>
     );
   }

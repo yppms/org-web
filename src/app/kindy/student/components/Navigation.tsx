@@ -25,7 +25,7 @@ export default function Navigation({
   return (
     <>
       {/* Sticky header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card">
+      <header className="sticky top-0 z-40 bg-card/75 backdrop-blur-md">
         <div className="flex items-center justify-between gap-3 px-5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft">
@@ -34,10 +34,10 @@ export default function Navigation({
               </span>
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold leading-tight">
+              <p className="text-sm font-semibold leading-tight">
                 {studentName}
               </p>
-              <p className="truncate text-xs leading-tight text-muted-foreground">
+              <p className="text-xs leading-tight text-muted-foreground">
                 {subtitle}
               </p>
             </div>
@@ -47,7 +47,7 @@ export default function Navigation({
       </header>
 
       {/* Fixed bottom nav */}
-      <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-app -translate-x-1/2 border-t border-border bg-card">
+      <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-app -translate-x-1/2 bg-card/75 backdrop-blur-md">
         <div className="flex gap-1 px-3 pb-3 pt-2">
           {navItems.map((item) => {
             const isActive = activeSection === item.key;

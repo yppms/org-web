@@ -37,11 +37,11 @@ export default function ThemeToggle() {
       className={`flex h-[22px] w-10 shrink-0 items-center rounded-full border p-0.5 transition-colors ${
         dark
           ? "border-transparent bg-primary"
-          : "border-border bg-muted-foreground/30"
+          : "border-border bg-muted-foreground/40"
       }`}
     >
       <span
-        className={`flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white text-[11px] leading-none text-zinc-600 shadow ring-1 ring-black/10 transition-transform ${
+        className={`flex h-[18px] w-[18px] items-center justify-center rounded-full bg-card text-[11px] leading-none text-card-foreground shadow-sm transition-transform ${
           dark ? "translate-x-[18px]" : "translate-x-0"
         }`}
       >

@@ -18,6 +18,8 @@ import {
   Badge,
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
   Separator,
   Tabs,
   TabsList,
@@ -57,13 +59,6 @@ const cellColor = (amount: number, max: number, tone: GraphTone): string => {
   if (ratio > 0.25) return ramp[1];
   return ramp[0];
 };
-
-const formatTooltipDate = (dateString: string): string =>
-  new Date(dateString).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<KindyStudent | null>(null);
@@ -392,26 +387,24 @@ export default function Dashboard() {
     <div className="flex flex-col gap-4">
       {/* Hero card */}
       <Card>
-        <CardContent className="flex flex-col gap-4">
-          <div>
-            <p className="mb-1.5 text-[13px] text-muted-foreground">
-              Tagihan saat ini
-            </p>
-            <div className="flex flex-wrap items-baseline gap-2.5">
-              <span
-                className="font-mono text-3xl font-bold tracking-[-0.02em]"
-                suppressHydrationWarning
-              >
-                {formatCurrency(Math.max(0, stats.outstanding))}
-              </span>
-              {isLunas ? (
-                <Badge variant="default">Lunas — terima kasih</Badge>
-              ) : (
-                <Badge variant="destructive">
-                  {outstandingRows.length || stats.countInvoice} tagihan
-                </Badge>
-              )}
-            </div>
+        <CardHeader className="border-b border-border">
+          <CardTitle>Tagihan</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 pt-3">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <span
+              className="font-mono text-3xl font-bold tracking-[-0.02em]"
+              suppressHydrationWarning
+            >
+              {formatCurrency(Math.max(0, stats.outstanding))}
+            </span>
+            {isLunas ? (
+              <Badge variant="default">Lunas — terima kasih</Badge>
+            ) : (
+              <Badge variant="destructive">
+                {outstandingRows.length || stats.countInvoice} tagihan
+              </Badge>
+            )}
           </div>
 
           {/* {admission && (
@@ -549,16 +542,16 @@ export default function Dashboard() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
+          <CardHeader className="border-b border-border p-4">
+            <CardTitle>Tabungan</CardTitle>
+          </CardHeader>
           <CardContent className="flex flex-col gap-2.5 p-4">
-            <div>
-              <p className="mb-1 text-xs text-muted-foreground">Tabungan</p>
-              <p
-                className="font-mono text-lg font-bold tracking-[-0.02em]"
-                suppressHydrationWarning
-              >
-                {formatCurrency(stats.saving)}
-              </p>
-            </div>
+            <p
+              className="font-mono text-lg font-bold tracking-[-0.02em]"
+              suppressHydrationWarning
+            >
+              {formatCurrency(stats.saving)}
+            </p>
             <ContributionGraph
               tone="primary"
               items={savingData.map((s) => ({
@@ -582,16 +575,16 @@ export default function Dashboard() {
         </Card>
 
         <Card>
+          <CardHeader className="border-b border-border p-4">
+            <CardTitle>Infaq</CardTitle>
+          </CardHeader>
           <CardContent className="flex flex-col gap-2.5 p-4">
-            <div>
-              <p className="mb-1 text-xs text-muted-foreground">Infaq</p>
-              <p
-                className="font-mono text-lg font-bold tracking-[-0.02em]"
-                suppressHydrationWarning
-              >
-                {formatCurrency(stats.infaq)}
-              </p>
-            </div>
+            <p
+              className="font-mono text-lg font-bold tracking-[-0.02em]"
+              suppressHydrationWarning
+            >
+              {formatCurrency(stats.infaq)}
+            </p>
             <ContributionGraph
               tone="info"
               items={infaqData.map((i) => ({ amount: i.amount, date: i.date }))}
@@ -606,8 +599,10 @@ export default function Dashboard() {
 
       {/* Activity card */}
       <Card>
-        <CardContent className="p-4">
-          <h3 className="mb-3 text-base font-semibold">Aktivitas</h3>
+        <CardHeader className="border-b border-border">
+          <CardTitle>Aktivitas</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-3">
           <Tabs
             value={currentTab}
             onValueChange={(v) => setCurrentTab(v as typeof currentTab)}
@@ -736,7 +731,7 @@ function ContributionGraph({
             className={`aspect-square rounded-sm ${colorClass}`}
             title={
               item
-                ? `${formatTooltipDate(item.date)}: ${formatCurrency(item.amount)}`
+                ? `${formatDate(item.date)}: ${formatCurrency(item.amount)}`
                 : `${index + 1}/40`
             }
           />

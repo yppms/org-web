@@ -33,22 +33,32 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
+ * Digit-grouped amount for a currency text INPUT, e.g. "1000000" → "1.000.000".
+ * No "Rp" prefix — the field label carries it. Returns "" for empty input.
+ * Use this instead of `formatCurrency(...).replace("Rp", "")`.
+ */
+export const formatAmountInput = (value: string | number): string => {
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+/**
  * Formats a raw digit string (from a currency text input) into "Rp1.000".
  * Returns "" for empty/non-numeric input. Strips any non-digits first.
  */
 export const formatRupiah = (value: string): string => {
-  const numericValue = value.replace(/\D/g, '');
-  if (!numericValue) return '';
-  const formatted = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `Rp${formatted}`;
+  const formatted = formatAmountInput(value);
+  return formatted ? `Rp${formatted}` : '';
 };
 
-export const formatDateShort = (dateString: string): string => {
+/**
+ * Date + time in the same Indonesian style as `formatDate`, e.g. "26-Jul-26 14:05".
+ * Use this for timestamps — never `toLocaleString("en-GB", …)`.
+ */
+export const formatDateTime = (dateString: string): string => {
   const date = new Date(dateString);
-  
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
+  const hh = date.getHours().toString().padStart(2, '0');
+  const mm = date.getMinutes().toString().padStart(2, '0');
+  return `${formatDate(dateString)} ${hh}:${mm}`;
 };

@@ -7,11 +7,41 @@ instead of hand-writing markup. Two layers live here:
    `input`, `label`, `chip`, `switch`, `separator`, `tabs`, `table`, `dialog`,
    `alert-dialog`. CVA + Radix based; styled with the theme tokens below.
 2. **App composites** (PascalCase files): `Spinner`, `ErrorAlert`, `EmptyState`,
-   `SectionHeader`, `TransactionCard`, `StatCard`, `AmountBadge`, `Modal`,
-   `ConfirmDialog`. Token-only (no data fetching); data comes from
-   [`useApi`](../../hooks/useApi.ts) and [`src/lib/api.ts`](../../lib/api.ts).
+   `SectionHeader`, `StatCard`, `Modal`. Token-only (no data fetching); data
+   comes from [`useApi`](../../hooks/useApi.ts) and
+   [`src/lib/api.ts`](../../lib/api.ts).
+
+Every section heading uses `SectionHeader` (title + optional subtitle / count /
+actions) and every card title uses `CardHeader` + `CardTitle` with
+`border-b border-border` — don't hand-roll an `<h2>` or `<h3>`.
 
 Import from the barrel: `import { Button, Card, Badge, Spinner } from "@/components/ui";`
+
+## Never truncate or shrink text — let it stack
+
+**Do not use `truncate`, `text-ellipsis`, `line-clamp-*`, or `overflow-hidden` on
+text**, and never shrink a font size to make content fit. On a 425px column,
+content must **wrap onto more lines** and the row must grow taller instead.
+
+The pattern for a "label left / amount right" row is a `min-w-0` text column
+beside a `shrink-0` value, with `items-start` so the value stays top-aligned as
+the text wraps:
+
+```tsx
+<div className="flex items-start justify-between gap-3">
+  <div className="min-w-0">…wrapping text…</div>
+  <span className="shrink-0 font-mono">{formatCurrency(amount)}</span>
+</div>
+```
+
+`min-w-0` is what lets the text column wrap (without it a flex child refuses to
+shrink below its content width and overflows). To pair two inline bits that
+should split onto separate lines when tight, use `flex-wrap` with `gap-x`/`gap-y`
+— see [`ActivityRow`](../../app/kindy/student/components/ActivityRow.tsx).
+
+`whitespace-nowrap` stays acceptable in two places only: short control labels
+(`Button`, `Badge`, `Chip`, `Tabs`) and currency/account numbers that must never
+break mid-value.
 
 ## Design tokens — do not hardcode
 
@@ -60,9 +90,58 @@ fully-rounded `<Chip>`. Dialogs are centered, `max-w-[400px]`, `p-6`.
 Mobile frame width is `max-w-app` (425px), applied once in
 [`layout.tsx`](../../app/layout.tsx).
 
+## Cards — always the `<Card>` component
+
+**Never hand-roll card chrome.** `<div className="bg-card border border-border
+rounded-xl shadow-card">` is `<Card>`; writing it by hand means the chrome drifts
+(and it has — that markup existed in nine places with two different class
+orderings). Pass only *padding* overrides via `className`.
+
+Every card with a title uses the same anatomy — no bare `<h3>` inside
+`CardContent`:
+
+```tsx
+<Card>
+  <CardHeader className="border-b border-border">   {/* + flex-row items-center
+      justify-between when the title has a trailing Button/Badge */}
+    <CardTitle>Skema Biaya</CardTitle>
+  </CardHeader>
+  <CardContent className="pt-3">…</CardContent>
+</Card>
+```
+
+Padding: full-width cards keep `CardHeader`'s default `p-5` with `CardContent
+className="pt-3"`. Compact tiles in a 2-column grid use `p-4` on **both** header
+and content — a `p-5` header over a `p-4` body reads as a misalignment.
+
+## Sticky / fixed bars
+
+Top headers and the bottom nav are translucent with a blur and **no border**:
+`bg-card/75 backdrop-blur-md`. Content passes softly underneath. Don't add
+`border-b`/`border-t` — the bar already sits on a different surface than the
+page, so a border makes a doubled separator (and in dark mode `--border` is
+*lighter* than both, which reads as a glowing seam). Keep `blur-md`; `blur-xl`
+samples wide enough to pull neighbouring text into the bar as ghosting.
+
+## Formatting — always via [`lib/utils`](../../lib/utils.ts)
+
+Never call `toLocaleString` / `toLocaleDateString` / `Intl.*` in a component, and
+never post-process a formatter's output (`formatCurrency(x).replace("Rp", "")`).
+The audience is Indonesian; an `en-GB` locale slipping in is a bug.
+
+| Need | Use |
+|------|-----|
+| money for display | `formatCurrency(1500000)` → `Rp1.500.000` |
+| date | `formatDate(iso)` → `26-Jul-26` |
+| date + time | `formatDateTime(iso)` → `26-Jul-26 14:05` |
+| currency **text input** (no prefix) | `formatAmountInput(raw)` → `1.500.000` |
+| currency text input (with prefix) | `formatRupiah(raw)` → `Rp1.500.000` |
+
+Every rendered amount, account number, phone and ID also gets `font-mono`.
+
 ## Dialogs
 
 All modals are React-state-controlled shadcn `Dialog` / `AlertDialog` (drive with
 `open` / `onOpenChange`) — no native `<dialog>`/`showModal()`/`getElementById`.
-`Modal` and `ConfirmDialog` are thin wrappers over `Dialog` with the legacy
+`Modal` is a thin wrapper over `Dialog` with the legacy
 `open` / `onClose` / `title` / `actions` API.

@@ -3,6 +3,7 @@
 export interface KindyStudent {
   id: string;
   name: string;
+  nickname: string | null;
   phone: string | null;
   lang: 'EN' | 'ID';
   finEnt: string | null;

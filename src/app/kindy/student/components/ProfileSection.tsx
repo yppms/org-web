@@ -186,13 +186,16 @@ export default function ProfileSection({
   return (
     <>
       <div className="flex flex-col gap-4">
-        {/* Data Siswa */}
+        {/* Data Santri */}
         <Card>
           <CardHeader className="border-b border-border">
-            <CardTitle>Data Siswa</CardTitle>
+            <CardTitle>Data Santri</CardTitle>
           </CardHeader>
-          <CardContent className="py-2">
+          <CardContent className="pt-3">
             <Row label="Nama" value={profile.name} />
+            {profile.nickname && (
+              <Row label="Panggilan" value={profile.nickname} />
+            )}
             {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
             {profile.gender && <Row label="Jenis Kelamin" value={genderLabel} />}
             {enrollment && (
@@ -208,25 +211,23 @@ export default function ProfileSection({
 
         {/* Program Full Day */}
         <Card>
-          <CardContent>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-base font-semibold">Program Full Day</h3>
-                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                  {isFullDayEnrolled
-                    ? "Ananda mengikuti program full day."
-                    : "Ananda belum mengikuti program full day. Pendaftaran berlaku mulai bulan depan."}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant={isFullDayEnrolled ? "destructive" : "default"}
-                onClick={openFullDayModal}
-                className="shrink-0"
-              >
-                {isFullDayEnrolled ? "Berhenti" : "Daftar"}
-              </Button>
-            </div>
+          <CardHeader className="flex-row items-center justify-between border-b border-border">
+            <CardTitle>Program Full Day</CardTitle>
+            <Button
+              size="sm"
+              variant={isFullDayEnrolled ? "destructive" : "default"}
+              onClick={openFullDayModal}
+              className="shrink-0"
+            >
+              {isFullDayEnrolled ? "Berhenti" : "Daftar"}
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-3">
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {isFullDayEnrolled
+                ? "Ananda mengikuti program full day."
+                : "Ananda belum mengikuti program full day. Pendaftaran berlaku mulai bulan depan."}
+            </p>
           </CardContent>
         </Card>
 
@@ -243,9 +244,16 @@ export default function ProfileSection({
                   key={fee.id}
                   className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
                 >
-                  <span className="text-sm">{fee.KindyOneTimeFee.name}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-sm">
+                      {fee.KindyOneTimeFee.name}
+                    </span>
+                    <Badge variant="secondary" className="shrink-0 font-mono">
+                      {fee.KindyOneTimeFee.kindyYearName}
+                    </Badge>
+                  </div>
                   <span
-                    className="font-mono text-[13px] font-semibold"
+                    className="shrink-0 font-mono text-[13px] font-semibold"
                     suppressHydrationWarning
                   >
                     {formatCurrency(fee.amount)}
@@ -260,9 +268,16 @@ export default function ProfileSection({
                   key={fee.id}
                   className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
                 >
-                  <span className="text-sm">{fee.KindyRecurringFee.name}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-sm">
+                      {fee.KindyRecurringFee.name}
+                    </span>
+                    <Badge variant="secondary" className="shrink-0 font-mono">
+                      {fee.KindyRecurringFee.kindyYearName}
+                    </Badge>
+                  </div>
                   <span
-                    className="font-mono text-[13px] font-semibold"
+                    className="shrink-0 font-mono text-[13px] font-semibold"
                     suppressHydrationWarning
                   >
                     {formatCurrency(fee.amount)}

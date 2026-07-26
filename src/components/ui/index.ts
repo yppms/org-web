@@ -3,12 +3,9 @@ export { default as Spinner } from "./Spinner";
 export { default as ErrorAlert } from "./ErrorAlert";
 export { default as EmptyState } from "./EmptyState";
 export { default as SectionHeader } from "./SectionHeader";
-export { default as TransactionCard } from "./TransactionCard";
 export { default as StatCard } from "./StatCard";
 export type { StatTone } from "./StatCard";
-export { default as AmountBadge } from "./AmountBadge";
 export { default as Modal } from "./Modal";
-export { default as ConfirmDialog } from "./ConfirmDialog";
 
 // shadcn/ui primitives
 export { Button, buttonVariants } from "./button";

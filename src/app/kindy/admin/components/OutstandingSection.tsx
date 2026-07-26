@@ -5,32 +5,47 @@ import { kindyAdminApi } from "@/lib/api";
 import { StudentOutstanding } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, StatCard, Input, Chip, Badge } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  StatCard,
+  Input,
+  Chip,
+  Badge,
+  SectionHeader,
+  Card,
+} from "@/components/ui";
 
 type SortKey = "no" | "name" | "outstanding" | "totalInvoice";
 
 export default function OutstandingSection() {
   const { data, isLoading, error } = useApi<StudentOutstanding[]>(
     () => kindyAdminApi.getAllOutstanding(),
-    { fallbackMessage: "Gagal memuat data tunggakan" }
+    { fallbackMessage: "Gagal memuat data tunggakan" },
   );
   const outstandingData = useMemo(() => data ?? [], [data]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("outstanding");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [filterType, setFilterType] = useState<"all" | "outstanding" | "overpaid">("all");
+  const [filterType, setFilterType] = useState<
+    "all" | "outstanding" | "overpaid"
+  >("all");
 
   const filteredAndSorted = useMemo(() => {
     let filtered = outstandingData;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = outstandingData.filter((s) => s.name.toLowerCase().includes(query));
+      filtered = outstandingData.filter((s) =>
+        s.name.toLowerCase().includes(query),
+      );
     }
 
-    if (filterType === "outstanding") filtered = filtered.filter((s) => s.outstanding > 0);
-    else if (filterType === "overpaid") filtered = filtered.filter((s) => s.outstanding < 0);
+    if (filterType === "outstanding")
+      filtered = filtered.filter((s) => s.outstanding > 0);
+    else if (filterType === "overpaid")
+      filtered = filtered.filter((s) => s.outstanding < 0);
 
     return [...filtered].sort((a, b) => {
       let comparison = 0;
@@ -63,22 +78,32 @@ export default function OutstandingSection() {
   const arrow = (key: SortKey) =>
     sortBy === key ? (sortOrder === "desc" ? " ↓" : " ↑") : "";
 
-  const totalOutstanding = outstandingData.reduce((sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0), 0);
-  const totalOverpaid = Math.abs(outstandingData.reduce((sum, s) => sum + (s.outstanding < 0 ? s.outstanding : 0), 0));
-  const studentsWithOutstanding = outstandingData.filter((s) => s.outstanding > 0).length;
-  const studentsOverpaid = outstandingData.filter((s) => s.outstanding < 0).length;
+  const totalOutstanding = outstandingData.reduce(
+    (sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0),
+    0,
+  );
+  const totalOverpaid = Math.abs(
+    outstandingData.reduce(
+      (sum, s) => sum + (s.outstanding < 0 ? s.outstanding : 0),
+      0,
+    ),
+  );
+  const studentsWithOutstanding = outstandingData.filter(
+    (s) => s.outstanding > 0,
+  ).length;
+  const studentsOverpaid = outstandingData.filter(
+    (s) => s.outstanding < 0,
+  ).length;
 
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">Tunggakan</h2>
-        <p className="text-[13px] text-muted-foreground">
-          Saldo tunggakan pembayaran siswa
-        </p>
-      </div>
+      <SectionHeader
+        title="Tunggakan"
+        subtitle="Saldo tunggakan pembayaran siswa"
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard
@@ -103,13 +128,22 @@ export default function OutstandingSection() {
       />
 
       <div className="flex gap-1.5 flex-wrap">
-        <Chip active={filterType === "all"} onClick={() => setFilterType("all")}>
+        <Chip
+          active={filterType === "all"}
+          onClick={() => setFilterType("all")}
+        >
           Semua
         </Chip>
-        <Chip active={filterType === "outstanding"} onClick={() => setFilterType("outstanding")}>
+        <Chip
+          active={filterType === "outstanding"}
+          onClick={() => setFilterType("outstanding")}
+        >
           Tunggakan
         </Chip>
-        <Chip active={filterType === "overpaid"} onClick={() => setFilterType("overpaid")}>
+        <Chip
+          active={filterType === "overpaid"}
+          onClick={() => setFilterType("overpaid")}
+        >
           Lebih bayar
         </Chip>
       </div>
@@ -123,12 +157,9 @@ export default function OutstandingSection() {
           </p>
         ) : (
           filteredAndSorted.map((student) => (
-            <div
-              key={student.id}
-              className="bg-card border border-border rounded-xl shadow-card px-4 py-3.5"
-            >
-              <div className="flex justify-between items-center gap-2 mb-2">
-                <p className="text-sm font-semibold truncate">{student.name}</p>
+            <Card key={student.id} className="px-4 py-3.5">
+              <div className="flex justify-between items-start gap-2 mb-2">
+                <p className="min-w-0 text-sm font-semibold">{student.name}</p>
                 {student.outstanding > 0 ? (
                   <Badge variant="destructive">Tertunggak</Badge>
                 ) : student.outstanding < 0 ? (
@@ -158,36 +189,48 @@ export default function OutstandingSection() {
                       student.outstanding > 0
                         ? "text-destructive"
                         : student.outstanding < 0
-                        ? "text-info"
-                        : "text-foreground"
+                          ? "text-info"
+                          : "text-foreground"
                     }`}
                   >
-                    {student.outstanding > 0 ? "−" : student.outstanding < 0 ? "+" : ""}
+                    {student.outstanding > 0
+                      ? "−"
+                      : student.outstanding < 0
+                        ? "+"
+                        : ""}
                     {formatCurrency(Math.abs(student.outstanding))}
                   </strong>
                 </span>
               </div>
 
-              {student.unpaidInvoiceCount && student.unpaidInvoice && student.unpaidInvoice.length > 0 && (
-                <div className="mt-2.5 pt-2.5 border-t border-border flex flex-col gap-1.5">
-                  {student.unpaidInvoice.map((inv, idx) => (
-                    <div key={idx} className="flex justify-between gap-3 text-[13px]">
-                      <span className="text-muted-foreground truncate">{inv.name}</span>
-                      <span className="font-mono text-destructive whitespace-nowrap">
-                        {formatCurrency(inv.outstanding)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              {student.unpaidInvoiceCount &&
+                student.unpaidInvoice &&
+                student.unpaidInvoice.length > 0 && (
+                  <div className="mt-2.5 pt-2.5 border-t border-border flex flex-col gap-1.5">
+                    {student.unpaidInvoice.map((inv, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between gap-3 text-[13px]"
+                      >
+                        <span className="min-w-0 text-muted-foreground">
+                          {inv.name}
+                        </span>
+                        <span className="font-mono text-destructive whitespace-nowrap">
+                          {formatCurrency(inv.outstanding)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </Card>
           ))
         )}
       </div>
 
       {filteredAndSorted.length > 0 && (
         <p className="text-center text-xs text-muted-foreground">
-          Menampilkan {filteredAndSorted.length} dari {outstandingData.length} siswa
+          Menampilkan {filteredAndSorted.length} dari {outstandingData.length}{" "}
+          siswa
         </p>
       )}
     </div>

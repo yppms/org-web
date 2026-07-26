@@ -4,7 +4,13 @@ import { useMemo, useState } from "react";
 import { ApiResponse } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, StatCard } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  StatCard,
+  SectionHeader,
+  Card,
+} from "@/components/ui";
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 
@@ -95,14 +101,15 @@ export default function GroupedListSection<T>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</p>
-      </div>
+      <SectionHeader title={title} subtitle={subtitle} />
 
       {/* Overall statistics */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard tone="primary" label={labels.totalStat} value={formatCurrency(total)} />
+        <StatCard
+          tone="primary"
+          label={labels.totalStat}
+          value={formatCurrency(total)}
+        />
         <StatCard
           tone="neutral"
           label={labels.activeStat}
@@ -113,14 +120,19 @@ export default function GroupedListSection<T>({
       {/* Class filter chips */}
       {classes.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          <Chip active={selectedClass === null} onClick={() => setSelectedClass(null)}>
+          <Chip
+            active={selectedClass === null}
+            onClick={() => setSelectedClass(null)}
+          >
             Semua
           </Chip>
           {classes.map((cls) => (
             <Chip
               key={cls}
               active={selectedClass === cls}
-              onClick={() => setSelectedClass(selectedClass === cls ? null : cls)}
+              onClick={() =>
+                setSelectedClass(selectedClass === cls ? null : cls)
+              }
             >
               {cls}
             </Chip>
@@ -141,10 +153,12 @@ export default function GroupedListSection<T>({
       {/* Student list */}
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-muted-foreground">
-          {searchQuery ? `Tidak ada siswa dengan nama "${searchQuery}"` : labels.noData}
+          {searchQuery
+            ? `Tidak ada siswa dengan nama "${searchQuery}"`
+            : labels.noData}
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card px-4 shadow-card">
+        <Card className="px-4">
           {filtered.map((student) => {
             const parts = [
               student.class,
@@ -156,17 +170,19 @@ export default function GroupedListSection<T>({
             return (
               <div
                 key={student.id}
-                className="flex items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
+                className="flex items-start justify-between gap-3 border-b border-border py-3 last:border-b-0"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{student.name}</p>
+                  <p className="text-sm font-medium">{student.name}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {parts.join(" · ")}
                   </p>
                 </div>
                 <span
                   className={`shrink-0 font-mono text-[13px] font-semibold ${
-                    student.total > 0 ? "text-foreground" : "text-muted-foreground"
+                    student.total > 0
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {formatCurrency(student.total)}
@@ -174,7 +190,7 @@ export default function GroupedListSection<T>({
               </div>
             );
           })}
-        </div>
+        </Card>
       )}
 
       {filtered.length > 0 && (

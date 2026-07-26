@@ -35,11 +35,11 @@ export default function Navigation({
   accessibleSections,
 }: NavigationProps) {
   const items = allItems.filter((item) =>
-    accessibleSections.includes(item.key)
+    accessibleSections.includes(item.key),
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card">
+    <header className="sticky top-0 z-40 bg-card/75 backdrop-blur-md">
       <div className="px-5 pt-3.5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>

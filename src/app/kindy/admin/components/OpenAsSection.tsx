@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { kindyAdminApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import { Spinner, ErrorAlert, EmptyState, Input, Button } from "@/components/ui";
+import {
+  Spinner,
+  ErrorAlert,
+  EmptyState,
+  Input,
+  Button,
+  SectionHeader,
+  Card,
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface OpenAsStudent {
@@ -16,7 +24,7 @@ interface OpenAsStudent {
 export default function OpenAsSection() {
   const { data, isLoading, error } = useApi<OpenAsStudent[]>(
     () => kindyAdminApi.getAllStudents(),
-    { fallbackMessage: "Gagal memuat data siswa" }
+    { fallbackMessage: "Gagal memuat data siswa" },
   );
   const students = data ?? [];
 
@@ -26,7 +34,7 @@ export default function OpenAsSection() {
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (student.phone && student.phone.includes(searchQuery))
+      (student.phone && student.phone.includes(searchQuery)),
   );
 
   const handleCopyForIncognito = (openas: string, studentId: string) => {
@@ -46,12 +54,10 @@ export default function OpenAsSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">Buka Sebagai Siswa</h2>
-        <p className="text-[13px] text-muted-foreground">
-          Buka dashboard siswa untuk melihat portal mereka
-        </p>
-      </div>
+      <SectionHeader
+        title="Buka Sebagai Siswa"
+        subtitle="Buka dashboard siswa untuk melihat portal mereka"
+      />
 
       <Input
         placeholder="Cari nama atau telepon…"
@@ -61,17 +67,19 @@ export default function OpenAsSection() {
 
       {filteredStudents.length === 0 ? (
         <EmptyState
-          message={searchQuery ? "Tidak ada siswa ditemukan" : "Tidak ada siswa"}
+          message={
+            searchQuery ? "Tidak ada siswa ditemukan" : "Tidak ada siswa"
+          }
         />
       ) : (
-        <div className="bg-card border border-border rounded-xl shadow-card px-4">
+        <Card className="px-4">
           {filteredStudents.map((student) => (
             <div
               key={student.id}
-              className="flex justify-between items-center gap-3 py-3 border-b border-border last:border-b-0"
+              className="flex justify-between items-start gap-3 py-3 border-b border-border last:border-b-0"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{student.name}</p>
+                <p className="text-sm font-medium">{student.name}</p>
                 {student.phone && (
                   <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                     {student.phone}
@@ -81,17 +89,19 @@ export default function OpenAsSection() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleCopyForIncognito(student.openas, student.id)}
+                onClick={() =>
+                  handleCopyForIncognito(student.openas, student.id)
+                }
                 className={cn(
                   copiedId === student.id &&
-                    "bg-primary-soft text-primary border-transparent"
+                    "bg-primary-soft text-primary border-transparent",
                 )}
               >
                 {copiedId === student.id ? "Tersalin" : "Salin tautan"}
               </Button>
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {filteredStudents.length > 0 && (

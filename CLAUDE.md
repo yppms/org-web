@@ -68,8 +68,17 @@ these in sync with the API; they are not generated.
 
 ### Formatting — [src/lib/utils.ts](src/lib/utils.ts)
 
-`formatCurrency` (→ `Rp` + Indonesian grouping) and `formatDate` (Indonesian month
-abbreviations, `d-Mmm-yy`). Use these for all money and dates — the audience is Indonesian.
+All money/date formatting goes through these — the audience is Indonesian, so **never call
+`toLocaleString`/`toLocaleDateString`/`Intl.*` in a component**, and never post-process a
+formatter's output (`formatCurrency(x).replace("Rp", "")`).
+
+| Need                              | Use                                  |
+| --------------------------------- | ------------------------------------ |
+| money for display                 | `formatCurrency` → `Rp1.500.000`     |
+| date                              | `formatDate` → `26-Jul-26`           |
+| date + time                       | `formatDateTime` → `26-Jul-26 14:05` |
+| currency text input (no prefix)   | `formatAmountInput` → `1.500.000`    |
+| currency text input (with prefix) | `formatRupiah` → `Rp1.500.000`       |
 
 ## Styling conventions
 
@@ -79,15 +88,34 @@ abbreviations, `d-Mmm-yy`). Use these for all money and dates — the audience i
 - Theming is **CSS variables** on `:root` / `.dark` in [globals.css](src/app/globals.css),
   mapped to semantic Tailwind tokens (`bg-card`, `text-foreground`, `text-muted-foreground`,
   `bg-muted`, `border-border`, `text-primary`, `bg-primary-soft`, `text-destructive`,
-  `text-warning`, `text-info`, `*-soft`). Brand green primary `#16a34a`/`#22c55e`. **Never**
-  use daisyUI classes (`btn`, `card`, `bg-base-*`, `text-base-content`, `modal`, `badge-*`)
-  or raw palette utilities.
+  `text-warning`, `text-info`, `*-soft`). Brand green primary `#16a34a`/`#22c55e`.
 - **Light + dark mode**: the `dark` class on `<html>` (`darkMode: "class"`), persisted to
   `localStorage['yppms-theme']`, toggled by [ThemeToggle](src/components/ThemeToggle.tsx);
   a no-FOUC inline script in [layout.tsx](src/app/layout.tsx) applies it before paint.
 - Fonts: **Geist** (UI) + **Geist Mono** (all money/account numbers/phones/IDs — `font-mono`).
 - Loading state is `<Spinner />`; errors render via `<ErrorAlert message={...} />`. All modals
   are React-state shadcn `Dialog`/`AlertDialog` (no `document.getElementById().showModal()`).
+
+### Composition rules — the four that keep drifting
+
+1. **Never truncate or shrink text.** No `truncate` / `line-clamp-*` /
+   `overflow-hidden` on text, and never shrink a font to fit. At 425px content must
+   **wrap and grow taller**. The row pattern is a `min-w-0` text column beside a
+   `shrink-0` value with `items-start`; `min-w-0` is what permits wrapping. Two inline
+   bits that should split apart use `flex-wrap` + `gap-x`/`gap-y` (see
+   [ActivityRow](src/app/kindy/student/components/ActivityRow.tsx)).
+2. **Never hand-roll a component that exists.** `<div className="bg-card border
+border-border rounded-xl shadow-card">` is `<Card>`; a section heading is
+   `<SectionHeader title subtitle actions />`; a card title is `<CardHeader
+className="border-b border-border"><CardTitle>` — never a bare `<h2>`/`<h3>`.
+   Before writing markup, check [src/components/ui](src/components/ui) first.
+3. **Card padding follows the card's width.** Full-width: header `p-5` (default) +
+   content `pt-3`. Compact 2-col tiles: `p-4` on both. Don't mix.
+4. **Sticky/fixed bars are `bg-card/75 backdrop-blur-md` with no border.** A border
+   plus the surface change is a doubled separator, and in dark mode `--border` is
+   lighter than both surfaces so it reads as a glowing seam.
+
+Full detail with token tables lives in [src/components/ui/README.md](src/components/ui/README.md).
 
 ## Environment & config
 

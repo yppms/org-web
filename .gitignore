@@ -43,3 +43,6 @@ coverage/
 # Misc
 .github
 dev
+
+# Claude Code local settings (may contain secrets)
+.claude/settings.local.json

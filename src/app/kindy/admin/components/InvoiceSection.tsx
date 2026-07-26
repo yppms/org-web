@@ -19,6 +19,8 @@ import {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
+  SectionHeader,
+  Card,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import InvoiceFormModal from "./InvoiceFormModal";
@@ -162,21 +164,15 @@ export default function InvoiceSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Tagihan Khusus</h2>
-          <p className="text-[13px] text-muted-foreground mt-0.5">
-            Buat dan kelola tagihan khusus untuk siswa
-          </p>
-        </div>
-        <Button
-          size="sm"
-          className="shrink-0"
-          onClick={() => setFormMode("add")}
-        >
-          + Tambah
-        </Button>
-      </div>
+      <SectionHeader
+        title="Tagihan Khusus"
+        subtitle="Buat dan kelola tagihan khusus untuk siswa"
+        actions={
+          <Button size="sm" onClick={() => setFormMode("add")}>
+            + Tambah
+          </Button>
+        }
+      />
 
       {actionError && <ErrorAlert message={actionError} />}
 
@@ -224,13 +220,10 @@ export default function InvoiceSection() {
 
                 {!isCollapsed &&
                   groupedInvoices[date].map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="rounded-xl border border-border bg-card px-4 py-3.5 shadow-card"
-                    >
+                    <Card key={invoice.id} className="px-4 py-3.5">
                       <div className="flex justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
+                          <p className="text-sm font-semibold">
                             {invoice.kindyStudentName}
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -266,7 +259,7 @@ export default function InvoiceSection() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   ))}
               </div>
             );

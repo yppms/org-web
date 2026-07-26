@@ -51,7 +51,7 @@ export default function PaymentSection() {
                     key={i}
                     className="flex items-center justify-between gap-3 py-1"
                   >
-                    <span className="min-w-0 truncate text-xs text-muted-foreground">
+                    <span className="min-w-0 text-xs text-muted-foreground">
                       {a.name}
                     </span>
                     <span className="shrink-0 font-mono text-xs">

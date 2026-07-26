@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatAmountInput, formatDateTime } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import {
   Spinner,
@@ -19,6 +19,8 @@ import {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  SectionHeader,
+  Card,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -58,7 +60,7 @@ export default function SetorSection() {
         },
       };
     },
-    { fallbackMessage: "Gagal memuat data setoran" }
+    { fallbackMessage: "Gagal memuat data setoran" },
   );
 
   const setorData = data?.setor ?? [];
@@ -93,46 +95,39 @@ export default function SetorSection() {
       await refetch();
       closeModal();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : "Gagal mencatat setoran. Coba lagi.");
+      setFormError(
+        err instanceof ApiError
+          ? err.message
+          : "Gagal mencatat setoran. Coba lagi.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const formatTimestamp = (value: string) =>
-    new Date(value).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
 
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Kontrol Setoran</h2>
-          <p className="text-[13px] text-muted-foreground">
-            Setoran dana terkumpul ke rekening yayasan
-          </p>
-        </div>
-        <Button size="sm" onClick={() => setShowAddModal(true)} className="flex-shrink-0">
-          + Catat
-        </Button>
-      </div>
+      <SectionHeader
+        title="Kontrol Setoran"
+        subtitle="Setoran dana terkumpul ke rekening yayasan"
+        actions={
+          <Button size="sm" onClick={() => setShowAddModal(true)}>
+            + Catat
+          </Button>
+        }
+      />
 
       {deltaData && (
         <>
-          <div className="bg-card border border-border rounded-xl shadow-card px-4 py-3.5">
+          <Card className="px-4 py-3.5">
             <p className="text-xs text-muted-foreground">Sisa untuk disetor</p>
             <p className="text-2xl font-bold font-mono tracking-[-0.02em] text-warning">
               {formatCurrency(deltaData.delta)}
             </p>
-          </div>
+          </Card>
 
           <div className="grid grid-cols-2 gap-3">
             <StatCard
@@ -152,7 +147,7 @@ export default function SetorSection() {
       {setorData.length === 0 ? (
         <EmptyState message="Belum ada catatan setoran" />
       ) : (
-        <div className="bg-card border border-border rounded-xl shadow-card px-4">
+        <Card className="px-4">
           {setorData.map((setor) => (
             <div
               key={setor.id}
@@ -160,15 +155,19 @@ export default function SetorSection() {
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={setor.type === "bank" ? "default" : "secondary"}>
+                  <Badge
+                    variant={setor.type === "bank" ? "default" : "secondary"}
+                  >
                     {setor.type === "bank" ? "Bank" : "Amil"}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">#{setor.no}</span>
+                  <span className="text-xs text-muted-foreground">
+                    #{setor.no}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatTimestamp(setor.createdAt)}
+                  {formatDateTime(setor.createdAt)}
                   {setor.createdAt !== setor.updatedAt && (
-                    <> · Diperbarui {formatTimestamp(setor.updatedAt)}</>
+                    <> · Diperbarui {formatDateTime(setor.updatedAt)}</>
                   )}
                 </p>
               </div>
@@ -177,10 +176,13 @@ export default function SetorSection() {
               </span>
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
-      <Dialog open={showAddModal} onOpenChange={(open) => !open && closeModal()}>
+      <Dialog
+        open={showAddModal}
+        onOpenChange={(open) => !open && closeModal()}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Catat Setoran Baru</DialogTitle>
@@ -203,11 +205,7 @@ export default function SetorSection() {
                 inputMode="numeric"
                 placeholder="100.000"
                 className="font-mono"
-                value={
-                  formData.amount
-                    ? formatCurrency(parseFloat(formData.amount)).replace("Rp", "").trim()
-                    : ""
-                }
+                value={formatAmountInput(formData.amount)}
                 onChange={(e) => {
                   const numericValue = e.target.value.replace(/\D/g, "");
                   setFormData({ ...formData, amount: numericValue });
@@ -225,7 +223,7 @@ export default function SetorSection() {
                     "h-9 rounded-lg border text-sm font-medium transition-colors",
                     formData.type === "bank"
                       ? "border-primary bg-primary-soft text-foreground"
-                      : "border-border text-muted-foreground"
+                      : "border-border text-muted-foreground",
                   )}
                 >
                   Transfer Bank
@@ -237,7 +235,7 @@ export default function SetorSection() {
                     "h-9 rounded-lg border text-sm font-medium transition-colors",
                     formData.type === "amil"
                       ? "border-primary bg-primary-soft text-foreground"
-                      : "border-border text-muted-foreground"
+                      : "border-border text-muted-foreground",
                   )}
                 >
                   Via Amil
@@ -247,7 +245,11 @@ export default function SetorSection() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeModal} disabled={isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={closeModal}
+              disabled={isSubmitting}
+            >
               Batal
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>

@@ -12,6 +12,8 @@ export interface KindyStudent {
   nisn: string | null;
   gender: 'MALE' | 'FEMALE' | null;
   insuranceNum: number | null;
+  /** Short-lived SAS read URL for the profile photo; the blob path itself never leaves the API. */
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   KindyEnrollment: KindyEnrollment[];

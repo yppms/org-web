@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { KindyStudent, InsuranceInfo } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import { capitalizeWords, formatCurrency } from "@/lib/utils";
 import kindyStudentApi, { ApiError } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Loader2 } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   ErrorAlert,
   Modal,
 } from "@/components/ui";
+import StudentAvatar from "./StudentAvatar";
 
 interface ProfileSectionProps {
   profile: KindyStudent;
@@ -176,12 +177,13 @@ export default function ProfileSection({
     }
   };
 
-  const genderLabel =
+  // Honorific in front of the nickname; dropped when gender is unrecorded.
+  const honorific =
     profile.gender === "MALE"
-      ? "Laki-laki"
+      ? "Mas "
       : profile.gender === "FEMALE"
-        ? "Perempuan"
-        : "—";
+        ? "Mba "
+        : "";
 
   return (
     <>
@@ -192,14 +194,24 @@ export default function ProfileSection({
             <CardTitle>Data Santri</CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
+            <div className="flex justify-center border-b border-border pb-4 pt-1">
+              <StudentAvatar
+                name={profile.name}
+                url={profile.photoUrl}
+                size={96}
+                className="text-2xl ring-2 ring-border"
+              />
+            </div>
             <Row label="Nama" value={profile.name} />
             {profile.nickname && (
-              <Row label="Panggilan" value={profile.nickname} />
+              <Row label="Panggilan" value={`${honorific}${profile.nickname}`} />
             )}
             {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
-            {profile.gender && <Row label="Jenis Kelamin" value={genderLabel} />}
             {enrollment && (
-              <Row label="Kelompok" value={enrollment.KindyGroup.name} />
+              <Row
+                label="Kelompok"
+                value={capitalizeWords(enrollment.KindyGroup.name)}
+              />
             )}
             <Row
               label="Tahun Ajaran"

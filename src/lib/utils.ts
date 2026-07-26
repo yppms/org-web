@@ -62,3 +62,10 @@ export const formatDateTime = (dateString: string): string => {
   const mm = date.getMinutes().toString().padStart(2, '0');
   return `${formatDate(dateString)} ${hh}:${mm}`;
 };
+
+/**
+ * Title-cases each word, e.g. "a al ibda" → "A Al Ibda". Backend group and
+ * year names are stored lowercase; this is for display only.
+ */
+export const capitalizeWords = (value: string): string =>
+  value.replace(/\S+/g, (word) => word[0].toUpperCase() + word.slice(1));

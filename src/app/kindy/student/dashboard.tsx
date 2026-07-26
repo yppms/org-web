@@ -633,6 +633,7 @@ export default function Dashboard() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         studentName={profile.name}
+        photoUrl={profile.photoUrl}
         subtitle={subtitle}
       />
       <main className="px-5 pb-24 pt-5">

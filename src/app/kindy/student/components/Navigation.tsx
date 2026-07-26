@@ -1,6 +1,7 @@
 "use client";
 
 import ThemeToggle from "@/components/ThemeToggle";
+import StudentAvatar from "./StudentAvatar";
 
 export type StudentSection = "dashboard" | "profile";
 
@@ -8,6 +9,7 @@ interface NavigationProps {
   activeSection: StudentSection;
   onSectionChange: (section: StudentSection) => void;
   studentName: string;
+  photoUrl?: string | null;
   subtitle?: string;
 }
 
@@ -20,6 +22,7 @@ export default function Navigation({
   activeSection,
   onSectionChange,
   studentName,
+  photoUrl = null,
   subtitle = "TK IT Miftahussalam",
 }: NavigationProps) {
   return (
@@ -28,11 +31,13 @@ export default function Navigation({
       <header className="sticky top-0 z-40 bg-card/75 backdrop-blur-md">
         <div className="flex items-center justify-between gap-3 px-5 py-3.5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft">
-              <span className="text-sm font-semibold text-primary">
-                {studentName.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            <StudentAvatar
+              name={studentName}
+              url={photoUrl}
+              size={36}
+              initialsWords={1}
+              className="text-sm"
+            />
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-tight">
                 {studentName}

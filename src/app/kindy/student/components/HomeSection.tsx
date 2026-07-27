@@ -209,7 +209,10 @@ export default function HomeSection({
         <Card style={{ order: hasOverdue ? 0 : 10 }}>
           <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border">
             <CardTitle>Tagihan</CardTitle>
-            <CardLink label="Lihat & bayar" onClick={() => onNavigate("keuangan")} />
+            <CardLink
+              label="Lihat & bayar"
+              onClick={() => onNavigate("keuangan")}
+            />
           </CardHeader>
           <CardContent className="flex flex-col gap-3 pt-3">
             <div className="flex flex-wrap items-baseline gap-2.5">
@@ -258,7 +261,7 @@ export default function HomeSection({
 
       <Card style={{ order: 1 }}>
         <CardHeader className="flex-row items-baseline justify-between gap-3 border-b border-border">
-          <CardTitle>Laporan Harian</CardTitle>
+          <CardTitle>Harian</CardTitle>
           <CardLink label="Lihat semua" onClick={() => onNavigate("harian")} />
         </CardHeader>
         <CardContent className="flex flex-col gap-3.5 pt-4">
@@ -280,8 +283,11 @@ export default function HomeSection({
 
       <Card style={{ order: 2 }}>
         <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border">
-          <CardTitle>Aktivitas Keuangan</CardTitle>
-          <CardLink label="Lihat semua" onClick={() => onNavigate("keuangan")} />
+          <CardTitle>Keuangan</CardTitle>
+          <CardLink
+            label="Lihat semua"
+            onClick={() => onNavigate("keuangan")}
+          />
         </CardHeader>
         <CardContent className="px-5 pb-2 pt-0">
           {activity === null ? (
@@ -322,13 +328,7 @@ export default function HomeSection({
 }
 
 /** The muted "Lihat semua ›" affordance every Beranda card header carries. */
-function CardLink({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
+function CardLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"

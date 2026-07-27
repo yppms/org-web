@@ -11,7 +11,12 @@ import {
   Infaq,
   HarianMedia,
 } from "@/lib/types";
-import { addressOf, formatCurrency, formatDate } from "@/lib/utils";
+import {
+  addressOf,
+  capitalizeWords,
+  formatCurrency,
+  formatDate,
+} from "@/lib/utils";
 import {
   Spinner,
   ErrorAlert,
@@ -386,8 +391,15 @@ export default function Dashboard() {
   }
 
   const admission = stats.admission;
-  const groupName = profile.KindyEnrollment[0]?.KindyGroup.name;
-  const subtitle = groupName ? `TK IT Miftahussalam` : "TK IT Miftahussalam";
+  const enrollment = profile.KindyEnrollment[0];
+  // Top bar identity line: school, then the student's class and academic year.
+  const subtitle = [
+    "TK IT Miftahussalam",
+    enrollment && capitalizeWords(enrollment.KindyGroup.name),
+    enrollment?.KindyGroup.kindyYearName,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const outstandingRows = stats.outstandingInvoice ?? [];
   const isLunas = stats.outstanding <= 0;

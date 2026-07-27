@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KindyStudent, InsuranceInfo } from "@/lib/types";
+import { KindyStudent, InsuranceInfo, FacilityInfo } from "@/lib/types";
 import { addressOf, capitalizeWords, formatCurrency } from "@/lib/utils";
-import kindyStudentApi, { ApiError } from "@/lib/api";
+import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
-import { Loader2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  Wifi,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -15,6 +24,7 @@ import {
   Button,
   Input,
   Label,
+  Separator,
   ErrorAlert,
   Modal,
 } from "@/components/ui";
@@ -59,6 +69,47 @@ function Row({
   );
 }
 
+/**
+ * One entry inside the Fasilitas card. The icon tile + bold title is what
+ * separates each facility from the next, so WiFi and Asuransi don't read as
+ * one continuous list of rows.
+ */
+function FacilityItem({
+  icon: Icon,
+  title,
+  subtitle,
+  badge,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <span className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+            <Icon className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{title}</p>
+            {subtitle && (
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+        {badge && <div className="shrink-0">{badge}</div>}
+      </div>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
 const MicroLabel = ({ children }: { children: React.ReactNode }) => (
   <p className="mb-1 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
     {children}
@@ -81,9 +132,31 @@ export default function ProfileSection({
   const [isChangingFullDay, setIsChangingFullDay] = useState(false);
   const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
   const [isSavingBank, setIsSavingBank] = useState(false);
+  const [showWifiPass, setShowWifiPass] = useState(false);
+  const [wifiCopied, setWifiCopied] = useState(false);
 
   const { data: insuranceInfo, isLoading: isLoadingInsurance } =
     useApi<InsuranceInfo>(() => kindyStudentApi.getInsurance());
+
+  const { data: facility, isLoading: isLoadingFacility } = useApi<FacilityInfo>(
+    () => orgApi.getFacility()
+  );
+
+  const wifi = facility?.wifi?.ssid ? facility.wifi : null;
+  const hasInsurance = !isLoadingInsurance && !!insuranceInfo?.num;
+  const showFacilities = !isLoadingFacility && (!!wifi || hasInsurance);
+
+  const copyWifiPass = async () => {
+    if (!wifi) return;
+    try {
+      await navigator.clipboard.writeText(wifi.pass);
+      setWifiCopied(true);
+      setTimeout(() => setWifiCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (insecure origin / denied) — the password is
+      // still readable on screen via the reveal toggle.
+    }
+  };
 
   const isFullDayEnrolled =
     profile.KindyStudentRecurringFee?.some((fee) =>
@@ -295,6 +368,93 @@ export default function ProfileSection({
           </CardContent>
         </Card>
 
+        {/* Fasilitas */}
+        {showFacilities && (
+          <Card>
+            <CardHeader className="border-b border-border">
+              <CardTitle>Fasilitas</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-3">
+              {wifi && (
+                <FacilityItem
+                  icon={Wifi}
+                  title="Akses WiFi"
+                  subtitle="Untuk wali santri selama berada di lingkungan sekolah."
+                >
+                  <Row label="Jaringan" value={wifi.ssid} mono />
+                  <Row
+                    label="Kata Sandi"
+                    last
+                    value={
+                      <span className="inline-flex items-center gap-1">
+                        <span className="font-mono">
+                          {showWifiPass ? wifi.pass : "••••••••"}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          aria-label={
+                            showWifiPass
+                              ? "Sembunyikan kata sandi"
+                              : "Tampilkan kata sandi"
+                          }
+                          onClick={() => setShowWifiPass((v) => !v)}
+                        >
+                          {showWifiPass ? <EyeOff /> : <Eye />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          aria-label="Salin kata sandi"
+                          onClick={copyWifiPass}
+                        >
+                          {wifiCopied ? (
+                            <Check className="text-primary" />
+                          ) : (
+                            <Copy />
+                          )}
+                        </Button>
+                      </span>
+                    }
+                  />
+                </FacilityItem>
+              )}
+
+              {wifi && hasInsurance && <Separator className="my-4" />}
+
+              {hasInsurance && insuranceInfo && (
+                <FacilityItem
+                  icon={ShieldCheck}
+                  title="Asuransi"
+                  subtitle={insuranceInfo.type}
+                  badge={<Badge variant="info">Aktif</Badge>}
+                >
+                  <Row label="Penyedia" value={insuranceInfo.ent} />
+                  <Row label="Tertanggung" value={insuranceInfo.beneficiary} />
+                  <Row label="Polis" value={insuranceInfo.num} mono last />
+                  {insuranceInfo.benefit?.length > 0 && (
+                    <div className="pt-3">
+                      <MicroLabel>Manfaat</MicroLabel>
+                      <div className="flex flex-col gap-1.5">
+                        {insuranceInfo.benefit.map((b, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-primary" />
+                            <span className="text-[13px] leading-relaxed text-muted-foreground">
+                              {b}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </FacilityItem>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rekening Penerimaan */}
         <Card>
           <CardHeader className="flex-row items-center justify-between border-b border-border">
@@ -322,36 +482,6 @@ export default function ProfileSection({
           </CardContent>
         </Card>
 
-        {/* Asuransi */}
-        {!isLoadingInsurance && insuranceInfo && insuranceInfo.num && (
-          <Card>
-            <CardHeader className="flex-row items-center justify-between border-b border-border">
-              <CardTitle>Asuransi</CardTitle>
-              <Badge variant="info">Aktif</Badge>
-            </CardHeader>
-            <CardContent className="pt-3">
-              <Row label="Penyedia" value={insuranceInfo.ent} />
-              <Row label="Jenis" value={insuranceInfo.type} />
-              <Row label="Tertanggung" value={insuranceInfo.beneficiary} />
-              <Row label="Polis" value={insuranceInfo.num} mono last />
-              {insuranceInfo.benefit?.length > 0 && (
-                <div className="pt-3">
-                  <MicroLabel>Manfaat</MicroLabel>
-                  <div className="flex flex-col gap-1.5">
-                    {insuranceInfo.benefit.map((b, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-primary" />
-                        <span className="text-[13px] leading-relaxed text-muted-foreground">
-                          {b}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Full Day dialog */}

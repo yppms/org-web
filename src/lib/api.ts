@@ -1,5 +1,5 @@
 // API utility functions for Kindy Student portal
-import type { HarianDay, HarianIndexEntry } from './types';
+import type { FacilityInfo, HarianDay, HarianIndexEntry } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -283,6 +283,7 @@ export const kindyAdminApi = {
 // Org API endpoints
 export const orgApi = {
   getFinancialInfo: () => apiCall('/org/fin'),
+  getFacility: () => apiCall<FacilityInfo>('/org/facility'),
   ping: () => apiCall('/ping'),
 };
 

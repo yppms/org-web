@@ -266,6 +266,14 @@ export interface InsuranceInfo {
   benefit: string[];
 }
 
+/** Facilities the foundation provides to parents — served by `GET /org/facility`. */
+export interface FacilityInfo {
+  wifi: {
+    ssid: string;
+    pass: string;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Laporan Harian (daily report) — see docs/harian-design-handoff.md.
 // The portal only ever receives `noteParent`; the teacher's raw internal `note`

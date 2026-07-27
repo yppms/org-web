@@ -1,0 +1,142 @@
+{
+  "_comment": "Simulated data for the Kindy 'Laporan Harian' (daily report) parent feature — PHASE 1: KindyReport only. Attendance, meals and development tags are deliberately out of scope. Shapes derive from the real production DB. Student names, teacher names and note text are SYNTHETIC stand-ins written in the same style and length as the real records — no real child's data is in this file.",
+
+  "_comment_noteParent": "Entries carry ONLY `noteParent` — the teacher-approved, parent-facing wording. The raw internal `note` column exists in the DB but must never cross the wire to the portal. The backend resolves the fallback server-side and emits this single field.",
+
+  "student": {
+    "name": "Naura Alesha Ramadhani",
+    "nickname": "Naura",
+    "gender": "FEMALE",
+    "address": "Mbak Naura",
+    "lang": "ID",
+    "photoUrl": "https://yppms.blob.core.windows.net/media/students/VfOYe_ENvlc_ievdwotQy.jpg?sv=2024-11-04&se=2026-07-27T09%3A15%3A00Z&sig=REDACTED",
+    "group": { "id": "cda1z", "name": "a al injaz", "year": "2627" },
+    "teachers": ["Maudy Puspandari", "Hesmy Fetriyantari", "Sugiati"]
+  },
+
+  "_comment_index": "GET /kindy/student/harian — the day index the parent scrolls. Newest first. Only days that HAVE a report appear. `hasIndividual` drives the 'ada catatan khusus' affordance.",
+  "index": [
+    { "date": "2026-07-24", "hasClassReport": true, "hasIndividual": true,  "mediaCount": 3, "videoCount": 1 },
+    { "date": "2026-07-23", "hasClassReport": true, "hasIndividual": false, "mediaCount": 1, "videoCount": 0 },
+    { "date": "2026-07-22", "hasClassReport": true, "hasIndividual": false, "mediaCount": 6, "videoCount": 2 },
+    { "date": "2026-07-21", "hasClassReport": true, "hasIndividual": true,  "mediaCount": 0, "videoCount": 0 }
+  ],
+
+  "_comment_days": "GET /kindy/student/harian?date=YYYY-MM-DD — one day. Five states, in the order a designer should build them.",
+  "days": [
+    {
+      "_state": "1. RICH DAY — class report with photos + video, plus an individual note carrying TWO entries. The happy path.",
+      "date": "2026-07-24",
+      "classReport": {
+        "id": "ilzJGzxugD9RD-AloOpZ9",
+        "type": "CLASS_WIDE",
+        "teacher": "Maudy Puspandari",
+        "entries": [
+          {
+            "noteParent": "Assalamu'alaikum Ayah Bunda hebat Kindy A\n\nKegiatan Ananda hari ini:\n1. Membuat bentuk manusia dengan bahan loose part\nTujuan: Melatih kreativitas dan imajinasi anak dalam merangkai bentuk tubuh manusia, serta mengembangkan motorik halus dan kemampuan problem solving\n2. Melengkapi bagian wajah dengan menggambar\nTujuan: Mengasah kemampuan mengenal bagian-bagian wajah dan fungsinya, serta melatih koordinasi mata dan tangan melalui kegiatan menggambar\n3. Menggambar bebas dan presentasi di depan teman-teman\nTujuan: Menumbuhkan keberanian, percaya diri, dan kemampuan komunikasi anak untuk menyampaikan ide serta hasil karyanya di depan umum\n\nTerima kasih Ayah Bunda atas dukungan dan kerjasamanya 🌹\nSemoga Kindy A selalu kompak & Ilmunya bermanfaat, Aamiin\n\nWassalamu'alaikum wr wb",
+            "photos": [
+              { "path": "reports/bNevkOpPcjKNx0tVgGdbZ.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/bNevkOpPcjKNx0tVgGdbZ.jpg?sig=REDACTED" },
+              { "path": "reports/CBnhbkhOdUbwkJK-TkaZS.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/CBnhbkhOdUbwkJK-TkaZS.jpg?sig=REDACTED" },
+              { "path": "reports/9JW0O-Or3iM0QFus3aAG-.mp4", "url": "https://yppms.blob.core.windows.net/media/reports/9JW0O-Or3iM0QFus3aAG-.mp4?sig=REDACTED" }
+            ]
+          }
+        ]
+      },
+      "individualReport": {
+        "id": "mcs76",
+        "type": "INDIVIDUAL",
+        "teacher": "Maudy Puspandari",
+        "entries": [
+          {
+            "noteParent": "Hari ini Mbak Naura tampak senang, tersenyum lebar, dan semangat saat diminta presentasi di depan teman-temannya. Mbak Naura tetap tenang, mengikuti instruksi Guru, dan mengerjakan tugasnya sampai tuntas.",
+            "photos": []
+          },
+          {
+            "_note": "Second entry. 7 of 318 real reports have two. Entries are a repeating list, not a single note — and the second one can carry its own media while the first has none.",
+            "noteParent": "Mbak Naura menunjukkan minat membaca dan melihat buku cerita bergambar bersama temannya. Ia juga bercerita tentang imajinasi dan pengalamannya saat itu, yang membuat kegiatan menjadi hangat dan interaktif.",
+            "photos": [
+              { "path": "reports/7Cg-NPnC2YGMj0I4S-giN.mov", "url": "https://yppms.blob.core.windows.net/media/reports/7Cg-NPnC2YGMj0I4S-giN.mov?sig=REDACTED" }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      "_state": "2. CLASS ONLY — no personal note. 80 of 199 real student-days look like this. Short-ish note, one photo.",
+      "date": "2026-07-23",
+      "classReport": {
+        "id": "kR2mQvbTx1p8sLdEwYn0V",
+        "type": "CLASS_WIDE",
+        "teacher": "Hesmy Fetriyantari",
+        "entries": [
+          {
+            "noteParent": "Assalamualaikum Ayah/Bunda hebat 😊\n\nAlhamdulillah hari ini anak-anak belajar tema *\"Aku Sayang Diriku\"* dengan seru!\n\n*Kegiatan hari ini:*\n1. *Prakarya Motorik Halus*: Anak-anak membuat kreasi \"Aku Sehat & Kuat\" dengan menggunting-menempel gambar anggota tubuh. Ini melatih fokus, koordinasi mata-tangan, dan mengenal bagian tubuhnya.\n2. *Bernyanyi Ceria*: Menyanyikan lagu \"Mandiku\" & \"Gosok Gigi\". Anak-anak jadi makin paham kalau mandi, gosok gigi, cuci tangan = bentuk sayang sama diri sendiri.\n\nMasyaAllah anak-anak antusias banget dan hasilnya bagus-bagus. Terima kasih Ayah/Bunda sudah menyiapkan anak dengan rapi dan semangat ke sekolah.",
+            "photos": [
+              { "path": "reports/m1IWBXLbAFQjNeK8BnEug.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/m1IWBXLbAFQjNeK8BnEug.jpg?sig=REDACTED" }
+            ]
+          }
+        ]
+      },
+      "individualReport": null
+    },
+
+    {
+      "_state": "3. MEDIA-HEAVY + BILINGUAL — six items in one gallery, two of them video (.mov and .mp4), and the note is written in English. Both happen in production.",
+      "date": "2026-07-22",
+      "classReport": {
+        "id": "aB9xKmPqR3nVtZwL5cGdJ",
+        "type": "CLASS_WIDE",
+        "teacher": "Sugiati",
+        "entries": [
+          {
+            "noteParent": "Today, the children learned to appreciate and take care of their bodies through bilingual songs.\n\nActivity: Singing songs about \"Bathing & Brushing Teeth\" in English and Bahasa Indonesia.\n\nLearning Objectives:\n1. Language Development: Introduce basic English vocabulary related to self-care — bath, shower, toothbrush, toothpaste, soap, towel — using the fun method of singing.\n2. Theme Connection: Help children understand that keeping their body clean is one way to say \"I Love Myself\" / \"Aku Sayang Diriku\".\n3. Motoric Skills: Practice actions while singing, like pretending to brush teeth and scrub the body.\n\n*Result*: The children showed great enthusiasm. They were able to follow the song and mention 2-3 English words for bathing activities.\n\n*Follow-up at home*: Please sing with your child during bath time to reinforce the vocabulary.",
+            "photos": [
+              { "path": "reports/EM8_j9HChWBAq7fY7SEI9.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/EM8_j9HChWBAq7fY7SEI9.jpg?sig=REDACTED" },
+              { "path": "reports/8FRj51fUnRCkFuLnZHH_S.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/8FRj51fUnRCkFuLnZHH_S.jpg?sig=REDACTED" },
+              { "path": "reports/m9TF12bl-XMRlaGotXHvF.mov", "url": "https://yppms.blob.core.windows.net/media/reports/m9TF12bl-XMRlaGotXHvF.mov?sig=REDACTED" },
+              { "path": "reports/OALEHRp9xAUQn3OWSombY.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/OALEHRp9xAUQn3OWSombY.jpg?sig=REDACTED" },
+              { "path": "reports/CQmuHFtPBBF_ExTvgkMDa.mp4", "url": "https://yppms.blob.core.windows.net/media/reports/CQmuHFtPBBF_ExTvgkMDa.mp4?sig=REDACTED" },
+              { "path": "reports/BHwVGPH-igxvBvwMsSKlM.jpg", "url": "https://yppms.blob.core.windows.net/media/reports/BHwVGPH-igxvBvwMsSKlM.jpg?sig=REDACTED" }
+            ]
+          }
+        ]
+      },
+      "individualReport": null
+    },
+
+    {
+      "_state": "4. HARD DAY — a candid individual note. Not every note is a celebration; the design has to hold difficult wording as gracefully as praise. Long single paragraph, no media.",
+      "date": "2026-07-21",
+      "classReport": {
+        "id": "pQ7wZnRkT4vLmXc2BdHsY",
+        "type": "CLASS_WIDE",
+        "teacher": "Maudy Puspandari",
+        "entries": [
+          {
+            "noteParent": "Hari ini anak-anak bermain peran menjadi dokter kecil dan pasien, lalu dilanjutkan dengan kegiatan mencuci tangan bersama sebelum makan. Kegiatan ini melatih keberanian, empati, dan kebiasaan hidup bersih.",
+            "photos": []
+          }
+        ]
+      },
+      "individualReport": {
+        "id": "v1fxh",
+        "type": "INDIVIDUAL",
+        "teacher": "Maudy Puspandari",
+        "entries": [
+          {
+            "noteParent": "Hari ini Mbak Naura beberapa kali melepas jilbabnya dan diingatkan oleh Bu Guru. Ia juga sempat bermain dengan sentuhan tangan dan kaki yang agak kasar terhadap teman, dan masih membutuhkan bantuan guru untuk menyusun kalimat ekspresif karena belum mampu mengutarakan sesuatu secara kompleks. Mungkin ia sedang bereksperimen dengan batas-batas permainan dan butuh bantuan saat menyampaikan pikirannya.",
+            "photos": []
+          }
+        ]
+      }
+    },
+
+    {
+      "_state": "5. NO REPORT — the teacher wrote nothing that day. Weekend, holiday, or simply not filled in. Parents will hit this.",
+      "date": "2026-07-20",
+      "classReport": null,
+      "individualReport": null
+    }
+  ]
+}

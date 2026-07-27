@@ -9,6 +9,7 @@ import {
   OrgFinancialInfo,
   Saving,
   Infaq,
+  HarianMedia,
 } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -32,6 +33,9 @@ import {
   TableCell,
 } from "@/components/ui";
 import Navigation, { type StudentSection } from "./components/Navigation";
+import HomeSection from "./components/HomeSection";
+import HarianSection from "./components/harian/HarianSection";
+import MediaViewer from "./components/harian/MediaViewer";
 import ProfileSection from "./components/ProfileSection";
 import InvoicesSection from "./components/InvoicesSection";
 import PaymentSection from "./components/PaymentSection";
@@ -64,8 +68,12 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<KindyStudent | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [orgFinInfo, setOrgFinInfo] = useState<OrgFinancialInfo | null>(null);
-  const [activeSection, setActiveSection] =
-    useState<StudentSection>("dashboard");
+  const [activeSection, setActiveSection] = useState<StudentSection>("home");
+  /** Fullscreen media viewer, shared by Beranda, Harian and the avatar. */
+  const [viewer, setViewer] = useState<{
+    items: HarianMedia[];
+    index: number;
+  } | null>(null);
   const [currentTab, setCurrentTab] = useState<
     "invoices" | "payment" | "saving" | "infaq"
   >("invoices");
@@ -129,9 +137,12 @@ export default function Dashboard() {
     setBankSignal((n) => n + 1);
   };
 
+  const openMedia = (items: HarianMedia[], index: number) =>
+    setViewer({ items, index });
+
   const handleBankInfoAdded = () => {
     if (bankInfoIntent === "withdraw") {
-      setActiveSection("dashboard");
+      setActiveSection("keuangan");
       setCurrentTab("saving");
       setWithdrawAmount("");
       setWithdrawSuccess(null);
@@ -635,20 +646,59 @@ export default function Dashboard() {
         studentName={profile.name}
         photoUrl={profile.photoUrl}
         subtitle={subtitle}
+        onAvatarClick={
+          profile.photoUrl
+            ? // Synthetic path: the viewer reads the extension to tell photo
+              // from video, and a signed URL's query string hides the real one.
+              () =>
+                openMedia(
+                  [{ path: "foto.jpg", url: profile.photoUrl as string }],
+                  0,
+                )
+            : undefined
+        }
       />
       <main className="px-5 pb-24 pt-5">
-        {activeSection === "profile" ? (
+        {activeSection === "home" && (
+          <HomeSection
+            profile={profile}
+            stats={stats}
+            onNavigate={setActiveSection}
+            onOpenMedia={openMedia}
+          />
+        )}
+        {activeSection === "harian" && (
+          <HarianSection onOpenMedia={openMedia} />
+        )}
+        {activeSection === "keuangan" && renderDashboard()}
+        {activeSection === "profile" && (
           <ProfileSection
             profile={profile}
             onUpdate={setProfile}
             onBankInfoAdded={handleBankInfoAdded}
             onError={showGlobalError}
             openBankSignal={bankSignal}
+            onAvatarClick={
+              profile.photoUrl
+                ? () =>
+                    openMedia(
+                      [{ path: "foto.jpg", url: profile.photoUrl as string }],
+                      0,
+                    )
+                : undefined
+            }
           />
-        ) : (
-          renderDashboard()
         )}
       </main>
+
+      <MediaViewer
+        items={viewer?.items ?? null}
+        index={viewer?.index ?? 0}
+        onIndexChange={(index) =>
+          setViewer((current) => (current ? { ...current, index } : current))
+        }
+        onClose={() => setViewer(null)}
+      />
 
       <BankRequiredModal
         open={modal === "bank_required"}

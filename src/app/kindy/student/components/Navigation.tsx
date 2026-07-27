@@ -3,7 +3,7 @@
 import ThemeToggle from "@/components/ThemeToggle";
 import StudentAvatar from "./StudentAvatar";
 
-export type StudentSection = "dashboard" | "profile";
+export type StudentSection = "home" | "harian" | "keuangan" | "profile";
 
 interface NavigationProps {
   activeSection: StudentSection;
@@ -11,10 +11,14 @@ interface NavigationProps {
   studentName: string;
   photoUrl?: string | null;
   subtitle?: string;
+  /** Opens the profile photo in the fullscreen media viewer. */
+  onAvatarClick?: () => void;
 }
 
 const navItems: { key: StudentSection; label: string }[] = [
-  { key: "dashboard", label: "Keuangan" },
+  { key: "home", label: "Beranda" },
+  { key: "harian", label: "Harian" },
+  { key: "keuangan", label: "Keuangan" },
   { key: "profile", label: "Profil" },
 ];
 
@@ -24,6 +28,7 @@ export default function Navigation({
   studentName,
   photoUrl = null,
   subtitle = "TK IT Miftahussalam",
+  onAvatarClick,
 }: NavigationProps) {
   return (
     <>
@@ -36,6 +41,7 @@ export default function Navigation({
               url={photoUrl}
               size={36}
               initialsWords={1}
+              onClick={onAvatarClick}
               className="text-sm"
             />
             <div className="min-w-0">

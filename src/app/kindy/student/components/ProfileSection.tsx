@@ -27,6 +27,8 @@ interface ProfileSectionProps {
   onError?: (error: unknown) => void;
   /** Incrementing signal from the parent to open the bank dialog (withdraw flow). */
   openBankSignal?: number;
+  /** Opens the profile photo in the fullscreen media viewer. */
+  onAvatarClick?: () => void;
 }
 
 /** A label / value row with a bottom divider (last row can drop it). */
@@ -69,6 +71,7 @@ export default function ProfileSection({
   onBankInfoAdded,
   onError,
   openBankSignal = 0,
+  onAvatarClick,
 }: ProfileSectionProps) {
   const [modal, setModal] = useState<null | "fullday" | "bank">(null);
   const [finEnt, setFinEnt] = useState(profile.finEnt || "");
@@ -199,13 +202,17 @@ export default function ProfileSection({
                 name={profile.name}
                 url={profile.photoUrl}
                 size={96}
-                className="text-2xl ring-2 ring-border"
+                ring
+                badge={
+                  profile.nickname
+                    ? `${honorific}${profile.nickname}`
+                    : null
+                }
+                onClick={onAvatarClick}
+                className="text-2xl"
               />
             </div>
             <Row label="Nama" value={profile.name} />
-            {profile.nickname && (
-              <Row label="Panggilan" value={`${honorific}${profile.nickname}`} />
-            )}
             {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
             {enrollment && (
               <Row

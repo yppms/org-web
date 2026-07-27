@@ -265,3 +265,58 @@ export interface InsuranceInfo {
   image: string;
   benefit: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Laporan Harian (daily report) — see docs/harian-design-handoff.md.
+// The portal only ever receives `noteParent`; the teacher's raw internal `note`
+// column never crosses the wire.
+// ---------------------------------------------------------------------------
+
+/** One photo or video on a report entry. Signed blob URLs — they expire. */
+export interface HarianMedia {
+  /** Blob path, e.g. "reports/xyz.jpg". Carries the file extension. */
+  path: string;
+  /** Short-lived SAS read URL for the full-size media. */
+  url: string;
+  /**
+   * Signed URL for the 400px grid thumbnail (~20KB vs ~150KB). Null for video,
+   * which has none, and absent on responses from before thumbnails existed.
+   */
+  thumbUrl?: string | null;
+}
+
+/**
+ * One observation. A report holds 1–2 of these, and the media often sits on
+ * the second one rather than the first.
+ */
+export interface HarianEntry {
+  /** The teacher-approved, parent-facing wording. The only text we get. */
+  noteParent: string;
+  /** Named `photos` by the backend, but it carries video too (.mp4 / .mov). */
+  photos: HarianMedia[];
+}
+
+export interface HarianReport {
+  id: string;
+  type: 'CLASS_WIDE' | 'INDIVIDUAL';
+  teacher: string | null;
+  entries: HarianEntry[];
+}
+
+/** One day. `classReport` is the spine — an individual never exists without it. */
+export interface HarianDay {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  classReport: HarianReport | null;
+  individualReport: HarianReport | null;
+}
+
+/** A row of the day index. Only days that have a report are listed. */
+export interface HarianIndexEntry {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  hasClassReport: boolean;
+  hasIndividual: boolean;
+  mediaCount: number;
+  videoCount: number;
+}

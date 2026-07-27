@@ -18,18 +18,36 @@ export const formatCurrency = (amount: number): string => {
   return `Rp${formatted}`;
 };
 
+/** Indonesian month abbreviations, indexed 0–11. */
+const MONTHS_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  
+
   const day = date.getDate();
   const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
-  
-  // Indonesian month abbreviations
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  
-  const month = monthNames[date.getMonth()];
-  
+
+  const month = MONTHS_ID[date.getMonth()];
+
   return `${day}-${month}-${year}`;
+};
+
+/**
+ * Inclusive date range for a week header, e.g. "20–24 Jul 2026". Collapses the
+ * repeated month/year: crossing a month gives "29 Jun–3 Jul 2026", crossing a
+ * year gives both in full. Takes plain `YYYY-MM-DD` strings and reads them as
+ * calendar dates — no timezone conversion.
+ */
+export const formatDateRange = (fromYmd: string, toYmd: string): string => {
+  const [fy, fm, fd] = fromYmd.split('-').map(Number);
+  const [ty, tm, td] = toYmd.split('-').map(Number);
+
+  const from = `${fd} ${MONTHS_ID[fm - 1]}`;
+  const to = `${td} ${MONTHS_ID[tm - 1]}`;
+
+  if (fy !== ty) return `${from} ${fy}–${to} ${ty}`;
+  if (fm !== tm) return `${from}–${to} ${ty}`;
+  return `${fd}–${td} ${MONTHS_ID[tm - 1]} ${ty}`;
 };
 
 /**

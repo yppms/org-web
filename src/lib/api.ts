@@ -1,4 +1,6 @@
 // API utility functions for Kindy Student portal
+import type { HarianDay, HarianIndexEntry } from './types';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
 
 export interface ApiResponse<T = any> {
@@ -137,6 +139,13 @@ export const kindyStudentApi = {
 
   // Insurance endpoints
   getInsurance: () => apiCall('/kindy/insurance'),
+
+  // Laporan Harian (daily report) endpoints
+  /** Index of days that have a report, newest first. */
+  getHarianIndex: () => apiCall<HarianIndexEntry[]>('/kindy/student/harian'),
+  /** One day's reports. `date` is `YYYY-MM-DD`. */
+  getHarianDay: (date: string) =>
+    apiCall<HarianDay>(`/kindy/student/harian?date=${encodeURIComponent(date)}`),
 };
 
 // Kindy Admin API endpoints

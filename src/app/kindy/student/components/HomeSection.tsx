@@ -76,7 +76,9 @@ const invoicesPaidBy = (payment: Payment): string | null => {
       ? [payment.invoiceName]
       : [];
   if (names.length === 0) return null;
-  return names.length === 1 ? names[0] : `${names[0]} +${names.length - 1} lagi`;
+  return names.length === 1
+    ? names[0]
+    : `${names[0]} +${names.length - 1} lagi`;
 };
 
 const INVOICE_STATUS: Record<
@@ -168,7 +170,7 @@ export default function HomeSection({
               .join(" · ") || null,
           date: formatDate(payment.date),
           amount: formatCurrency(payment.amount),
-          badge: "Diterima",
+          badge: "Sukses",
           badgeVariant: "default",
         });
       }

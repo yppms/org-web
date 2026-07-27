@@ -197,7 +197,7 @@ export default function HarianSection({ onOpenMedia }: HarianSectionProps) {
       {rangeMode && visibleDates.length === 0 && (
         <div className="rounded-xl border border-dashed border-border px-6 py-8 text-center">
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Tidak ada laporan pada rentang tanggal ini.
+            Belum ada laporan pada rentang tanggal ini.
           </p>
         </div>
       )}

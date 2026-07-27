@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@/components/ui";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from "@/components/ui";
 import { HarianDay, HarianMedia } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { relativeDayLabel, weekdayName } from "@/lib/harian";
@@ -58,7 +64,7 @@ export function NoReportRow({ date }: { date: string }) {
         </span>
       </div>
       <span className="shrink-0 text-xs text-muted-foreground">
-        Tidak ada laporan
+        Belum ada laporan
       </span>
     </div>
   );

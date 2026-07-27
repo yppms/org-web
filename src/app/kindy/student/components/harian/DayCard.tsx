@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@/components/ui";
 import { HarianDay, HarianMedia } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { weekdayName } from "@/lib/harian";
+import { relativeDayLabel, weekdayName } from "@/lib/harian";
 import ReportEntries from "./ReportEntries";
 
 interface DayCardProps {
@@ -24,10 +24,13 @@ export default function DayCard({
 }: DayCardProps) {
   return (
     <Card>
+      {/* "Kemarin" leads, because how long ago is what a parent catching up
+          actually wants; the weekday and date stay as the reference. */}
       <CardHeader className="flex-row items-baseline justify-between gap-3 border-b border-border px-5 py-4">
-        <CardTitle className="text-[15px]">{weekdayName(date)}</CardTitle>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">
-          {formatDate(date)}
+        <CardTitle className="text-[15px]">{relativeDayLabel(date)}</CardTitle>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {weekdayName(date)}{" "}
+          <span className="font-mono">{formatDate(date)}</span>
         </span>
       </CardHeader>
       <CardContent className="px-5 pb-5 pt-4">
@@ -45,12 +48,13 @@ export default function DayCard({
 export function NoReportRow({ date }: { date: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-5 py-3.5">
-      <div className="flex items-baseline gap-2">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-semibold text-muted-foreground">
-          {weekdayName(date)}
+          {relativeDayLabel(date)}
         </span>
-        <span className="font-mono text-xs text-muted-foreground">
-          {formatDate(date)}
+        <span className="text-xs text-muted-foreground">
+          {weekdayName(date)}{" "}
+          <span className="font-mono">{formatDate(date)}</span>
         </span>
       </div>
       <span className="shrink-0 text-xs text-muted-foreground">

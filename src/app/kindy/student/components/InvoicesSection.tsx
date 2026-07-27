@@ -31,8 +31,14 @@ export default function InvoicesSection() {
 
   return (
     <div>
-      {invoices
-        .sort((a, b) => b.no - a.no)
+      {[...invoices]
+        // Most recent activity first. `no` is only the backend's row order,
+        // which drifts from the real chronology once records are backfilled.
+        .sort(
+          (a, b) =>
+            new Date(b.startDate).getTime() - new Date(a.startDate).getTime() ||
+            b.no - a.no,
+        )
         .map((invoice) => {
           const status = statusMap[invoice.status] || {
             text: invoice.status,

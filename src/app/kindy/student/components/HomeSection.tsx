@@ -13,7 +13,7 @@ import {
   StudentStats,
 } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { weekdayName } from "@/lib/harian";
+import { relativeDayLabel, weekdayName } from "@/lib/harian";
 import {
   Badge,
   Card,
@@ -22,6 +22,12 @@ import {
   CardTitle,
   EmptyState,
   Spinner,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui";
 import type { BadgeProps } from "@/components/ui/badge";
 import ActivityRow from "./ActivityRow";
@@ -35,16 +41,43 @@ interface HomeSectionProps {
   onOpenMedia: (items: HarianMedia[], index: number) => void;
 }
 
-/** One activity row's worth of data, whatever type it came from. */
+/**
+ * One activity row's worth of data, whatever type it came from.
+ *
+ * The row is titled by its `type` — this card shows the newest of each kind,
+ * so "Tagihan" / "Pembayaran" is what distinguishes one row from the next.
+ * The individual record's `name` belongs in the subline beside its date.
+ */
 interface LatestActivity {
   key: string;
-  title: string;
+  /** Section this came from: "Tagihan", "Pembayaran", "Tabungan", "Infaq". */
   type: string;
+  /** The specific record, e.g. an invoice name. Null when it has no name. */
+  name: string | null;
   date: string;
   amount: string;
   badge: string;
   badgeVariant: BadgeProps["variant"];
 }
+
+/** "regular-jul-26-prorate · 13-Jul-26", or just the date when unnamed. */
+const detailOf = (row: LatestActivity): string =>
+  row.name && row.name !== row.type ? `${row.name} · ${row.date}` : row.date;
+
+/**
+ * What a payment paid off. One payment can be split across several invoices
+ * (and partly from savings), so the extra ones are counted rather than listed
+ * — the full breakdown lives in the Keuangan tab.
+ */
+const invoicesPaidBy = (payment: Payment): string | null => {
+  const names = payment.appliedInvoices?.length
+    ? payment.appliedInvoices.map((applied) => applied.invoiceName)
+    : payment.invoiceName
+      ? [payment.invoiceName]
+      : [];
+  if (names.length === 0) return null;
+  return names.length === 1 ? names[0] : `${names[0]} +${names.length - 1} lagi`;
+};
 
 const INVOICE_STATUS: Record<
   string,
@@ -112,8 +145,8 @@ export default function HomeSection({
         };
         rows.push({
           key: `invoice-${invoice.id}`,
-          title: invoice.name,
           type: "Tagihan",
+          name: invoice.name,
           date: formatDate(invoice.startDate),
           amount: formatCurrency(invoice.amount),
           badge: status.text,
@@ -125,8 +158,14 @@ export default function HomeSection({
       if (payment) {
         rows.push({
           key: `payment-${payment.id}`,
-          title: payment.invoiceName || payment.reference || "Pembayaran",
           type: "Pembayaran",
+          // Both the bank reference and what it settled — they answer
+          // different questions ("which transfer was this?" vs "what did it
+          // pay?"). detailOf appends the date after them.
+          name:
+            [payment.reference, invoicesPaidBy(payment)]
+              .filter(Boolean)
+              .join(" · ") || null,
           date: formatDate(payment.date),
           amount: formatCurrency(payment.amount),
           badge: "Diterima",
@@ -143,8 +182,8 @@ export default function HomeSection({
         const isWithdraw = saving.type === "WITHDRAW";
         rows.push({
           key: `saving-${saving.id}`,
-          title: isWithdraw ? "Narik" : "Nabung",
           type: "Tabungan",
+          name: isWithdraw ? "Narik" : "Nabung",
           date: formatDate(saving.date),
           amount: `${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`,
           badge: status.text,
@@ -156,8 +195,8 @@ export default function HomeSection({
       if (donation) {
         rows.push({
           key: `infaq-${donation.id}`,
-          title: donation.reference || "Infaq",
           type: "Infaq",
+          name: donation.reference || null,
           date: formatDate(donation.date),
           amount: formatCurrency(donation.amount),
           badge: "Sukses",
@@ -229,31 +268,39 @@ export default function HomeSection({
               </Badge>
             </div>
 
+            {/* Same three columns as the Keuangan tab's table, so the summary
+                and the full list read identically. */}
             {outstandingRows.length > 0 && (
-              <div>
-                {outstandingRows.map((invoice, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start justify-between gap-3 border-t border-border py-2.5 text-[13px]"
-                  >
-                    <span className="min-w-0 font-medium">{invoice.name}</span>
-                    <div className="flex shrink-0 flex-col items-end gap-0.5">
-                      <span className="font-mono">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-t-0">
+                    <TableHead>Tagihan</TableHead>
+                    <TableHead className="text-right">Jumlah</TableHead>
+                    <TableHead className="text-right">Terakhir</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {outstandingRows.map((invoice, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">
+                        {invoice.name}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
                         {formatCurrency(invoice.outstanding)}
-                      </span>
+                      </TableCell>
                       {invoice.daysLate > 0 ? (
-                        <span className="font-semibold text-destructive">
+                        <TableCell className="text-right font-semibold text-destructive">
                           Terlambat {invoice.daysLate} hari
-                        </span>
+                        </TableCell>
                       ) : (
-                        <span className="font-mono text-muted-foreground">
+                        <TableCell className="text-right font-mono text-muted-foreground">
                           {formatDate(invoice.dueDate)}
-                        </span>
+                        </TableCell>
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -270,7 +317,10 @@ export default function HomeSection({
           ) : latestDay ? (
             <>
               <span className="text-xs text-muted-foreground">
-                {weekdayName(latestDay.date)} ·{" "}
+                <span className="font-medium text-foreground">
+                  {relativeDayLabel(latestDay.date)}
+                </span>{" "}
+                · {weekdayName(latestDay.date)}{" "}
                 <span className="font-mono">{formatDate(latestDay.date)}</span>
               </span>
               <ReportEntries day={latestDay} onOpenMedia={onOpenMedia} />
@@ -298,8 +348,8 @@ export default function HomeSection({
             activity.map((row) => (
               <ActivityRow
                 key={row.key}
-                title={row.title}
-                sub={`${row.type} · ${row.date}`}
+                title={row.type}
+                sub={detailOf(row)}
                 amount={row.amount}
                 badge={row.badge}
                 badgeVariant={row.badgeVariant}

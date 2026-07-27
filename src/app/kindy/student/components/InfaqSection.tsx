@@ -20,8 +20,14 @@ export default function InfaqSection() {
 
   return (
     <div>
-      {infaq
-        .sort((a, b) => b.no - a.no)
+      {[...infaq]
+        // Most recent activity first. `no` is only the backend's row order,
+        // which drifts from the real chronology once records are backfilled.
+        .sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime() ||
+            b.no - a.no,
+        )
         .map((item) => (
           <ActivityRow
             key={item.id}

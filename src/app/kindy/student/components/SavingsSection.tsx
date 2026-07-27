@@ -32,8 +32,14 @@ export default function SavingsSection(_props: SavingsSectionProps) {
 
   return (
     <div>
-      {savings
-        .sort((a, b) => b.no - a.no)
+      {[...savings]
+        // Most recent activity first. `no` is only the backend's row order,
+        // which drifts from the real chronology once records are backfilled.
+        .sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime() ||
+            b.no - a.no,
+        )
         .map((saving) => {
           const status = statusMap[saving.status] || {
             text: saving.status,

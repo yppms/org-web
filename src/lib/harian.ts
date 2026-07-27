@@ -63,6 +63,43 @@ export const schoolDaysOf = (monday: string): string[] =>
 /** Chronological comparison of two `YYYY-MM-DD` strings. Lexical works here. */
 export const isBefore = (a: string, b: string): boolean => a < b;
 
+/** Whole days from `from` to `to`. Negative when `from` is in the future. */
+export const daysBetween = (from: string, to: string): number =>
+  Math.round((toUtc(to).getTime() - toUtc(from).getTime()) / 86_400_000);
+
+/**
+ * How a parent refers to a day: "Hari ini", "Kemarin", "3 hari lalu".
+ *
+ * A weekday name alone ("Jumat") forces the reader to work out how long ago
+ * that was, which is the thing they actually want to know when catching up on
+ * reports. The exact date stays alongside it for reference.
+ *
+ * Coarsens as it recedes — nobody counts in days past a fortnight.
+ */
+export const relativeDayLabel = (ymd: string, today = todayYmd()): string => {
+  const days = daysBetween(ymd, today);
+
+  if (days < 0) {
+    const ahead = -days;
+    if (ahead === 1) return "Besok";
+    return `${ahead} hari lagi`;
+  }
+  if (days === 0) return "Hari ini";
+  if (days === 1) return "Kemarin";
+  if (days < 7) return `${days} hari lalu`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks === 1) return "Minggu lalu";
+  if (days < 30) return `${weeks} minggu lalu`;
+
+  const months = Math.floor(days / 30);
+  if (months === 1) return "Bulan lalu";
+  if (days < 365) return `${months} bulan lalu`;
+
+  const years = Math.floor(days / 365);
+  return years === 1 ? "Tahun lalu" : `${years} tahun lalu`;
+};
+
 /** Inclusive range test. */
 export const isWithin = (ymd: string, from: string, to: string): boolean =>
   ymd >= from && ymd <= to;

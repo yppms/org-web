@@ -55,6 +55,8 @@ interface LatestActivity {
   /** The specific record, e.g. an invoice name. Null when it has no name. */
   name: string | null;
   date: string;
+  /** Epoch ms of `date` — what the rows are ordered by; `date` is display-only. */
+  at: number;
   amount: string;
   badge: string;
   badgeVariant: BadgeProps["variant"];
@@ -150,6 +152,7 @@ export default function HomeSection({
           type: "Tagihan",
           name: invoice.name,
           date: formatDate(invoice.startDate),
+          at: new Date(invoice.startDate).getTime(),
           amount: formatCurrency(invoice.amount),
           badge: status.text,
           badgeVariant: status.variant,
@@ -169,6 +172,7 @@ export default function HomeSection({
               .filter(Boolean)
               .join(" · ") || null,
           date: formatDate(payment.date),
+          at: new Date(payment.date).getTime(),
           amount: formatCurrency(payment.amount),
           badge: "Sukses",
           badgeVariant: "default",
@@ -187,6 +191,7 @@ export default function HomeSection({
           type: "Tabungan",
           name: isWithdraw ? "Narik" : "Nabung",
           date: formatDate(saving.date),
+          at: new Date(saving.date).getTime(),
           amount: `${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`,
           badge: status.text,
           badgeVariant: status.variant,
@@ -200,12 +205,17 @@ export default function HomeSection({
           type: "Infaq",
           name: donation.reference || null,
           date: formatDate(donation.date),
+          at: new Date(donation.date).getTime(),
           amount: formatCurrency(donation.amount),
           badge: "Sukses",
           badgeVariant: "default",
         });
       }
 
+      // Newest first across all four kinds. Built in a fixed type order above,
+      // which would otherwise show a July invoice above a payment made weeks
+      // later purely because invoices are fetched first.
+      rows.sort((a, b) => b.at - a.at);
       setActivity(rows);
     });
 

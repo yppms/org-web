@@ -82,6 +82,27 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 /**
+ * How the school addresses a child: "Mas Zaki", "Mba Naura".
+ *
+ * "Mba" (not "Mbak") is deliberate — it is the school's own usage. The
+ * backend's note rewrites say "Mbak"; that is a separate, teacher-facing
+ * surface and is left alone.
+ *
+ * The honorific is dropped when gender is unrecorded, and the full name stands
+ * in when there is no nickname — so this always returns something printable.
+ */
+export const addressOf = (student: {
+  name: string;
+  nickname?: string | null;
+  gender?: 'MALE' | 'FEMALE' | null;
+}): string => {
+  const honorific =
+    student.gender === 'MALE' ? 'Mas' : student.gender === 'FEMALE' ? 'Mba' : '';
+  const called = student.nickname?.trim() || student.name;
+  return honorific ? `${honorific} ${called}` : called;
+};
+
+/**
  * Title-cases each word, e.g. "a al ibda" → "A Al Ibda". Backend group and
  * year names are stored lowercase; this is for display only.
  */

@@ -16,6 +16,8 @@ import DayCard, { NoReportRow } from "./DayCard";
 
 interface HarianSectionProps {
   onOpenMedia: (items: HarianMedia[], index: number) => void;
+  /** How to refer to the child, e.g. "Mas Zaki". */
+  address: string;
 }
 
 /**
@@ -26,7 +28,10 @@ interface HarianSectionProps {
  * fetched on demand and cached, so stepping back through weeks costs one
  * request per new day and revisiting a week costs none.
  */
-export default function HarianSection({ onOpenMedia }: HarianSectionProps) {
+export default function HarianSection({
+  onOpenMedia,
+  address,
+}: HarianSectionProps) {
   const [index, setIndex] = useState<HarianIndexEntry[] | null>(null);
   const [days, setDays] = useState<Record<string, HarianDay>>({});
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +72,28 @@ export default function HarianSection({ onOpenMedia }: HarianSectionProps) {
     };
   }, []);
 
+  /**
+   * Days that actually have something to read. The index also lists days the
+   * child was absent — those carry no report by design, so they must not be
+   * mistaken for one.
+   */
   const reportDates = useMemo(
-    () => new Set((index ?? []).map((entry) => entry.date)),
+    () =>
+      new Set(
+        (index ?? [])
+          .filter((entry) => entry.hasClassReport || entry.hasIndividual)
+          .map((entry) => entry.date),
+      ),
+    [index],
+  );
+
+  const absentDates = useMemo(
+    () =>
+      new Set(
+        (index ?? [])
+          .filter((entry) => entry.attendance === "ABSENT")
+          .map((entry) => entry.date),
+      ),
     [index],
   );
 
@@ -212,7 +237,12 @@ export default function HarianSection({ onOpenMedia }: HarianSectionProps) {
             onOpenMedia={onOpenMedia}
           />
         ) : (
-          <NoReportRow key={date} date={date} />
+          <NoReportRow
+            key={date}
+            date={date}
+            absent={absentDates.has(date)}
+            address={address}
+          />
         ),
       )}
     </div>

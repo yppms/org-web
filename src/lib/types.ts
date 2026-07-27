@@ -279,10 +279,18 @@ export interface HarianMedia {
   /** Short-lived SAS read URL for the full-size media. */
   url: string;
   /**
-   * Signed URL for the 400px grid thumbnail (~20KB vs ~150KB). Null for video,
-   * which has none, and absent on responses from before thumbnails existed.
+   * Signed URL for the 400px grid thumbnail (~20KB vs ~150KB) — a poster frame
+   * for video. Absent on responses from before thumbnails existed.
    */
   thumbUrl?: string | null;
+  /**
+   * Signed URL for the browser-playable H.264 MP4 sibling of a clip. Null for
+   * photos, and absent on responses from before transcoding existed.
+   *
+   * May 404 while a deferred re-encode is still running — the viewer falls
+   * back to the original.
+   */
+  playUrl?: string | null;
 }
 
 /**
@@ -307,6 +315,8 @@ export interface HarianReport {
 export interface HarianDay {
   /** `YYYY-MM-DD`. */
   date: string;
+  /** Null when the register wasn't taken that day. */
+  attendance?: 'PRESENT' | 'ABSENT' | 'LATE' | null;
   classReport: HarianReport | null;
   individualReport: HarianReport | null;
 }
@@ -315,6 +325,12 @@ export interface HarianDay {
 export interface HarianIndexEntry {
   /** `YYYY-MM-DD`. */
   date: string;
+  /**
+   * Null when the register wasn't taken. An `ABSENT` day is listed even with
+   * no visible report, so the feed can distinguish "wasn't in" from "the
+   * teacher wrote nothing" — the class report is withheld on those days.
+   */
+  attendance?: 'PRESENT' | 'ABSENT' | 'LATE' | null;
   hasClassReport: boolean;
   hasIndividual: boolean;
   mediaCount: number;

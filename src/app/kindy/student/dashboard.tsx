@@ -11,7 +11,7 @@ import {
   Infaq,
   HarianMedia,
 } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { addressOf, formatCurrency, formatDate } from "@/lib/utils";
 import {
   Spinner,
   ErrorAlert,
@@ -668,7 +668,10 @@ export default function Dashboard() {
           />
         )}
         {activeSection === "harian" && (
-          <HarianSection onOpenMedia={openMedia} />
+          <HarianSection
+            onOpenMedia={openMedia}
+            address={addressOf(profile)}
+          />
         )}
         {activeSection === "keuangan" && renderDashboard()}
         {activeSection === "profile" && (

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { HarianMedia } from "@/lib/types";
-import { canPlayVideo, mediaKind, mediaLabel } from "@/lib/harian";
+import { mediaKind, videoSources } from "@/lib/harian";
 
 interface MediaViewerProps {
   /** The media set being browsed, or null when the viewer is closed. */
@@ -156,6 +156,8 @@ function SwipeArea({
  */
 function MediaFrame({ item }: { item: HarianMedia }) {
   const [failed, setFailed] = useState(false);
+  /** Index into `videoSources` — advances each time a source fails to load. */
+  const [attempt, setAttempt] = useState(0);
 
   if (mediaKind(item.path) === "image") {
     if (failed) {
@@ -182,13 +184,14 @@ function MediaFrame({ item }: { item: HarianMedia }) {
     );
   }
 
-  // .mov plays in Safari and almost nowhere else, so ask the browser rather
-  // than assuming from the extension. `failed` covers the case where it said
-  // yes and then couldn't — a codec inside the container it can't decode.
-  if (failed || !canPlayVideo(item.path)) {
+  // Transcoded MP4 first, original second — and only if this browser can
+  // decode it. Each `onError` steps to the next; running out means neither
+  // works, which is the honest failure card.
+  const sources = videoSources(item);
+  if (attempt >= sources.length) {
     return (
       <Unavailable
-        title={`Video .${mediaLabel(item.path).toLowerCase()} tidak dapat diputar`}
+        title="Video tidak dapat diputar"
         detail="Format ini tidak didukung browser. Video tetap tersimpan dan dapat diunduh."
         action={
           <a
@@ -205,10 +208,13 @@ function MediaFrame({ item }: { item: HarianMedia }) {
 
   return (
     <video
-      src={item.url}
+      // Remount on source change — swapping `src` on a live <video> without
+      // calling .load() is silently ignored by some browsers.
+      key={sources[attempt]}
+      src={sources[attempt]}
       controls
       playsInline
-      onError={() => setFailed(true)}
+      onError={() => setAttempt((current) => current + 1)}
       className="max-h-full max-w-full"
     />
   );

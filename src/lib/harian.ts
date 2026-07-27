@@ -147,3 +147,23 @@ export const canPlayVideo = (path: string): boolean => {
   if (!mime) return false;
   return document.createElement("video").canPlayType(mime) !== "";
 };
+
+/**
+ * Sources to try for a clip, best first.
+ *
+ * The transcoded H.264 sibling comes first: it plays everywhere and starts
+ * without downloading the whole file. It can 404 while a deferred re-encode is
+ * still running, so the original follows — but only when this browser can
+ * actually decode it, which for an iPhone HEVC clip means Safari alone.
+ *
+ * Empty means neither will play, and the viewer says so.
+ */
+export const videoSources = (item: {
+  path: string;
+  url: string;
+  playUrl?: string | null;
+}): string[] =>
+  [
+    item.playUrl ?? null,
+    canPlayVideo(item.path) ? item.url : null,
+  ].filter((src): src is string => Boolean(src));

@@ -50,8 +50,24 @@ export default function DayCard({
   );
 }
 
-/** A school day the teacher wrote nothing for. */
-export function NoReportRow({ date }: { date: string }) {
+/**
+ * A school day with nothing to show.
+ *
+ * Two different reasons land here and a parent should be able to tell them
+ * apart: the teacher wrote nothing, or their child wasn't in. On an absent day
+ * the class report is deliberately withheld — it describes activities the child
+ * had no part in — so without saying so this would read as a missing report.
+ */
+export function NoReportRow({
+  date,
+  absent = false,
+  address,
+}: {
+  date: string;
+  absent?: boolean;
+  /** How to refer to the child, e.g. "Mas Zaki". */
+  address?: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-5 py-3.5">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -63,8 +79,12 @@ export function NoReportRow({ date }: { date: string }) {
           <span className="font-mono">{formatDate(date)}</span>
         </span>
       </div>
-      <span className="shrink-0 text-xs text-muted-foreground">
-        Belum ada laporan
+      <span
+        className={`shrink-0 text-xs ${absent ? "font-medium text-warning" : "text-muted-foreground"}`}
+      >
+        {absent
+          ? `${address ?? "Ananda"} tidak masuk`
+          : "Belum ada laporan"}
       </span>
     </div>
   );

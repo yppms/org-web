@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { KindyStudent, InsuranceInfo } from "@/lib/types";
-import { capitalizeWords, formatCurrency } from "@/lib/utils";
+import { addressOf, capitalizeWords, formatCurrency } from "@/lib/utils";
 import kindyStudentApi, { ApiError } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Loader2 } from "lucide-react";
@@ -180,14 +180,6 @@ export default function ProfileSection({
     }
   };
 
-  // Honorific in front of the nickname; dropped when gender is unrecorded.
-  const honorific =
-    profile.gender === "MALE"
-      ? "Mas "
-      : profile.gender === "FEMALE"
-        ? "Mba "
-        : "";
-
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -203,11 +195,7 @@ export default function ProfileSection({
                 url={profile.photoUrl}
                 size={96}
                 ring
-                badge={
-                  profile.nickname
-                    ? `${honorific}${profile.nickname}`
-                    : null
-                }
+                badge={profile.nickname ? addressOf(profile) : null}
                 onClick={onAvatarClick}
                 className="text-2xl"
               />

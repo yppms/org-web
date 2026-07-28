@@ -82,9 +82,7 @@ export function NoReportRow({
       <span
         className={`shrink-0 text-xs ${absent ? "font-medium text-warning" : "text-muted-foreground"}`}
       >
-        {absent
-          ? `${address ?? "Ananda"} tidak masuk`
-          : "Belum ada laporan"}
+        {absent ? `${address ?? "Ananda"} tidak masuk` : "Belum ada catatan"}
       </span>
     </div>
   );

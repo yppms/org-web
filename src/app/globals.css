@@ -87,4 +87,19 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /*
+   * Long-form prose: justified with hyphenation. For blocks that wrap to three
+   * or more lines only (teacher notes, disclaimers) — on a 425px column those
+   * read noticeably tidier with flush edges. Hyphenation is not optional here:
+   * without it, justify opens rivers of whitespace at this width.
+   *
+   * Never on labels, row values, buttons, table cells, or one-to-two line
+   * helper text — justify leaves the last line ragged, so a short block just
+   * gets one stretched line for nothing. See the UI README.
+   */
+  .prose {
+    text-align: justify;
+    hyphens: auto;
+  }
 }

@@ -93,6 +93,9 @@ formatter's output (`formatCurrency(x).replace("Rp", "")`).
   `localStorage['yppms-theme']`, toggled by [ThemeToggle](src/components/ThemeToggle.tsx);
   a no-FOUC inline script in [layout.tsx](src/app/layout.tsx) applies it before paint.
 - Fonts: **Geist** (UI) + **Geist Mono** (all money/account numbers/phones/IDs — `font-mono`).
+- Long-form prose (teacher notes, disclaimers) uses the **`prose`** class — justify +
+  hyphenation, relying on `<html lang="id">`. Only for blocks wrapping to 3+ lines; never on
+  labels, values, or the 1–2 line helper sentences in modals and cards.
 - Loading state is `<Spinner />`; errors render via `<ErrorAlert message={...} />`. All modals
   are React-state shadcn `Dialog`/`AlertDialog` (no `document.getElementById().showModal()`).
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import kindyStudentApi, { ApiError } from "@/lib/api";
 import { HarianDay, HarianIndexEntry, HarianMedia } from "@/lib/types";
 import { ErrorAlert, Input, Spinner } from "@/components/ui";
+import { Info } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import {
   addDays,
@@ -222,7 +223,7 @@ export default function HarianSection({
       {rangeMode && visibleDates.length === 0 && (
         <div className="rounded-xl border border-dashed border-border px-6 py-8 text-center">
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Belum ada laporan pada rentang tanggal ini.
+            Belum ada catatan pada rentang tanggal ini.
           </p>
         </div>
       )}
@@ -245,6 +246,26 @@ export default function HarianSection({
           />
         ),
       )}
+
+      <Disclaimer />
+    </div>
+  );
+}
+
+/**
+ * Sets expectations about the feed: reports are written up after the school day
+ * ends, so slips are possible — and points parents to the teacher to confirm.
+ */
+function Disclaimer() {
+  return (
+    <div className="mt-1 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3.5">
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+      <p className="prose text-xs leading-relaxed text-muted-foreground">
+        Catatan memuat kegiatan Ananda selama di sekolah. Ditulis setelah
+        kegiatan hari berakhir. Kesalahan atau hal terlewat masih mungkin
+        terjadi. Apabila wali santri menemukan catatan yang dirasa kurang sesuai
+        atau ingin ditanyakan, mohon sampaikan kepada guru bersangkutan.
+      </p>
     </div>
   );
 }

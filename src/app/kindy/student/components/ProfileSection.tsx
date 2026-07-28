@@ -139,7 +139,7 @@ export default function ProfileSection({
     useApi<InsuranceInfo>(() => kindyStudentApi.getInsurance());
 
   const { data: facility, isLoading: isLoadingFacility } = useApi<FacilityInfo>(
-    () => orgApi.getFacility()
+    () => orgApi.getFacility(),
   );
 
   const wifi = facility?.wifi?.ssid ? facility.wifi : null;
@@ -160,7 +160,7 @@ export default function ProfileSection({
 
   const isFullDayEnrolled =
     profile.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day")
+      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
     ) || false;
 
   const hasBankInfo = !!(profile.finEnt && profile.finNum && profile.finName);
@@ -203,7 +203,7 @@ export default function ProfileSection({
       await kindyStudentApi.setFinancialInfo(
         finEnt.trim(),
         finNum.trim(),
-        finName.trim()
+        finName.trim(),
       );
       onUpdate({
         ...profile,
@@ -219,7 +219,7 @@ export default function ProfileSection({
         setError(
           err instanceof ApiError
             ? err.message
-            : "Gagal memperbarui rekening penerimaan"
+            : "Gagal memperbarui rekening penerimaan",
         );
     } finally {
       setIsSavingBank(false);
@@ -238,7 +238,7 @@ export default function ProfileSection({
       setFullDaySuccess(
         wasEnrolled
           ? "Ananda dapat mendaftar kembali kapan saja bulan berikutnya."
-          : "Ananda dapat mengikuti Full Day mulai bulan depan."
+          : "Ananda dapat mengikuti Full Day mulai bulan depan.",
       );
     } catch (err) {
       if (onError) onError(err);
@@ -246,7 +246,7 @@ export default function ProfileSection({
         setError(
           err instanceof ApiError
             ? err.message
-            : "Gagal memperbarui program full day"
+            : "Gagal memperbarui program full day",
         );
     } finally {
       setIsChangingFullDay(false);
@@ -325,9 +325,7 @@ export default function ProfileSection({
                   className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0"
                 >
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-sm">
-                      {fee.KindyOneTimeFee.name}
-                    </span>
+                    <span className="text-sm">{fee.KindyOneTimeFee.name}</span>
                     <Badge variant="secondary" className="shrink-0 font-mono">
                       {fee.KindyOneTimeFee.kindyYearName}
                     </Badge>
@@ -378,7 +376,7 @@ export default function ProfileSection({
               {wifi && (
                 <FacilityItem
                   icon={Wifi}
-                  title="Akses WiFi"
+                  title="Akses Internet"
                   subtitle="Untuk wali santri selama berada di lingkungan sekolah."
                 >
                   <Row label="Jaringan" value={wifi.ssid} mono />
@@ -481,7 +479,6 @@ export default function ProfileSection({
             )}
           </CardContent>
         </Card>
-
       </div>
 
       {/* Full Day dialog */}
@@ -559,7 +556,11 @@ export default function ProfileSection({
         open={modal === "bank"}
         onClose={closeModal}
         dismissable={!isSavingBank}
-        title={hasBankInfo ? "Ubah Rekening Penerimaan" : "Tambah Rekening Penerimaan"}
+        title={
+          hasBankInfo
+            ? "Ubah Rekening Penerimaan"
+            : "Tambah Rekening Penerimaan"
+        }
         actions={
           <>
             <Button

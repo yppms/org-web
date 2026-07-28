@@ -338,7 +338,7 @@ export default function HomeSection({
               <ReportEntries day={latestDay} onOpenMedia={onOpenMedia} />
             </>
           ) : (
-            <EmptyState message="Belum ada laporan harian." />
+            <EmptyState message="Belum ada catatan harian." />
           )}
         </CardContent>
       </Card>

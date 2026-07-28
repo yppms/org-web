@@ -14,10 +14,14 @@ import { Fragment } from "react";
  * literal render leaves holes in the card.
  *
  * Never truncated: lines wrap and the card grows.
+ *
+ * Justified via the `prose` utility. Only lines long enough to wrap are
+ * affected — a short line is its own last line, which justify leaves alone —
+ * so the WhatsApp-style short lines and headings keep their ragged right.
  */
 export default function ReportEntryBody({ text }: { text: string }) {
   return (
-    <div className="text-sm leading-[1.65]">
+    <div className="prose text-sm leading-[1.65]">
       {text.split("\n").map((line, index) =>
         line.trim() === "" ? (
           <div key={index} aria-hidden className="h-2.5" />

@@ -79,6 +79,30 @@ soft-tint background + strong-color text. Variants: `default` (primary-soft),
   `text-3xl font-bold font-mono tracking-[-0.02em]` · uppercase micro-labels
   `text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground`.
 
+### Long-form prose — the `prose` class
+
+`prose` (defined in [`globals.css`](../../app/globals.css)) is justified text with
+automatic hyphenation. On a 425px column, a long block reads noticeably tidier
+with flush edges — hyphenation is what keeps justify from opening rivers of
+whitespace at this width, so the two always ship together.
+
+```tsx
+<p className="prose text-xs leading-relaxed text-muted-foreground">…</p>
+```
+
+**Use it only on blocks that wrap to three or more lines** — teacher notes
+([`ReportEntryBody`](../../app/kindy/student/components/harian/ReportEntryBody.tsx)),
+disclaimers, multi-paragraph explanations.
+
+**Never** on labels, row values, buttons, table cells, or the one-to-two line
+helper sentences in modals and cards. Justify leaves a paragraph's *last* line
+ragged, so a short block gains one stretched line and nothing else — it looks
+worse than plain ragged-right. When in doubt, leave it off.
+
+Hyphenation relies on `<html lang="id">` ([`layout.tsx`](../../app/layout.tsx)) —
+the browser needs the language to know where Indonesian words may break. Don't
+set `lang` per element.
+
 ### Shape
 
 Cards `rounded-xl` (12px) + `border border-border` + `shadow-card` (light only);

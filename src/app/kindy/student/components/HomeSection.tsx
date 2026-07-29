@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import kindyStudentApi from "@/lib/api";
 import {
   HarianDay,
+  HarianIndexEntry,
   HarianMedia,
   Infaq,
   Invoice,
@@ -12,7 +13,7 @@ import {
   Saving,
   StudentStats,
 } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { addressOf, formatCurrency, formatDate } from "@/lib/utils";
 import { relativeDayLabel, weekdayName } from "@/lib/harian";
 import {
   Badge,
@@ -83,6 +84,16 @@ const invoicesPaidBy = (payment: Payment): string | null => {
     : `${names[0]} +${names.length - 1} lagi`;
 };
 
+/**
+ * The newest day in the harian index, plus its content. `day` is null when the
+ * index lists the date with no report behind it — which is how an absence
+ * arrives, since the class report is withheld on a day the child missed.
+ */
+interface LatestHarian {
+  entry: HarianIndexEntry;
+  day: HarianDay | null;
+}
+
 const INVOICE_STATUS: Record<
   string,
   { text: string; variant: BadgeProps["variant"] }
@@ -123,7 +134,7 @@ export default function HomeSection({
   onOpenMedia,
 }: HomeSectionProps) {
   const [activity, setActivity] = useState<LatestActivity[] | null>(null);
-  const [latestDay, setLatestDay] = useState<HarianDay | null>(null);
+  const [latest, setLatest] = useState<LatestHarian | null>(null);
   const [harianLoading, setHarianLoading] = useState(true);
 
   useEffect(() => {
@@ -229,16 +240,21 @@ export default function HomeSection({
     kindyStudentApi
       .getHarianIndex()
       .then((response) => {
-        const newestDate = response.data?.[0]?.date;
-        if (!newestDate) return null;
+        const entry = response.data?.[0];
+        if (!entry) return null;
+        // A day the child missed is listed with no report — the class report is
+        // withheld on those days — so there is nothing to fetch for it.
+        if (!entry.hasClassReport && !entry.hasIndividual) {
+          return { entry, day: null };
+        }
         return kindyStudentApi
-          .getHarianDay(newestDate)
-          .then((day) => day.data ?? null);
+          .getHarianDay(entry.date)
+          .then((day) => ({ entry, day: day.data ?? null }));
       })
       .catch(() => null)
-      .then((day) => {
+      .then((result) => {
         if (cancelled) return;
-        setLatestDay(day ?? null);
+        setLatest(result ?? null);
         setHarianLoading(false);
       });
     return () => {
@@ -326,16 +342,34 @@ export default function HomeSection({
         <CardContent className="flex flex-col gap-3.5 pt-4">
           {harianLoading ? (
             <Spinner />
-          ) : latestDay ? (
+          ) : latest ? (
             <>
               <span className="text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {relativeDayLabel(latestDay.date)}
+                  {relativeDayLabel(latest.entry.date)}
                 </span>{" "}
-                · {weekdayName(latestDay.date)}{" "}
-                <span className="font-mono">{formatDate(latestDay.date)}</span>
+                · {weekdayName(latest.entry.date)}{" "}
+                <span className="font-mono">
+                  {formatDate(latest.entry.date)}
+                </span>
               </span>
-              <ReportEntries day={latestDay} onOpenMedia={onOpenMedia} />
+              {latest.day ? (
+                <ReportEntries day={latest.day} onOpenMedia={onOpenMedia} />
+              ) : (
+                // Same wording and warning tone as the Harian tab: without it
+                // the empty card reads as a report that failed to load.
+                <p
+                  className={`text-[13px] leading-relaxed ${
+                    latest.entry.attendance === "ABSENT"
+                      ? "font-medium text-warning"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {latest.entry.attendance === "ABSENT"
+                    ? `${addressOf(profile)} tidak masuk`
+                    : "Belum ada catatan."}
+                </p>
+              )}
             </>
           ) : (
             <EmptyState message="Belum ada catatan harian." />

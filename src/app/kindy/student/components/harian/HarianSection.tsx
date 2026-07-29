@@ -265,11 +265,10 @@ function Disclaimer() {
       <div className="min-w-0">
         <p className="text-[13px] font-semibold text-foreground">Disclaimer</p>
         <p className="prose mt-1 text-xs leading-relaxed text-muted-foreground">
-          Kami berusaha menulis catatan seakurat mungkin, namun tetap ada
-          kemungkinan keliru atau kurang lengkap. Guru dapat memperbaiki catatan
-          sewaktu-waktu. Apabila wali santri menemukan catatan yang kurang
-          sesuai atau ingin ditanyakan, jangan ragu menghubungi guru yang
-          bertugas.
+          Kesalahan dan ketidaklengkapan dalam penulisan catatan sangat mungkin
+          terjadi. Guru dapat memperbaiki catatan sewaktu-waktu. Apabila wali
+          santri menemukan catatan yang kurang sesuai, kurang berkenan, atau
+          ingin ditanyakan, jangan ragu menghubungi guru yang bertugas.
         </p>
       </div>
     </div>

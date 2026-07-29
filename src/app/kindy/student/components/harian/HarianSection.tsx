@@ -258,14 +258,20 @@ export default function HarianSection({
  */
 function Disclaimer() {
   return (
-    <div className="mt-1 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3.5">
-      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-      <p className="prose text-xs leading-relaxed text-muted-foreground">
-        Catatan memuat kegiatan Ananda selama di sekolah. Ditulis setelah
-        kegiatan hari berakhir. Kesalahan atau hal terlewat masih mungkin
-        terjadi. Apabila wali santri menemukan catatan yang dirasa kurang sesuai
-        atau ingin ditanyakan, mohon sampaikan kepada guru bersangkutan.
-      </p>
+    <div className="mt-1 flex items-start gap-3 rounded-xl border border-info/20 bg-info-soft px-4 py-3.5">
+      <span className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-info/15 text-info">
+        <Info className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-foreground">Disclaimer</p>
+        <p className="prose mt-1 text-xs leading-relaxed text-muted-foreground">
+          Kami berusaha menulis catatan seakurat mungkin, namun tetap ada
+          kemungkinan keliru atau kurang lengkap. Guru dapat memperbaiki catatan
+          sewaktu-waktu. Apabila wali santri menemukan catatan yang kurang
+          sesuai atau ingin ditanyakan, jangan ragu menghubungi guru yang
+          bertugas.
+        </p>
+      </div>
     </div>
   );
 }

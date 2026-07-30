@@ -65,7 +65,7 @@ export default function HarianSection({
       .catch((err) => {
         if (cancelled) return;
         setError(
-          err instanceof ApiError ? err.message : "Gagal memuat laporan harian",
+          err instanceof ApiError ? err.message : "Gagal memuat catatan harian",
         );
       });
     return () => {
@@ -147,7 +147,7 @@ export default function HarianSection({
   const closeRange = useCallback(() => setRangeMode(false), []);
 
   if (error) return <ErrorAlert message={error} />;
-  if (!index || !monday) return <Spinner label="Memuat laporan..." />;
+  if (!index || !monday) return <Spinner label="Memuat catatan..." />;
 
   const earliestMonday = index.length
     ? mondayOf(index[index.length - 1].date)

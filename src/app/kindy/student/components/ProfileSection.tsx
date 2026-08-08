@@ -5,6 +5,7 @@ import { KindyStudent, InsuranceInfo, FacilityInfo } from "@/lib/types";
 import {
   addressOf,
   capitalizeWords,
+  formatAge,
   formatCalendarDate,
   formatCurrency,
 } from "@/lib/utils";
@@ -170,6 +171,7 @@ export default function ProfileSection({
 
   const hasBankInfo = !!(profile.finEnt && profile.finNum && profile.finName);
   const enrollment = profile.KindyEnrollment[0];
+  const age = profile.birthDate ? formatAge(profile.birthDate) : null;
 
   const openBankModal = () => {
     setFinEnt(profile.finEnt || "");
@@ -281,10 +283,13 @@ export default function ProfileSection({
             <Row label="Nama" value={profile.name} />
             {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
             {profile.birthDate && (
-              <Row
-                label="Tanggal Lahir"
-                value={formatCalendarDate(profile.birthDate)}
-              />
+              <>
+                <Row
+                  label="Tanggal Lahir"
+                  value={formatCalendarDate(profile.birthDate)}
+                />
+                {age && <Row label="Umur" value={age} />}
+              </>
             )}
             {enrollment && (
               <Row

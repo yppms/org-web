@@ -21,6 +21,26 @@ export const formatCurrency = (amount: number): string => {
 /** Indonesian month abbreviations, indexed 0–11. */
 const MONTHS_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
+/**
+ * Unabbreviated month names, indexed 0–11. For dates that read as a record
+ * rather than a compact table cell — a birth date is written out in full on
+ * the akta, so the profile matches it.
+ */
+const MONTHS_ID_FULL = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
+
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
 
@@ -51,14 +71,44 @@ export const formatDateRange = (fromYmd: string, toYmd: string): string => {
 };
 
 /**
- * A single calendar date for display, e.g. "16 Feb 2020". Takes an ISO
+ * A single calendar date for display, e.g. "16 Februari 2020". Takes an ISO
  * timestamp or a plain `YYYY-MM-DD` and reads the date part literally — no
  * timezone conversion, so a UTC-midnight birth date never slips to the day
  * before. Use this, not `formatDate`, for date-only columns (`@db.Date`).
  */
 export const formatCalendarDate = (value: string): string => {
   const [y, m, d] = value.slice(0, 10).split('-').map(Number);
-  return `${d} ${MONTHS_ID[m - 1]} ${y}`;
+  return `${d} ${MONTHS_ID_FULL[m - 1]} ${y}`;
+};
+
+/**
+ * Completed age today, e.g. "6 tahun 5 bulan". Takes an ISO timestamp or a
+ * plain `YYYY-MM-DD` and reads the date part literally, then compares against
+ * the local calendar day — the same no-timezone-conversion rule as
+ * `formatCalendarDate`.
+ *
+ * Deliberately stops at months. For TK-age children days change the string
+ * every day without informing any decision; add them back here if an under-1
+ * case ever turns up. Drops a zero component ("6 tahun", "7 bulan") and
+ * returns "Baru lahir" on the birthday itself. Future dates give null.
+ */
+export const formatAge = (value: string, now: Date = new Date()): string | null => {
+  const [by, bm, bd] = value.slice(0, 10).split('-').map(Number);
+  const [ny, nm, nd] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+
+  let years = ny - by;
+  let months = nm - bm;
+  if (nd < bd) months--;
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  if (years < 0) return null;
+  if (years === 0 && months === 0) return 'Baru lahir';
+  if (years === 0) return `${months} bulan`;
+  if (months === 0) return `${years} tahun`;
+  return `${years} tahun ${months} bulan`;
 };
 
 /**

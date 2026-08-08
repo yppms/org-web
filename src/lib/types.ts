@@ -11,6 +11,8 @@ export interface KindyStudent {
   finName: string | null;
   nisn: string | null;
   gender: 'MALE' | 'FEMALE' | null;
+  /** Calendar date at UTC midnight, e.g. `2020-02-16T00:00:00.000Z`. */
+  birthDate: string | null;
   insuranceNum: number | null;
   /** Short-lived SAS read URL for the profile photo; the blob path itself never leaves the API. */
   photoUrl: string | null;

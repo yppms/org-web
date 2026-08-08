@@ -51,6 +51,17 @@ export const formatDateRange = (fromYmd: string, toYmd: string): string => {
 };
 
 /**
+ * A single calendar date for display, e.g. "16 Feb 2020". Takes an ISO
+ * timestamp or a plain `YYYY-MM-DD` and reads the date part literally — no
+ * timezone conversion, so a UTC-midnight birth date never slips to the day
+ * before. Use this, not `formatDate`, for date-only columns (`@db.Date`).
+ */
+export const formatCalendarDate = (value: string): string => {
+  const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+  return `${d} ${MONTHS_ID[m - 1]} ${y}`;
+};
+
+/**
  * Digit-grouped amount for a currency text INPUT, e.g. "1000000" → "1.000.000".
  * No "Rp" prefix — the field label carries it. Returns "" for empty input.
  * Use this instead of `formatCurrency(...).replace("Rp", "")`.

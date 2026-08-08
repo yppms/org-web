@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { KindyStudent, InsuranceInfo, FacilityInfo } from "@/lib/types";
-import { addressOf, capitalizeWords, formatCurrency } from "@/lib/utils";
+import {
+  addressOf,
+  capitalizeWords,
+  formatCalendarDate,
+  formatCurrency,
+} from "@/lib/utils";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import {
@@ -275,6 +280,12 @@ export default function ProfileSection({
             </div>
             <Row label="Nama" value={profile.name} />
             {profile.nisn && <Row label="NISN" value={profile.nisn} mono />}
+            {profile.birthDate && (
+              <Row
+                label="Tanggal Lahir"
+                value={formatCalendarDate(profile.birthDate)}
+              />
+            )}
             {enrollment && (
               <Row
                 label="Kelompok"

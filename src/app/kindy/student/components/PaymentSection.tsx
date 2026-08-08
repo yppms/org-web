@@ -31,21 +31,20 @@ export default function PaymentSection() {
         )
         .map((payment) => {
           const applied = payment.appliedInvoices ?? [];
-          const hasSaving = !!(
-            payment.savingsAmount && payment.savingsAmount > 0
-          );
+          // Where this payment went. The server fills outstanding invoices
+          // oldest-due-first and reports whatever is left over as
+          // `savingsAmount` — which is a misnomer: it never becomes a
+          // KindySaving row, and nothing in the app moves it there. It is
+          // simply this transfer minus what it settled, so it is labelled
+          // "Lebih bayar". The real savings balance is a separate table
+          // (SUM(SAVE) − SUM(WITHDRAW)), shown on the savings screen.
           const allocations = [
             ...applied.map((inv) => ({
               name: inv.invoiceName,
               amount: inv.amount,
             })),
-            ...(hasSaving
-              ? [
-                  {
-                    name: "Saldo tabungan",
-                    amount: payment.savingsAmount as number,
-                  },
-                ]
+            ...(payment.savingsAmount && payment.savingsAmount > 0
+              ? [{ name: "Lebih bayar", amount: payment.savingsAmount }]
               : []),
           ];
 

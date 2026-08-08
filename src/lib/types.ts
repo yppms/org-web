@@ -158,6 +158,13 @@ export interface Payment {
   invoiceId?: string | null;
   invoiceName?: string | null;
   appliedInvoices?: { invoiceId: string; invoiceName: string; amount: number }[];
+  /**
+   * Misnamed on the API: this is the part of the payment left over after the
+   * server filled outstanding invoices, i.e. an overpayment ("Lebih bayar").
+   * It is NOT savings — no code path turns it into a KindySaving row, and it
+   * does not affect the savings balance, which is derived separately from
+   * SUM(SAVE) − SUM(WITHDRAW). Computed per request, never stored.
+   */
   savingsAmount?: number;
   isAttached?: boolean;
   createdAt: string;

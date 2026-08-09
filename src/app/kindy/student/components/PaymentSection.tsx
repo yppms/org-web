@@ -44,7 +44,7 @@ export default function PaymentSection() {
               amount: inv.amount,
             })),
             ...(payment.savingsAmount && payment.savingsAmount > 0
-              ? [{ name: "Lebih bayar", amount: payment.savingsAmount }]
+              ? [{ name: "lebih bayar", amount: payment.savingsAmount }]
               : []),
           ];
 

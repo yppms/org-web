@@ -137,9 +137,6 @@ export const kindyStudentApi = {
   // Payment endpoints
   getPayments: () => apiCall('/kindy/student/payment'),
 
-  // Insurance endpoints
-  getInsurance: () => apiCall('/kindy/insurance'),
-
   // Laporan Harian (daily report) endpoints
   /** Index of days that have a report, newest first. */
   getHarianIndex: () => apiCall<HarianIndexEntry[]>('/kindy/student/harian'),

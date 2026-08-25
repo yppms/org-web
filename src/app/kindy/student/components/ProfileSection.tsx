@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KindyStudent, InsuranceInfo, FacilityInfo } from "@/lib/types";
+import { KindyStudent, FacilityInfo } from "@/lib/types";
 import {
   addressOf,
   capitalizeWords,
@@ -17,7 +17,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ShieldCheck,
   Wifi,
   type LucideIcon,
 } from "lucide-react";
@@ -30,7 +29,6 @@ import {
   Button,
   Input,
   Label,
-  Separator,
   ErrorAlert,
   Modal,
 } from "@/components/ui";
@@ -77,25 +75,23 @@ function Row({
 
 /**
  * One entry inside the Fasilitas card. The icon tile + bold title is what
- * separates each facility from the next, so WiFi and Asuransi don't read as
- * one continuous list of rows.
+ * separates each facility from the next, so several of them don't read as one
+ * continuous list of rows.
  */
 function FacilityItem({
   icon: Icon,
   title,
   subtitle,
-  badge,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   subtitle?: string;
-  badge?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
           <span className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
             <Icon className="h-4 w-4" />
@@ -109,7 +105,6 @@ function FacilityItem({
             )}
           </div>
         </div>
-        {badge && <div className="shrink-0">{badge}</div>}
       </div>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -141,16 +136,12 @@ export default function ProfileSection({
   const [showWifiPass, setShowWifiPass] = useState(false);
   const [wifiCopied, setWifiCopied] = useState(false);
 
-  const { data: insuranceInfo, isLoading: isLoadingInsurance } =
-    useApi<InsuranceInfo>(() => kindyStudentApi.getInsurance());
-
   const { data: facility, isLoading: isLoadingFacility } = useApi<FacilityInfo>(
     () => orgApi.getFacility(),
   );
 
   const wifi = facility?.wifi?.ssid ? facility.wifi : null;
-  const hasInsurance = !isLoadingInsurance && !!insuranceInfo?.num;
-  const showFacilities = !isLoadingFacility && (!!wifi || hasInsurance);
+  const showFacilities = !isLoadingFacility && !!wifi;
 
   const copyWifiPass = async () => {
     if (!wifi) return;
@@ -433,36 +424,6 @@ export default function ProfileSection({
                       </span>
                     }
                   />
-                </FacilityItem>
-              )}
-
-              {wifi && hasInsurance && <Separator className="my-4" />}
-
-              {hasInsurance && insuranceInfo && (
-                <FacilityItem
-                  icon={ShieldCheck}
-                  title="Asuransi"
-                  subtitle={insuranceInfo.type}
-                  badge={<Badge variant="info">Aktif</Badge>}
-                >
-                  <Row label="Penyedia" value={insuranceInfo.ent} />
-                  <Row label="Tertanggung" value={insuranceInfo.beneficiary} />
-                  <Row label="Polis" value={insuranceInfo.num} mono last />
-                  {insuranceInfo.benefit?.length > 0 && (
-                    <div className="pt-3">
-                      <MicroLabel>Manfaat</MicroLabel>
-                      <div className="flex flex-col gap-1.5">
-                        {insuranceInfo.benefit.map((b, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-primary" />
-                            <span className="text-[13px] leading-relaxed text-muted-foreground">
-                              {b}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </FacilityItem>
               )}
             </CardContent>

@@ -13,7 +13,6 @@ export interface KindyStudent {
   gender: 'MALE' | 'FEMALE' | null;
   /** Calendar date at UTC midnight, e.g. `2020-02-16T00:00:00.000Z`. */
   birthDate: string | null;
-  insuranceNum: number | null;
   /** Short-lived SAS read URL for the profile photo; the blob path itself never leaves the API. */
   photoUrl: string | null;
   createdAt: string;
@@ -264,15 +263,6 @@ export interface OrgFinancialInfo {
   num: string;
   name: string;
   img: string;
-}
-
-export interface InsuranceInfo {
-  beneficiary: string;
-  ent: string;
-  type: string
-  num: string;
-  image: string;
-  benefit: string[];
 }
 
 /** Facilities the foundation provides to parents — served by `GET /org/facility`. */

@@ -122,6 +122,10 @@ Full detail with token tables lives in [src/components/ui/README.md](src/compone
 
 ## Environment & config
 
+- **Deployment: pushing `main` deploys to production.** org-web is served by Vercel at
+  `portal.miftahussalam.or.id` through the Vercel GitHub integration — there is no
+  workflow, no `vercel.json` and no `.vercel/` in the repo, so nothing here reveals it.
+  Prod talks to the org-server App Service via `srv.miftahussalam.or.id`.
 - `.env.local` sets `NEXT_PUBLIC_API_BASE_URL`. Point it at localhost or the dev backend
   (`https://dev-srv.miftahussalam.or.id`, commented alternative).
 - [next.config.js](next.config.js): CORS headers + `allowedDevOrigins` are scoped to the

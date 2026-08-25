@@ -51,6 +51,14 @@ export default function SavingsSection(_props: SavingsSectionProps) {
               key={saving.id}
               title={isWithdraw ? "Narik" : "Nabung"}
               date={formatDate(saving.date)}
+              // The bank transaction id of the transfer that drew on the
+              // savings — it answers "which transfer was this?", the same
+              // question the reference on a payment answers. Only a withdrawal
+              // can have one: a SAVE is a book entry from the sync sheet and
+              // never carries a reference. It can still be absent, so the row
+              // has to read without it — a withdrawal the parent requested
+              // themselves has no reference until an admin settles it.
+              sub={isWithdraw ? (saving.reference ?? undefined) : undefined}
               amount={`${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`}
               badge={status.text}
               badgeVariant={status.variant}

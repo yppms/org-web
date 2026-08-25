@@ -200,7 +200,12 @@ export default function HomeSection({
         rows.push({
           key: `saving-${saving.id}`,
           type: "Tabungan",
-          name: isWithdraw ? "Narik" : "Nabung",
+          // The withdrawal's bank reference, same as the payment row above.
+          // A SAVE never has one, and a withdrawal only gets one once an admin
+          // settles it, so the row has to read without it too.
+          name: isWithdraw
+            ? ["Narik", saving.reference].filter(Boolean).join(" · ")
+            : "Nabung",
           date: formatDate(saving.date),
           at: new Date(saving.date).getTime(),
           amount: `${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`,

@@ -170,10 +170,6 @@ export interface Payment {
   updatedAt: string;
 }
 
-export interface FullDayInfo {
-  date: number;
-}
-
 // ---------------------------------------------------------------------------
 // Admin portal shared types (previously re-declared inline in each admin
 // component, which caused drift — e.g. Payment defined three different ways).

@@ -292,18 +292,6 @@ export default function PaymentFormModal({
                 >
                   Reguler 300K
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    formData.amount === "600000" &&
-                      "border-primary bg-primary-soft text-primary",
-                  )}
-                  onClick={() => setFormData({ ...formData, amount: "600000" })}
-                >
-                  Full Day 600K
-                </Button>
               </div>
               <Input
                 type="text"

@@ -119,8 +119,7 @@ const newest = <T extends { no: number }>(rows: T[]): T | undefined =>
 
 /**
  * Beranda — the landing tab. Composes a summary of every other tab: what is
- * owed, the latest daily report, recent money movement, and the full-day
- * programme.
+ * owed, the latest daily report, and recent money movement.
  *
  * Card order is driven by urgency rather than a fixed layout: an overdue bill
  * jumps to the top, and when nothing is overdue the bill sinks below the
@@ -271,10 +270,6 @@ export default function HomeSection({
   const isLunas = stats.outstanding <= 0;
   const hasOverdue = outstandingRows.some((row) => row.daysLate > 0);
 
-  const isFullDayEnrolled = profile.KindyStudentRecurringFee?.some((fee) =>
-    fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
-  );
-
   return (
     <div className="flex flex-col gap-4">
       {!isLunas && (
@@ -409,21 +404,6 @@ export default function HomeSection({
           )}
         </CardContent>
       </Card>
-
-      {isFullDayEnrolled && (
-        <Card style={{ order: 3 }}>
-          <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border">
-            <CardTitle>Program Full Day</CardTitle>
-            <CardLink label="Kelola" onClick={() => onNavigate("profile")} />
-          </CardHeader>
-          <CardContent className="flex items-center gap-2 pt-3">
-            <Badge>Aktif</Badge>
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              Ananda mengikuti program full day.
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

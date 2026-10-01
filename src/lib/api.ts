@@ -112,14 +112,6 @@ export const kindyStudentApi = {
       headers: {}, // Remove Content-Type for FormData
     }),
 
-  // Full Day endpoints
-  getFullDayDate: () => apiCall('/kindy/student/fd/date'),
-  changeFullDay: (isJoin: boolean) =>
-    apiCall('/kindy/student/fd', {
-      method: 'PATCH',
-      body: JSON.stringify({ isJoin }),
-    }),
-
   // Saving endpoints
   getSavings: () => apiCall('/kindy/student/saving'),
   withdrawSaving: (amount: number) =>

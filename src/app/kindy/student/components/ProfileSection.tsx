@@ -125,13 +125,11 @@ export default function ProfileSection({
   openBankSignal = 0,
   onAvatarClick,
 }: ProfileSectionProps) {
-  const [modal, setModal] = useState<null | "fullday" | "bank">(null);
+  const [modal, setModal] = useState<null | "bank">(null);
   const [finEnt, setFinEnt] = useState(profile.finEnt || "");
   const [finNum, setFinNum] = useState(profile.finNum || "");
   const [finName, setFinName] = useState(profile.finName || "");
   const [error, setError] = useState<string | null>(null);
-  const [isChangingFullDay, setIsChangingFullDay] = useState(false);
-  const [fullDaySuccess, setFullDaySuccess] = useState<string | null>(null);
   const [isSavingBank, setIsSavingBank] = useState(false);
   const [showWifiPass, setShowWifiPass] = useState(false);
   const [wifiCopied, setWifiCopied] = useState(false);
@@ -155,11 +153,6 @@ export default function ProfileSection({
     }
   };
 
-  const isFullDayEnrolled =
-    profile.KindyStudentRecurringFee?.some((fee) =>
-      fee.KindyRecurringFee.name.toLowerCase().includes("full day"),
-    ) || false;
-
   const hasBankInfo = !!(profile.finEnt && profile.finNum && profile.finName);
   const enrollment = profile.KindyEnrollment[0];
   const age = profile.birthDate ? formatAge(profile.birthDate) : null;
@@ -178,16 +171,9 @@ export default function ProfileSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openBankSignal]);
 
-  const openFullDayModal = () => {
-    setError(null);
-    setFullDaySuccess(null);
-    setModal("fullday");
-  };
-
   const closeModal = () => {
     setModal(null);
     setError(null);
-    setFullDaySuccess(null);
   };
 
   const handleBankSave = async () => {
@@ -221,33 +207,6 @@ export default function ProfileSection({
         );
     } finally {
       setIsSavingBank(false);
-    }
-  };
-
-  const handleFullDayToggle = async () => {
-    setIsChangingFullDay(true);
-    setError(null);
-    setFullDaySuccess(null);
-    try {
-      const wasEnrolled = isFullDayEnrolled;
-      await kindyStudentApi.changeFullDay(!isFullDayEnrolled);
-      const profileResponse = await kindyStudentApi.getProfile();
-      onUpdate(profileResponse.data);
-      setFullDaySuccess(
-        wasEnrolled
-          ? "Ananda dapat mendaftar kembali kapan saja bulan berikutnya."
-          : "Ananda dapat mengikuti Full Day mulai bulan depan.",
-      );
-    } catch (err) {
-      if (onError) onError(err);
-      else
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Gagal memperbarui program full day",
-        );
-    } finally {
-      setIsChangingFullDay(false);
     }
   };
 
@@ -293,28 +252,6 @@ export default function ProfileSection({
               value={enrollment ? enrollment.KindyGroup.kindyYearName : "—"}
               last
             />
-          </CardContent>
-        </Card>
-
-        {/* Program Full Day */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between border-b border-border">
-            <CardTitle>Program Full Day</CardTitle>
-            <Button
-              size="sm"
-              variant={isFullDayEnrolled ? "destructive" : "default"}
-              onClick={openFullDayModal}
-              className="shrink-0"
-            >
-              {isFullDayEnrolled ? "Berhenti" : "Daftar"}
-            </Button>
-          </CardHeader>
-          <CardContent className="pt-3">
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {isFullDayEnrolled
-                ? "Ananda mengikuti program full day."
-                : "Ananda belum mengikuti program full day. Pendaftaran berlaku mulai bulan depan."}
-            </p>
           </CardContent>
         </Card>
 
@@ -457,76 +394,6 @@ export default function ProfileSection({
           </CardContent>
         </Card>
       </div>
-
-      {/* Full Day dialog */}
-      <Modal
-        open={modal === "fullday"}
-        onClose={closeModal}
-        dismissable={!isChangingFullDay}
-        title={
-          fullDaySuccess
-            ? undefined
-            : isFullDayEnrolled
-              ? "Berhenti Full Day"
-              : "Daftar Full Day"
-        }
-        actions={
-          fullDaySuccess ? (
-            <Button size="sm" onClick={closeModal}>
-              Selesai
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={closeModal}
-                disabled={isChangingFullDay}
-              >
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                variant={isFullDayEnrolled ? "destructive" : "default"}
-                onClick={handleFullDayToggle}
-                disabled={isChangingFullDay}
-              >
-                {isChangingFullDay && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {isFullDayEnrolled ? "Ya, berhenti" : "Ya, daftarkan"}
-              </Button>
-            </>
-          )
-        }
-      >
-        {fullDaySuccess ? (
-          <div className="py-2 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-lg font-bold text-primary">
-              ✓
-            </div>
-            <h3 className="mb-2 text-base font-semibold">
-              Kepesertaan diperbarui
-            </h3>
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {fullDaySuccess}
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              {isFullDayEnrolled
-                ? "Ananda dapat mengikuti kembali program full day kapan saja di bulan berikutnya."
-                : "Ananda akan mengikuti program full day mulai bulan depan. Biaya bulanan akan bertambah."}
-            </p>
-            {error && (
-              <div className="mt-3">
-                <ErrorAlert message={error} />
-              </div>
-            )}
-          </>
-        )}
-      </Modal>
 
       {/* Bank dialog */}
       <Modal

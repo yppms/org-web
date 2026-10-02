@@ -290,7 +290,19 @@ export default function PaymentFormModal({
                   )}
                   onClick={() => setFormData({ ...formData, amount: "300000" })}
                 >
-                  Reguler 300K
+                  300K
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    formData.amount === "500000" &&
+                      "border-primary bg-primary-soft text-primary",
+                  )}
+                  onClick={() => setFormData({ ...formData, amount: "500000" })}
+                >
+                  500K
                 </Button>
               </div>
               <Input

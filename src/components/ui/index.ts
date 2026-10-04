@@ -19,7 +19,6 @@ export {
 } from "./card";
 export { Badge, badgeVariants } from "./badge";
 export { Input } from "./input";
-export { Textarea } from "./textarea";
 export { Label } from "./label";
 export { Chip } from "./chip";
 export { Switch } from "./switch";

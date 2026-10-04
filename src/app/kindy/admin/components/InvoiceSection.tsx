@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import InvoiceFormModal from "./InvoiceFormModal";
+import RichText from "@/components/RichText";
 
 export default function InvoiceSection() {
   const {
@@ -245,9 +246,10 @@ export default function InvoiceSection() {
                             </span>
                           )}
                           {invoice.description && (
-                            <p className="mt-1.5 whitespace-pre-line text-xs text-muted-foreground">
-                              {invoice.description}
-                            </p>
+                            <RichText
+                              html={invoice.description}
+                              className="mt-1.5 text-xs text-muted-foreground"
+                            />
                           )}
                         </div>
 

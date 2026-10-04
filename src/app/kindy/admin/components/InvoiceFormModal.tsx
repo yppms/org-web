@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { formatCurrency, formatDate, formatAmountInput } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import RichText from "@/components/RichText";
+import dynamic from "next/dynamic";
 import type { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
 import {
   Button,
   Input,
-  Textarea,
   Switch,
   Label,
   Dialog,
@@ -17,6 +18,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui";
+
+// TipTap is ~130 kB; load it only when an admin switches Refund on.
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), {
+  ssr: false,
+});
 
 interface InvoiceFormModalProps {
   mode: "add" | "edit" | null;
@@ -286,12 +292,11 @@ export default function InvoiceFormModal({
             {formData.isRefund && (
               <div className="flex flex-col gap-1.5">
                 <Label>Deskripsi</Label>
-                <Textarea
-                  rows={4}
-                  placeholder="mis. Infak Pengembangan Sekolah: 4/12 * 2.500.000 = 416.667"
+                <RichTextEditor
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                  // Functional update: the editor may hold an older closure.
+                  onChange={(html) =>
+                    setFormData((prev) => ({ ...prev, description: html }))
                   }
                 />
               </div>
@@ -410,14 +415,12 @@ export default function InvoiceFormModal({
               )}
             </div>
 
-            {formData.isRefund && formData.description.trim() && (
+            {formData.isRefund && formData.description && (
               <div className="border-t border-border pt-3">
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                   Deskripsi
                 </div>
-                <div className="whitespace-pre-line text-sm">
-                  {formData.description.trim()}
-                </div>
+                <RichText html={formData.description} className="text-sm" />
               </div>
             )}
 

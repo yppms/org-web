@@ -7,6 +7,7 @@ import { useApi } from "@/hooks/useApi";
 import { Spinner, ErrorAlert, EmptyState } from "@/components/ui";
 import type { BadgeProps } from "@/components/ui/badge";
 import ActivityRow from "./ActivityRow";
+import RichText from "@/components/RichText";
 
 const statusMap: Record<
   string,
@@ -83,9 +84,10 @@ export default function InvoicesSection() {
             rows.length > 0 || invoice.description ? (
               <div className="rounded-lg bg-muted px-3 py-1">
                 {invoice.description && (
-                  <p className="whitespace-pre-line py-1 text-xs text-muted-foreground">
-                    {invoice.description}
-                  </p>
+                  <RichText
+                    html={invoice.description}
+                    className="py-1 text-xs text-muted-foreground"
+                  />
                 )}
                 {rows.map((r, i) => (
                   <div

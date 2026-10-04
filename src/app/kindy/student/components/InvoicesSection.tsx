@@ -1,7 +1,7 @@
 "use client";
 
 import { Invoice } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, invoiceAmount } from "@/lib/utils";
 import kindyStudentApi from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Spinner, ErrorAlert, EmptyState } from "@/components/ui";
@@ -60,12 +60,32 @@ export default function InvoicesSection() {
               className: "text-warning",
             });
           }
-          // A refund's `paid` is what the school has transferred back (negative).
-          if (invoice.isRefund && invoice.paid < 0) {
+          // Refund = everything paid − the school's share (hak sekolah).
+          if (invoice.refund) {
+            const { totalPaid, schoolShare, refundable, transferred } =
+              invoice.refund;
             rows.push({
-              label: "Ditransfer ke orang tua",
-              value: formatCurrency(-invoice.paid),
+              label: "Total dibayar",
+              value: formatCurrency(totalPaid),
             });
+            rows.push({
+              label: "Hak sekolah",
+              value: formatCurrency(-schoolShare),
+            });
+            rows.push({
+              label: refundable < 0 ? "Kurang bayar" : "Dikembalikan",
+              value: formatCurrency(Math.abs(refundable)),
+              className:
+                refundable < 0
+                  ? "text-destructive"
+                  : "font-semibold text-primary",
+            });
+            if (transferred > 0) {
+              rows.push({
+                label: "Sudah ditransfer",
+                value: formatCurrency(transferred),
+              });
+            }
           }
           // Only when partially paid: some payment made, but still outstanding.
           if (invoice.paid > 0 && invoice.outstanding > 0) {
@@ -110,7 +130,7 @@ export default function InvoicesSection() {
               key={invoice.id}
               title={invoice.name}
               date={formatDate(invoice.startDate)}
-              amount={formatCurrency(invoice.amount)}
+              amount={formatCurrency(invoiceAmount(invoice))}
               badge={status.text}
               badgeVariant={status.variant}
               extra={extra}

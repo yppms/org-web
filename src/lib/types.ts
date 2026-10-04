@@ -114,14 +114,32 @@ export interface Invoice {
   status: 'issued' | 'paid' | 'partial' | 'overdue' | 'refund';
   paid: number;
   outstanding: number;
-  /** Money owed back to the parent; amountFull/amount are negative. */
+  /**
+   * Settles a leaving student: amountFull is the school's share (hak sekolah)
+   * and `refund` holds what that comes to. `amount` is a ledger adjustment —
+   * never show it for a refund.
+   */
   isRefund: boolean;
-  /** Refund breakdown, one item per line. Null unless isRefund. */
+  /** Breakdown of the school's share, as sanitized HTML. Null unless isRefund. */
   description: string | null;
+  /** Present when isRefund. */
+  refund?: RefundBreakdown;
   kindyStudentName: string;
   no: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * What a refund comes to: everything the parent paid (payouts excluded) minus
+ * the school's share. `refundable` < 0 means the parent still owes that much.
+ */
+export interface RefundBreakdown {
+  totalPaid: number;
+  schoolShare: number;
+  refundable: number;
+  /** Already paid back to the parent. */
+  transferred: number;
 }
 
 export interface UnpaidInvoice {
@@ -212,13 +230,15 @@ export interface AdminInvoice {
   id: string;
   kindyStudentName: string;
   name: string;
-  /** Negative when isRefund. */
+  /** For a refund: the school's share (hak sekolah). */
   amountFull: number;
   discount: number;
-  /** Negative when isRefund. */
+  /** For a refund: a ledger adjustment — show `refund` instead. */
   amount: number;
   isRefund: boolean;
   description: string | null;
+  /** Present when isRefund. */
+  refund?: RefundBreakdown;
   startDate: string;
   dueDate: string;
   createdAt: string;
@@ -228,7 +248,7 @@ export interface AdminInvoice {
 /**
  * Form state for the admin invoice modal. amount/discount are strings because
  * they are bound to text inputs; the section parses them before calling the API.
- * amount is always entered positive — the server negates it for a refund.
+ * For a refund, amount is the school's share (hak sekolah).
  */
 export interface InvoiceFormData {
   studentId: string;

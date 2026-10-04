@@ -13,7 +13,12 @@ import {
   Saving,
   StudentStats,
 } from "@/lib/types";
-import { addressOf, formatCurrency, formatDate } from "@/lib/utils";
+import {
+  addressOf,
+  formatCurrency,
+  formatDate,
+  invoiceAmount,
+} from "@/lib/utils";
 import { relativeDayLabel, weekdayName } from "@/lib/harian";
 import {
   Badge,
@@ -164,7 +169,7 @@ export default function HomeSection({
           name: invoice.name,
           date: formatDate(invoice.startDate),
           at: new Date(invoice.startDate).getTime(),
-          amount: formatCurrency(invoice.amount),
+          amount: formatCurrency(invoiceAmount(invoice)),
           badge: status.text,
           badgeVariant: status.variant,
         });

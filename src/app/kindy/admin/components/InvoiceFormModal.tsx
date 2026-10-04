@@ -5,7 +5,13 @@ import { formatCurrency, formatDate, formatAmountInput } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import RichText from "@/components/RichText";
 import dynamic from "next/dynamic";
-import type { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
+import { kindyAdminApi } from "@/lib/api";
+import type {
+  AdminInvoice,
+  AdminStudent,
+  InvoiceFormData,
+  StudentOutstanding,
+} from "@/lib/types";
 import {
   Button,
   Input,
@@ -53,6 +59,8 @@ export default function InvoiceFormModal({
   const [filteredStudents, setFilteredStudents] = useState<AdminStudent[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  // Everything the student has paid, to show what the refund comes to.
+  const [totalPaid, setTotalPaid] = useState<number | null>(null);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -73,7 +81,8 @@ export default function InvoiceFormModal({
       setFormData({
         studentId: "", // Cannot edit studentId
         name: invoice.name,
-        // A refund is stored negative; the input only takes digits.
+        // A refund's amountFull is the school's share. Refunds saved before
+        // that stored a negative amount; the input only takes digits.
         amount: Math.abs(invoice.amountFull).toString(),
         discount: invoice.discount.toString(),
         startDate: invoice.startDate.split("T")[0],
@@ -85,6 +94,41 @@ export default function InvoiceFormModal({
       setFilteredStudents(students);
     }
   }, [mode, invoice, students]);
+
+  const refundStudentName =
+    mode === "edit"
+      ? invoice?.kindyStudentName
+      : students.find((s) => s.id === formData.studentId)?.name;
+
+  useEffect(() => {
+    if (!mode || !formData.isRefund) return;
+    // An existing refund carries its own figure; the outstanding list nets
+    // out payouts, so it would understate what was paid.
+    if (mode === "edit" && invoice?.refund) {
+      setTotalPaid(invoice.refund.totalPaid);
+      return;
+    }
+    if (!refundStudentName) {
+      setTotalPaid(null);
+      return;
+    }
+    let cancelled = false;
+    kindyAdminApi
+      .getAllOutstanding()
+      .then((res) => {
+        if (cancelled) return;
+        const row = (res.data as StudentOutstanding[] | undefined)?.find(
+          (s) => s.name === refundStudentName,
+        );
+        setTotalPaid(row?.totalPayment ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setTotalPaid(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, formData.isRefund, refundStudentName, invoice]);
 
   const handleStudentSearch = (searchValue: string) => {
     setStudentSearch(searchValue);
@@ -244,7 +288,7 @@ export default function InvoiceFormModal({
               <div>
                 <p className="text-[13px] font-medium">Refund</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Dana dikembalikan ke orang tua, dicatat minus
+                  Penyelesaian siswa keluar; menggantikan semua tagihan lain
                 </p>
               </div>
               <Switch
@@ -261,7 +305,7 @@ export default function InvoiceFormModal({
             >
               <div className="flex flex-col gap-1.5">
                 <Label>
-                  {formData.isRefund ? "Jumlah refund (Rp)" : "Jumlah (Rp)"}
+                  {formData.isRefund ? "Hak sekolah (Rp)" : "Jumlah (Rp)"}
                 </Label>
                 <Input
                   type="text"
@@ -272,6 +316,28 @@ export default function InvoiceFormModal({
                     setFormData({ ...formData, amount: numericValue });
                   }}
                 />
+                {formData.isRefund && (
+                  <p className="text-xs text-muted-foreground">
+                    Semua yang menjadi hak sekolah, termasuk SPP bulan yang
+                    sudah berjalan. Refund = total pembayaran − hak sekolah.
+                    {totalPaid !== null && (
+                      <>
+                        {" "}
+                        Dibayar{" "}
+                        <span className="font-mono">
+                          {formatCurrency(totalPaid)}
+                        </span>{" "}
+                        →{" "}
+                        {totalPaid - amountValue < 0
+                          ? "kurang bayar"
+                          : "dikembalikan"}{" "}
+                        <span className="font-mono font-medium text-foreground">
+                          {formatCurrency(Math.abs(totalPaid - amountValue))}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
               {!formData.isRefund && (
                 <div className="flex flex-col gap-1.5">
@@ -291,7 +357,7 @@ export default function InvoiceFormModal({
 
             {formData.isRefund && (
               <div className="flex flex-col gap-1.5">
-                <Label>Deskripsi</Label>
+                <Label>Rincian hak sekolah</Label>
                 <RichTextEditor
                   value={formData.description}
                   // Functional update: the editor may hold an older closure.
@@ -379,11 +445,42 @@ export default function InvoiceFormModal({
                 Rincian Jumlah
               </div>
               {formData.isRefund ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Total Refund</span>
-                  <span className="text-sm font-bold font-mono text-destructive">
-                    {formatCurrency(-amountValue)}
-                  </span>
+                <div className="flex flex-col gap-2">
+                  {totalPaid !== null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Total dibayar
+                      </span>
+                      <span className="text-sm font-medium font-mono">
+                        {formatCurrency(totalPaid)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Hak sekolah
+                    </span>
+                    <span className="text-sm font-medium font-mono">
+                      {formatCurrency(-amountValue)}
+                    </span>
+                  </div>
+                  {totalPaid !== null ? (
+                    <div className="flex items-center justify-between border-t border-border pt-2">
+                      <span className="text-sm font-semibold">
+                        {totalPaid - amountValue < 0
+                          ? "Kurang bayar"
+                          : "Dikembalikan"}
+                      </span>
+                      <span className="text-sm font-bold font-mono text-primary">
+                        {formatCurrency(Math.abs(totalPaid - amountValue))}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Refund = total pembayaran siswa − hak sekolah, dihitung
+                      otomatis.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -418,7 +515,7 @@ export default function InvoiceFormModal({
             {formData.isRefund && formData.description && (
               <div className="border-t border-border pt-3">
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
-                  Deskripsi
+                  Rincian hak sekolah
                 </div>
                 <RichText html={formData.description} className="text-sm" />
               </div>

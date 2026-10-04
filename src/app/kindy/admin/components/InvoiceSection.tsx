@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, invoiceAmount } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import {
   Spinner,
@@ -245,6 +245,30 @@ export default function InvoiceSection() {
                               Refund
                             </span>
                           )}
+                          {invoice.refund && (
+                            <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                              <span>
+                                Dibayar{" "}
+                                <span className="font-mono">
+                                  {formatCurrency(invoice.refund.totalPaid)}
+                                </span>
+                              </span>
+                              <span>
+                                Hak sekolah{" "}
+                                <span className="font-mono">
+                                  {formatCurrency(invoice.refund.schoolShare)}
+                                </span>
+                              </span>
+                              {invoice.refund.transferred > 0 && (
+                                <span>
+                                  Ditransfer{" "}
+                                  <span className="font-mono">
+                                    {formatCurrency(invoice.refund.transferred)}
+                                  </span>
+                                </span>
+                              )}
+                            </p>
+                          )}
                           {invoice.description && (
                             <RichText
                               html={invoice.description}
@@ -255,7 +279,7 @@ export default function InvoiceSection() {
 
                         <div className="flex shrink-0 flex-col items-end gap-1.5">
                           <span className="text-sm font-semibold font-mono">
-                            {formatCurrency(invoice.amount)}
+                            {formatCurrency(invoiceAmount(invoice))}
                           </span>
                           <div className="flex gap-0.5">
                             <Button
@@ -321,7 +345,7 @@ export default function InvoiceSection() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Jumlah</span>
                 <span className="font-mono font-medium">
-                  {formatCurrency(selectedInvoice.amount)}
+                  {formatCurrency(invoiceAmount(selectedInvoice))}
                 </span>
               </div>
               <div className="flex justify-between">

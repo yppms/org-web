@@ -16,6 +16,7 @@ const statusMap: Record<
   paid: { text: "Lunas", variant: "default" },
   partial: { text: "Sebagian", variant: "warning" },
   overdue: { text: "Terlambat", variant: "destructive" },
+  refund: { text: "Refund", variant: "info" },
 };
 
 export default function InvoicesSection() {
@@ -58,6 +59,13 @@ export default function InvoicesSection() {
               className: "text-warning",
             });
           }
+          // A refund's `paid` is what the school has transferred back (negative).
+          if (invoice.isRefund && invoice.paid < 0) {
+            rows.push({
+              label: "Ditransfer ke orang tua",
+              value: formatCurrency(-invoice.paid),
+            });
+          }
           // Only when partially paid: some payment made, but still outstanding.
           if (invoice.paid > 0 && invoice.outstanding > 0) {
             rows.push({
@@ -72,8 +80,13 @@ export default function InvoicesSection() {
           }
 
           const extra =
-            rows.length > 0 ? (
+            rows.length > 0 || invoice.description ? (
               <div className="rounded-lg bg-muted px-3 py-1">
+                {invoice.description && (
+                  <p className="whitespace-pre-line py-1 text-xs text-muted-foreground">
+                    {invoice.description}
+                  </p>
+                )}
                 {rows.map((r, i) => (
                   <div
                     key={i}

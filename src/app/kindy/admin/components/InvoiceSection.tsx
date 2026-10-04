@@ -64,6 +64,8 @@ export default function InvoiceSection() {
           discount: parseFloat(formData.discount),
           startDate: formData.startDate,
           dueDate: formData.dueDate,
+          isRefund: formData.isRefund,
+          description: formData.isRefund ? formData.description : null,
         });
       } else if (formMode === "edit" && selectedInvoice) {
         await kindyAdminApi.updateInvoice(selectedInvoice.id, {
@@ -72,6 +74,8 @@ export default function InvoiceSection() {
           discount: parseFloat(formData.discount),
           startDate: formData.startDate,
           dueDate: formData.dueDate,
+          isRefund: formData.isRefund,
+          description: formData.isRefund ? formData.description : null,
         });
       }
       await refetch();
@@ -234,6 +238,16 @@ export default function InvoiceSection() {
                             <span className="mt-1.5 inline-block rounded-md bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
                               Diskon {formatCurrency(invoice.discount)}
                             </span>
+                          )}
+                          {invoice.isRefund && (
+                            <span className="mt-1.5 inline-block rounded-md bg-info-soft px-2 py-0.5 text-xs font-medium text-info">
+                              Refund
+                            </span>
+                          )}
+                          {invoice.description && (
+                            <p className="mt-1.5 whitespace-pre-line text-xs text-muted-foreground">
+                              {invoice.description}
+                            </p>
                           )}
                         </div>
 

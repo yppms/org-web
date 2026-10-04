@@ -102,6 +102,7 @@ const INVOICE_STATUS: Record<
   paid: { text: "Lunas", variant: "default" },
   partial: { text: "Sebagian", variant: "warning" },
   overdue: { text: "Terlambat", variant: "destructive" },
+  refund: { text: "Refund", variant: "info" },
 };
 
 const SAVING_STATUS: Record<
@@ -173,7 +174,8 @@ export default function HomeSection({
       if (payment) {
         rows.push({
           key: `payment-${payment.id}`,
-          type: "Pembayaran",
+          // Negative = the school paying a refund back to the parent.
+          type: payment.amount < 0 ? "Refund" : "Pembayaran",
           // Both the bank reference and what it settled — they answer
           // different questions ("which transfer was this?" vs "what did it
           // pay?"). detailOf appends the date after them.
@@ -184,8 +186,8 @@ export default function HomeSection({
           date: formatDate(payment.date),
           at: new Date(payment.date).getTime(),
           amount: formatCurrency(payment.amount),
-          badge: "Sukses",
-          badgeVariant: "default",
+          badge: payment.amount < 0 ? "Ditransfer" : "Sukses",
+          badgeVariant: payment.amount < 0 ? "info" : "default",
         });
       }
 

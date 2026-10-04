@@ -67,15 +67,18 @@ export default function PaymentSection() {
               </div>
             ) : undefined;
 
+          // Negative = the school paying a refund back to the parent.
+          const isPayout = payment.amount < 0;
+
           return (
             <ActivityRow
               key={payment.id}
-              title={`Bayar #${payment.no}`}
+              title={`${isPayout ? "Refund" : "Bayar"} #${payment.no}`}
               date={formatDate(payment.date)}
               sub={payment.reference ?? undefined}
               amount={formatCurrency(payment.amount)}
-              badge="Sukses"
-              badgeVariant="default"
+              badge={isPayout ? "Ditransfer" : "Sukses"}
+              badgeVariant={isPayout ? "info" : "default"}
               extra={extra}
             />
           );

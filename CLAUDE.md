@@ -74,7 +74,7 @@ formatter's output (`formatCurrency(x).replace("Rp", "")`).
 
 | Need                              | Use                                  |
 | --------------------------------- | ------------------------------------ |
-| money for display                 | `formatCurrency` → `Rp1.500.000`     |
+| money for display                 | `formatCurrency` → `Rp1.500.000`; negatives (refunds, payouts) → `−Rp1.500.000` |
 | date                              | `formatDate` → `26-Jul-26`           |
 | date + time                       | `formatDateTime` → `26-Jul-26 14:05` |
 | currency text input (no prefix)   | `formatAmountInput` → `1.500.000`    |

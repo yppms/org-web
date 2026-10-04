@@ -7,6 +7,8 @@ import type { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
 import {
   Button,
   Input,
+  Textarea,
+  Switch,
   Label,
   Dialog,
   DialogContent,
@@ -38,6 +40,8 @@ export default function InvoiceFormModal({
     discount: "0",
     startDate: new Date().toISOString().split("T")[0],
     dueDate: new Date().toISOString().split("T")[0],
+    isRefund: false,
+    description: "",
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<AdminStudent[]>([]);
@@ -54,6 +58,8 @@ export default function InvoiceFormModal({
         discount: "0",
         startDate: new Date().toISOString().split("T")[0],
         dueDate: new Date().toISOString().split("T")[0],
+        isRefund: false,
+        description: "",
       });
       setStudentSearch("");
       setFilteredStudents(students);
@@ -61,10 +67,13 @@ export default function InvoiceFormModal({
       setFormData({
         studentId: "", // Cannot edit studentId
         name: invoice.name,
-        amount: invoice.amountFull.toString(),
+        // A refund is stored negative; the input only takes digits.
+        amount: Math.abs(invoice.amountFull).toString(),
         discount: invoice.discount.toString(),
         startDate: invoice.startDate.split("T")[0],
         dueDate: invoice.dueDate.split("T")[0],
+        isRefund: invoice.isRefund,
+        description: invoice.description ?? "",
       });
       setStudentSearch("");
       setFilteredStudents(students);
@@ -218,9 +227,36 @@ export default function InvoiceFormModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors",
+                formData.isRefund
+                  ? "border-primary bg-primary-soft"
+                  : "border-border",
+              )}
+            >
+              <div>
+                <p className="text-[13px] font-medium">Refund</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Dana dikembalikan ke orang tua, dicatat minus
+                </p>
+              </div>
+              <Switch
+                checked={formData.isRefund}
+                onCheckedChange={(checked) =>
+                  // A refund carries no discount; the server rejects one.
+                  setFormData({ ...formData, isRefund: checked, discount: "0" })
+                }
+              />
+            </div>
+
+            <div
+              className={cn("grid gap-3", !formData.isRefund && "grid-cols-2")}
+            >
               <div className="flex flex-col gap-1.5">
-                <Label>Jumlah (Rp)</Label>
+                <Label>
+                  {formData.isRefund ? "Jumlah refund (Rp)" : "Jumlah (Rp)"}
+                </Label>
                 <Input
                   type="text"
                   className="font-mono"
@@ -231,19 +267,35 @@ export default function InvoiceFormModal({
                   }}
                 />
               </div>
+              {!formData.isRefund && (
+                <div className="flex flex-col gap-1.5">
+                  <Label>Diskon (Rp)</Label>
+                  <Input
+                    type="text"
+                    className="font-mono"
+                    value={formatAmountInput(formData.discount)}
+                    onChange={(e) => {
+                      const numericValue = e.target.value.replace(/\D/g, "");
+                      setFormData({ ...formData, discount: numericValue });
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {formData.isRefund && (
               <div className="flex flex-col gap-1.5">
-                <Label>Diskon (Rp)</Label>
-                <Input
-                  type="text"
-                  className="font-mono"
-                  value={formatAmountInput(formData.discount)}
-                  onChange={(e) => {
-                    const numericValue = e.target.value.replace(/\D/g, "");
-                    setFormData({ ...formData, discount: numericValue });
-                  }}
+                <Label>Deskripsi</Label>
+                <Textarea
+                  rows={4}
+                  placeholder="mis. Infak Pengembangan Sekolah: 4/12 * 2.500.000 = 416.667"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                 />
               </div>
-            </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
@@ -321,33 +373,53 @@ export default function InvoiceFormModal({
               <div className="mb-2 text-xs font-medium text-muted-foreground">
                 Rincian Jumlah
               </div>
-              <div className="flex flex-col gap-2">
+              {formData.isRefund ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Jumlah Penuh
-                  </span>
-                  <span className="text-sm font-medium font-mono">
-                    {formatCurrency(amountValue)}
+                  <span className="text-sm font-semibold">Total Refund</span>
+                  <span className="text-sm font-bold font-mono text-destructive">
+                    {formatCurrency(-amountValue)}
                   </span>
                 </div>
-                {discountValue > 0 && (
+              ) : (
+                <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      Diskon
+                      Jumlah Penuh
                     </span>
-                    <span className="text-sm font-medium font-mono text-destructive">
-                      − {formatCurrency(discountValue)}
+                    <span className="text-sm font-medium font-mono">
+                      {formatCurrency(amountValue)}
                     </span>
                   </div>
-                )}
-                <div className="flex items-center justify-between border-t border-border pt-2">
-                  <span className="text-sm font-semibold">Total Akhir</span>
-                  <span className="text-sm font-bold font-mono text-primary">
-                    {formatCurrency(amountValue - discountValue)}
-                  </span>
+                  {discountValue > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Diskon
+                      </span>
+                      <span className="text-sm font-medium font-mono text-destructive">
+                        − {formatCurrency(discountValue)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <span className="text-sm font-semibold">Total Akhir</span>
+                    <span className="text-sm font-bold font-mono text-primary">
+                      {formatCurrency(amountValue - discountValue)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {formData.isRefund && formData.description.trim() && (
+              <div className="border-t border-border pt-3">
+                <div className="mb-1 text-xs font-medium text-muted-foreground">
+                  Deskripsi
+                </div>
+                <div className="whitespace-pre-line text-sm">
+                  {formData.description.trim()}
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="border-t border-border pt-3">
               <div className="mb-2 text-xs font-medium text-muted-foreground">

@@ -111,9 +111,13 @@ export interface Invoice {
   amount: number;
   startDate: string;
   dueDate: string;
-  status: 'issued' | 'paid' | 'partial' | 'overdue';
+  status: 'issued' | 'paid' | 'partial' | 'overdue' | 'refund';
   paid: number;
   outstanding: number;
+  /** Money owed back to the parent; amountFull/amount are negative. */
+  isRefund: boolean;
+  /** Refund breakdown, one item per line. Null unless isRefund. */
+  description: string | null;
   kindyStudentName: string;
   no: number;
   createdAt: string;
@@ -126,10 +130,13 @@ export interface UnpaidInvoice {
   amount: number;
   startDate: string;
   dueDate: string;
-  status: 'issued' | 'paid' | 'partial' | 'overdue';
+  status: 'issued' | 'paid' | 'partial' | 'overdue' | 'refund';
   paid: number;
+  /** For a refund row: what the school can still pay out (positive). */
   outstanding: number;
   isCustom: boolean;
+  /** Listed only while something is left to pay out — see `outstanding`. */
+  isRefund: boolean;
   daysLate: number;
   no: number;
   createdAt: string;
@@ -205,9 +212,13 @@ export interface AdminInvoice {
   id: string;
   kindyStudentName: string;
   name: string;
+  /** Negative when isRefund. */
   amountFull: number;
   discount: number;
+  /** Negative when isRefund. */
   amount: number;
+  isRefund: boolean;
+  description: string | null;
   startDate: string;
   dueDate: string;
   createdAt: string;
@@ -217,6 +228,7 @@ export interface AdminInvoice {
 /**
  * Form state for the admin invoice modal. amount/discount are strings because
  * they are bound to text inputs; the section parses them before calling the API.
+ * amount is always entered positive — the server negates it for a refund.
  */
 export interface InvoiceFormData {
   studentId: string;
@@ -225,6 +237,8 @@ export interface InvoiceFormData {
   discount: string;
   startDate: string;
   dueDate: string;
+  isRefund: boolean;
+  description: string;
 }
 
 /**
@@ -247,11 +261,14 @@ export interface AdminPayment {
 /** Form payload for creating/editing a payment (admin payment modal). */
 export interface PaymentFormData {
   studentId: string;
+  /** Always entered positive; negated on submit when isPayout. */
   amount: string;
   date: string;
   reference: string;
   invoiceId?: string | null;
   isSaving?: boolean;
+  /** The school paying a refund back to the parent (sent as a negative amount). */
+  isPayout?: boolean;
 }
 
 export interface OrgFinancialInfo {

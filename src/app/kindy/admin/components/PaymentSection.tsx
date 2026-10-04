@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import { AdminPayment, AdminStudent, PaymentFormData } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import {
   Spinner,
@@ -57,11 +57,13 @@ export default function PaymentSection() {
 
   const handleFormSubmit = async (formData: PaymentFormData) => {
     setActionError(null);
+    // A refund payout is the school paying out, so it is stored negative.
+    const amount = parseFloat(formData.amount) * (formData.isPayout ? -1 : 1);
     try {
       if (formMode === "add") {
         await kindyAdminApi.addPayment({
           studentId: formData.studentId,
-          amount: parseFloat(formData.amount),
+          amount,
           date: formData.date,
           reference: formData.reference,
           invoiceId: formData.invoiceId || null,
@@ -69,7 +71,7 @@ export default function PaymentSection() {
         });
       } else if (formMode === "edit" && selectedPayment) {
         await kindyAdminApi.updatePayment(selectedPayment.id, {
-          amount: parseFloat(formData.amount),
+          amount,
           date: formData.date,
           reference: formData.reference,
           invoiceId: formData.invoiceId || null,
@@ -255,7 +257,16 @@ export default function PaymentSection() {
                             {formatDate(payment.createdAt)}
                           </p>
                           {payment.invoiceName && (
-                            <span className="mt-1.5 inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            <span
+                              className={cn(
+                                "mt-1.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium",
+                                // Negative = the school paying out a refund.
+                                payment.amount < 0
+                                  ? "bg-info-soft text-info"
+                                  : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              {payment.amount < 0 && "Transfer "}
                               {payment.invoiceName}
                             </span>
                           )}

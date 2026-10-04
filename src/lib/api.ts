@@ -199,6 +199,8 @@ export const kindyAdminApi = {
     discount: number;
     startDate: string;
     dueDate: string;
+    isRefund: boolean;
+    description: string | null;
   }) =>
     apiCall('/kindy/admin/invoice', {
       method: 'POST',
@@ -210,6 +212,8 @@ export const kindyAdminApi = {
     discount: number;
     startDate: string;
     dueDate: string;
+    isRefund: boolean;
+    description: string | null;
   }) =>
     apiCall(`/kindy/admin/invoice/${id}`, {
       method: 'PUT',

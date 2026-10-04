@@ -13,9 +13,11 @@ export const formatCurrency = (amount: number): string => {
   const formatted = new Intl.NumberFormat('id-ID', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
-  
-  return `Rp${formatted}`;
+  }).format(Math.abs(amount));
+
+  // Sign before the prefix: "−Rp1.883.334", not Intl's "Rp-1.883.334".
+  // Refunds and refund payouts are stored negative.
+  return `${amount < 0 ? '−' : ''}Rp${formatted}`;
 };
 
 /** Indonesian month abbreviations, indexed 0–11. */

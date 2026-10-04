@@ -111,13 +111,14 @@ export interface Invoice {
   amount: number;
   startDate: string;
   dueDate: string;
-  status: 'issued' | 'paid' | 'partial' | 'overdue' | 'refund';
+  status: 'issued' | 'paid' | 'partial' | 'overdue';
   paid: number;
   outstanding: number;
   /**
    * Settles a leaving student: amountFull is the school's share (hak sekolah)
    * and `refund` holds what that comes to. `amount` is a ledger adjustment —
-   * never show it for a refund.
+   * never show it for a refund. Its status reads like any bill: paid once the
+   * money has moved, whichever way it had to.
    */
   isRefund: boolean;
   /** Breakdown of the school's share, as sanitized HTML. Null unless isRefund. */
@@ -150,7 +151,10 @@ export interface UnpaidInvoice {
   dueDate: string;
   status: 'issued' | 'paid' | 'partial' | 'overdue' | 'refund';
   paid: number;
-  /** For a refund row: what the school can still pay out (positive). */
+  /**
+   * For a payout offer (`status: 'refund'`): what the school can still pay
+   * out. A refund the parent still owes on is an ordinary row.
+   */
   outstanding: number;
   isCustom: boolean;
   /** Listed only while something is left to pay out — see `outstanding`. */

@@ -259,14 +259,6 @@ export default function InvoiceSection() {
                                   {formatCurrency(invoice.refund.schoolShare)}
                                 </span>
                               </span>
-                              {invoice.refund.transferred > 0 && (
-                                <span>
-                                  Ditransfer{" "}
-                                  <span className="font-mono">
-                                    {formatCurrency(invoice.refund.transferred)}
-                                  </span>
-                                </span>
-                              )}
                             </p>
                           )}
                           {invoice.description && (

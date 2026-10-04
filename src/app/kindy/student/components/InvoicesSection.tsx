@@ -17,7 +17,6 @@ const statusMap: Record<
   paid: { text: "Lunas", variant: "default" },
   partial: { text: "Sebagian", variant: "warning" },
   overdue: { text: "Terlambat", variant: "destructive" },
-  refund: { text: "Refund", variant: "info" },
 };
 
 export default function InvoicesSection() {
@@ -62,8 +61,7 @@ export default function InvoicesSection() {
           }
           // Refund = everything paid − the school's share (hak sekolah).
           if (invoice.refund) {
-            const { totalPaid, schoolShare, refundable, transferred } =
-              invoice.refund;
+            const { totalPaid, schoolShare, refundable } = invoice.refund;
             rows.push({
               label: "Total pembayaran",
               value: formatCurrency(totalPaid),
@@ -80,15 +78,10 @@ export default function InvoicesSection() {
                   ? "text-destructive"
                   : "font-semibold text-primary",
             });
-            if (transferred > 0) {
-              rows.push({
-                label: "Sudah ditransfer",
-                value: formatCurrency(transferred),
-              });
-            }
           }
           // Only when partially paid: some payment made, but still outstanding.
-          if (invoice.paid > 0 && invoice.outstanding > 0) {
+          // A refund's own breakdown already says what is left.
+          if (!invoice.refund && invoice.paid > 0 && invoice.outstanding > 0) {
             rows.push({
               label: "Terbayar",
               value: formatCurrency(invoice.paid),

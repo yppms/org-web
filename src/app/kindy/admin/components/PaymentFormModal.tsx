@@ -212,9 +212,11 @@ export default function PaymentFormModal({
     setShowConfirmModal(false);
   };
 
-  // Refund rows only in payout mode, bills only otherwise.
+  // Payout offers only in payout mode, bills only otherwise. Filter on the
+  // status, not isRefund: a refund the parent still owes on is an ordinary
+  // bill, paid with a positive amount.
   const invoiceOptions = unpaidInvoices.filter(
-    (invoice) => invoice.isRefund === isPayout,
+    (invoice) => (invoice.status === "refund") === isPayout,
   );
   const signedAmount = parseFloat(formData.amount || "0") * (isPayout ? -1 : 1);
 
@@ -457,7 +459,7 @@ export default function PaymentFormModal({
                       </option>
                       {invoiceOptions.map((invoice) => (
                         <option key={invoice.id} value={invoice.id}>
-                          {invoice.isRefund
+                          {invoice.status === "refund"
                             ? `${invoice.name} | sisa ${formatCurrency(invoice.outstanding)}`
                             : `${invoice.name} | ${formatCurrency(invoice.outstanding)} | ${invoice.daysLate} hari`}
                         </option>

@@ -77,8 +77,8 @@ export default function PaymentSection() {
               date={formatDate(payment.date)}
               sub={payment.reference ?? undefined}
               amount={formatCurrency(payment.amount)}
-              badge={isPayout ? "Ditransfer" : "Sukses"}
-              badgeVariant={isPayout ? "info" : "default"}
+              badge="Sukses"
+              badgeVariant="default"
               extra={extra}
             />
           );

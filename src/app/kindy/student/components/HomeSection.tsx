@@ -107,7 +107,6 @@ const INVOICE_STATUS: Record<
   paid: { text: "Lunas", variant: "default" },
   partial: { text: "Sebagian", variant: "warning" },
   overdue: { text: "Terlambat", variant: "destructive" },
-  refund: { text: "Refund", variant: "info" },
 };
 
 const SAVING_STATUS: Record<
@@ -191,8 +190,8 @@ export default function HomeSection({
           date: formatDate(payment.date),
           at: new Date(payment.date).getTime(),
           amount: formatCurrency(payment.amount),
-          badge: payment.amount < 0 ? "Ditransfer" : "Sukses",
-          badgeVariant: payment.amount < 0 ? "info" : "default",
+          badge: "Sukses",
+          badgeVariant: "default",
         });
       }
 

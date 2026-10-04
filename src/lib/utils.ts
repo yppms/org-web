@@ -174,10 +174,10 @@ export const capitalizeWords = (value: string): string =>
 
 /**
  * The figure to show for an invoice. A refund's stored `amount` is a ledger
- * adjustment (the school's share minus the student's other bills); what it
- * means to the parent is the refund itself, which is shown minus.
+ * adjustment (the school's share minus the student's other bills); a refund
+ * is shown as its total cost (the school's share), minus.
  */
 export const invoiceAmount = (invoice: {
   amount: number;
-  refund?: { refundable: number };
-}): number => (invoice.refund ? -invoice.refund.refundable : invoice.amount);
+  refund?: { schoolShare: number };
+}): number => (invoice.refund ? -invoice.refund.schoolShare : invoice.amount);

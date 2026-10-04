@@ -65,11 +65,11 @@ export default function InvoicesSection() {
             const { totalPaid, schoolShare, refundable, transferred } =
               invoice.refund;
             rows.push({
-              label: "Total dibayar",
+              label: "Total pembayaran",
               value: formatCurrency(totalPaid),
             });
             rows.push({
-              label: "Hak sekolah",
+              label: "Total biaya",
               value: formatCurrency(-schoolShare),
             });
             rows.push({

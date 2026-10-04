@@ -449,7 +449,7 @@ export default function InvoiceFormModal({
                   {totalPaid !== null && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
-                        Total dibayar
+                        Total pembayaran
                       </span>
                       <span className="text-sm font-medium font-mono">
                         {formatCurrency(totalPaid)}

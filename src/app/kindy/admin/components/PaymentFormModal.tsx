@@ -56,7 +56,9 @@ export default function PaymentFormModal({
   const [editModeStudentId, setEditModeStudentId] = useState<string>("");
   const [shouldFetchInvoices, setShouldFetchInvoices] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  // The school paying a refund back — sent negative, attached to a refund.
+  // Editing a refund transfer (a negative payment, attached to a refund) —
+  // new transfers are recorded from the Refund tab. Keeps the sign through an
+  // edit, since the amount input only takes digits.
   const [isPayout, setIsPayout] = useState(false);
   const [savingBalance, setSavingBalance] = useState<number | null>(null);
   const [loadingSavingBalance, setLoadingSavingBalance] = useState(false);
@@ -292,31 +294,6 @@ export default function PaymentFormModal({
                     Pilih siswa dari daftar
                   </span>
                 )}
-              </div>
-            )}
-
-            {mode === "add" && (
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors",
-                  isPayout ? "border-primary bg-primary-soft" : "border-border",
-                )}
-              >
-                <div>
-                  <p className="text-[13px] font-medium">Transfer refund</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Sekolah membayar ke orang tua, dicatat minus
-                  </p>
-                </div>
-                <Switch
-                  checked={isPayout}
-                  onCheckedChange={(checked) => {
-                    setIsPayout(checked);
-                    setIsSaving(false);
-                    // The two modes list different rows.
-                    setFormData({ ...formData, invoiceId: "", amount: "" });
-                  }}
-                />
               </div>
             )}
 

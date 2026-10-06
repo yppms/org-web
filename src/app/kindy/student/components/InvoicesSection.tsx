@@ -1,7 +1,7 @@
 "use client";
 
 import { Invoice } from "@/lib/types";
-import { formatCurrency, formatDate, invoiceAmount } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import kindyStudentApi from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Spinner, ErrorAlert, EmptyState } from "@/components/ui";
@@ -59,18 +59,19 @@ export default function InvoicesSection() {
               className: "text-warning",
             });
           }
-          // Refund = everything paid − the school's share (hak sekolah).
+          // A refund on this bill: its original figures stay above, then what
+          // was paid, the school's share (hak sekolah) and the difference.
+          const refundRows: typeof rows = [];
           if (invoice.refund) {
             const { totalPaid, schoolShare, refundable } = invoice.refund;
-            rows.push({
-              label: "Total pembayaran",
-              value: formatCurrency(totalPaid),
-            });
-            rows.push({
-              label: "Total biaya",
+            rows.push({ label: "Terbayar", value: formatCurrency(totalPaid) });
+            refundRows.push({
+              label: "Total biaya realisasi",
               value: formatCurrency(-schoolShare),
+              // Same as the other deduction above (Dibayar Ponpes).
+              className: "text-warning",
             });
-            rows.push({
+            refundRows.push({
               label: refundable < 0 ? "Kurang bayar" : "Dikembalikan",
               value: formatCurrency(Math.abs(refundable)),
               className:
@@ -93,28 +94,42 @@ export default function InvoicesSection() {
             });
           }
 
+          const renderRows = (list: typeof rows) =>
+            list.map((r, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 py-1"
+              >
+                <span className="text-xs text-muted-foreground">{r.label}</span>
+                <span className={`font-mono text-xs ${r.className ?? ""}`}>
+                  {r.value}
+                </span>
+              </div>
+            ));
+
           const extra =
-            rows.length > 0 || invoice.description ? (
+            rows.length > 0 || invoice.refund || invoice.refundedIn ? (
               <div className="rounded-lg bg-muted px-3 py-1">
-                {invoice.description && (
-                  <RichText
-                    html={invoice.description}
-                    className="py-1 text-xs text-muted-foreground"
-                  />
+                {renderRows(rows)}
+                {invoice.refund && (
+                  <>
+                    <div className="mt-1 border-t border-border pb-1 pt-2 text-xs font-medium">
+                      Kebijakan refund
+                    </div>
+                    {invoice.refund.description && (
+                      <RichText
+                        html={invoice.refund.description}
+                        className="py-1 text-xs text-muted-foreground"
+                      />
+                    )}
+                    {renderRows(refundRows)}
+                  </>
                 )}
-                {rows.map((r, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-3 py-1"
-                  >
-                    <span className="text-xs text-muted-foreground">
-                      {r.label}
-                    </span>
-                    <span className={`font-mono text-xs ${r.className ?? ""}`}>
-                      {r.value}
-                    </span>
-                  </div>
-                ))}
+                {invoice.refundedIn && (
+                  <p className="py-1 text-xs text-muted-foreground">
+                    Diselesaikan lewat refund di {invoice.refundedIn}
+                  </p>
+                )}
               </div>
             ) : undefined;
 
@@ -123,9 +138,11 @@ export default function InvoicesSection() {
               key={invoice.id}
               title={invoice.name}
               date={formatDate(invoice.startDate)}
-              amount={formatCurrency(invoiceAmount(invoice))}
+              amount={formatCurrency(invoice.amount)}
               badge={status.text}
               badgeVariant={status.variant}
+              // Marks the bill a refund sits on, and any other it replaced.
+              tag={invoice.refund || invoice.refundedIn ? "Refund" : undefined}
               extra={extra}
             />
           );

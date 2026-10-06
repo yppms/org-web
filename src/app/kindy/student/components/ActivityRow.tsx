@@ -12,6 +12,8 @@ interface ActivityRowProps {
   amount: string;
   badge: string;
   badgeVariant?: BadgeProps["variant"];
+  /** Optional second, informational badge shown before the status badge. */
+  tag?: string;
   /** Optional always-visible compact detail block under the row. */
   extra?: ReactNode;
 }
@@ -24,6 +26,7 @@ export default function ActivityRow({
   amount,
   badge,
   badgeVariant = "default",
+  tag,
   extra,
 }: ActivityRowProps) {
   return (
@@ -37,13 +40,14 @@ export default function ActivityRow({
               <span className="text-xs text-muted-foreground">{date}</span>
             )}
           </div>
-          {sub && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
-          )}
+          {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className="font-mono text-[13px] font-semibold">{amount}</span>
-          <Badge variant={badgeVariant}>{badge}</Badge>
+          <div className="flex flex-wrap justify-end gap-1">
+            {tag && <Badge variant="info">{tag}</Badge>}
+            <Badge variant={badgeVariant}>{badge}</Badge>
+          </div>
         </div>
       </div>
       {extra && <div className="mt-2">{extra}</div>}

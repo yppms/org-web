@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import { AdminInvoice, AdminStudent, InvoiceFormData } from "@/lib/types";
-import { formatCurrency, formatDate, invoiceAmount } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
 import {
   Spinner,
@@ -24,7 +24,6 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import InvoiceFormModal from "./InvoiceFormModal";
-import RichText from "@/components/RichText";
 
 export default function InvoiceSection() {
   const {
@@ -65,8 +64,6 @@ export default function InvoiceSection() {
           discount: parseFloat(formData.discount),
           startDate: formData.startDate,
           dueDate: formData.dueDate,
-          isRefund: formData.isRefund,
-          description: formData.isRefund ? formData.description : null,
         });
       } else if (formMode === "edit" && selectedInvoice) {
         await kindyAdminApi.updateInvoice(selectedInvoice.id, {
@@ -75,8 +72,6 @@ export default function InvoiceSection() {
           discount: parseFloat(formData.discount),
           startDate: formData.startDate,
           dueDate: formData.dueDate,
-          isRefund: formData.isRefund,
-          description: formData.isRefund ? formData.description : null,
         });
       }
       await refetch();
@@ -240,38 +235,11 @@ export default function InvoiceSection() {
                               Diskon {formatCurrency(invoice.discount)}
                             </span>
                           )}
-                          {invoice.isRefund && (
-                            <span className="mt-1.5 inline-block rounded-md bg-info-soft px-2 py-0.5 text-xs font-medium text-info">
-                              Refund
-                            </span>
-                          )}
-                          {invoice.refund && (
-                            <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                              <span>
-                                Dibayar{" "}
-                                <span className="font-mono">
-                                  {formatCurrency(invoice.refund.totalPaid)}
-                                </span>
-                              </span>
-                              <span>
-                                Hak sekolah{" "}
-                                <span className="font-mono">
-                                  {formatCurrency(invoice.refund.schoolShare)}
-                                </span>
-                              </span>
-                            </p>
-                          )}
-                          {invoice.description && (
-                            <RichText
-                              html={invoice.description}
-                              className="mt-1.5 text-xs text-muted-foreground"
-                            />
-                          )}
                         </div>
 
                         <div className="flex shrink-0 flex-col items-end gap-1.5">
                           <span className="text-sm font-semibold font-mono">
-                            {formatCurrency(invoiceAmount(invoice))}
+                            {formatCurrency(invoice.amount)}
                           </span>
                           <div className="flex gap-0.5">
                             <Button
@@ -337,7 +305,7 @@ export default function InvoiceSection() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Jumlah</span>
                 <span className="font-mono font-medium">
-                  {formatCurrency(invoiceAmount(selectedInvoice))}
+                  {formatCurrency(selectedInvoice.amount)}
                 </span>
               </div>
               <div className="flex justify-between">

@@ -6,13 +6,23 @@ import { Spinner } from "@/components/ui";
 import Navigation from "./components/Navigation";
 import PaymentSection from "./components/PaymentSection";
 import InvoiceSection from "./components/InvoiceSection";
+import RefundSection from "./components/RefundSection";
 import StampSection from "./components/StampSection";
 import OpenAsSection from "./components/OpenAsSection";
 import SavingSection from "./components/SavingSection";
 import InfaqSection from "./components/InfaqSection";
 import OutstandingSection from "./components/OutstandingSection";
 import SetorSection from "./components/SetorSection";
-type Section = "payment" | "invoice" | "stamp" | "openas" | "saving" | "infaq" | "outstanding" | "setor";
+type Section =
+  | "payment"
+  | "invoice"
+  | "refund"
+  | "stamp"
+  | "openas"
+  | "saving"
+  | "infaq"
+  | "outstanding"
+  | "setor";
 
 interface SectionConfig {
   key: Section;
@@ -22,6 +32,7 @@ interface SectionConfig {
 const allSections: SectionConfig[] = [
   { key: "payment", endpoint: "/kindy/admin/payment" },
   { key: "invoice", endpoint: "/kindy/admin/invoice" },
+  { key: "refund", endpoint: "/kindy/admin/refund" },
   { key: "outstanding", endpoint: "/kindy/admin/student/outstanding" },
   { key: "saving", endpoint: "/kindy/admin/student/saving" },
   { key: "infaq", endpoint: "/kindy/admin/student/infaq" },
@@ -38,15 +49,19 @@ export default function KindyAdminDashboard() {
   useEffect(() => {
     const checkAllAccess = async () => {
       setIsCheckingAccess(true);
-      
+
       const accessChecks = await Promise.all(
         allSections.map(async (section) => {
-          const hasAccess = await kindyAdminApi.checkEndpointAccess(section.endpoint);
+          const hasAccess = await kindyAdminApi.checkEndpointAccess(
+            section.endpoint,
+          );
           return hasAccess ? section.key : null;
-        })
+        }),
       );
 
-      const accessible = accessChecks.filter((key): key is Section => key !== null);
+      const accessible = accessChecks.filter(
+        (key): key is Section => key !== null,
+      );
       setAccessibleSections(accessible);
 
       // Set first accessible section as active
@@ -88,14 +103,27 @@ export default function KindyAdminDashboard() {
       />
 
       <main className="w-full overflow-x-hidden p-5">
-        {activeSection === "payment" && accessibleSections.includes("payment") && <PaymentSection />}
-        {activeSection === "invoice" && accessibleSections.includes("invoice") && <InvoiceSection />}
-        {activeSection === "outstanding" && accessibleSections.includes("outstanding") && <OutstandingSection />}
-        {activeSection === "stamp" && accessibleSections.includes("stamp") && <StampSection />}
-        {activeSection === "openas" && accessibleSections.includes("openas") && <OpenAsSection />}
-        {activeSection === "saving" && accessibleSections.includes("saving") && <SavingSection />}
-        {activeSection === "infaq" && accessibleSections.includes("infaq") && <InfaqSection />}
-        {activeSection === "setor" && accessibleSections.includes("setor") && <SetorSection />}
+        {activeSection === "payment" &&
+          accessibleSections.includes("payment") && <PaymentSection />}
+        {activeSection === "invoice" &&
+          accessibleSections.includes("invoice") && <InvoiceSection />}
+        {activeSection === "refund" &&
+          accessibleSections.includes("refund") && <RefundSection />}
+        {activeSection === "outstanding" &&
+          accessibleSections.includes("outstanding") && <OutstandingSection />}
+        {activeSection === "stamp" && accessibleSections.includes("stamp") && (
+          <StampSection />
+        )}
+        {activeSection === "openas" &&
+          accessibleSections.includes("openas") && <OpenAsSection />}
+        {activeSection === "saving" &&
+          accessibleSections.includes("saving") && <SavingSection />}
+        {activeSection === "infaq" && accessibleSections.includes("infaq") && (
+          <InfaqSection />
+        )}
+        {activeSection === "setor" && accessibleSections.includes("setor") && (
+          <SetorSection />
+        )}
       </main>
     </div>
   );

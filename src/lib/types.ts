@@ -115,16 +115,14 @@ export interface Invoice {
   paid: number;
   outstanding: number;
   /**
-   * Settles a leaving student: amountFull is the school's share (hak sekolah)
-   * and `refund` holds what that comes to. `amount` is a ledger adjustment —
-   * never show it for a refund. Its status reads like any bill: paid once the
-   * money has moved, whichever way it had to.
+   * Set on the bill a refund sits on (parents never see a refund as a row of
+   * its own): what it comes to, with the breakdown of the school's share as
+   * sanitized HTML. The bill's own figures stay its originals; `status` and
+   * `paid` are the refund's — paid once the money has moved either way.
    */
-  isRefund: boolean;
-  /** Breakdown of the school's share, as sanitized HTML. Null unless isRefund. */
-  description: string | null;
-  /** Present when isRefund. */
-  refund?: RefundBreakdown;
+  refund?: RefundBreakdown & { description: string | null };
+  /** Another bill the same refund replaces — the name of the one it sits on. */
+  refundedIn?: string;
   kindyStudentName: string;
   no: number;
   createdAt: string;
@@ -234,15 +232,9 @@ export interface AdminInvoice {
   id: string;
   kindyStudentName: string;
   name: string;
-  /** For a refund: the school's share (hak sekolah). */
   amountFull: number;
   discount: number;
-  /** For a refund: a ledger adjustment — show `refund` instead. */
   amount: number;
-  isRefund: boolean;
-  description: string | null;
-  /** Present when isRefund. */
-  refund?: RefundBreakdown;
   startDate: string;
   dueDate: string;
   createdAt: string;
@@ -250,9 +242,26 @@ export interface AdminInvoice {
 }
 
 /**
+ * A student's bills for the refund form: what the ordinary FIFO fill has paid
+ * on each (refunds ignored), and everything the student has paid, payouts
+ * excluded.
+ */
+export interface StudentInvoices {
+  invoices: {
+    id: string;
+    name: string;
+    amount: number;
+    paid: number;
+    dueDate: string;
+    /** Set when a refund already replaces this bill. */
+    supersededById: string | null;
+  }[];
+  totalPaid: number;
+}
+
+/**
  * Form state for the admin invoice modal. amount/discount are strings because
  * they are bound to text inputs; the section parses them before calling the API.
- * For a refund, amount is the school's share (hak sekolah).
  */
 export interface InvoiceFormData {
   studentId: string;
@@ -261,8 +270,31 @@ export interface InvoiceFormData {
   discount: string;
   startDate: string;
   dueDate: string;
-  isRefund: boolean;
-  description: string;
+}
+
+/**
+ * A refund as listed in the admin Refund tab. It replaces its source bills
+ * (tagihan asal) with the school's share; the figures come from the server's
+ * settlement reading. At most one of toTransfer / owed is above zero.
+ */
+export interface AdminRefund extends RefundBreakdown {
+  id: string;
+  name: string;
+  kindyStudentName: string;
+  KindyStudent: { id: string; name: string };
+  description: string | null;
+  startDate: string;
+  /** The planned transfer date. */
+  dueDate: string;
+  status: 'issued' | 'paid' | 'partial' | 'overdue';
+  /** Still to pay back to the parent. */
+  toTransfer: number;
+  /** Still owed by the parent. */
+  owed: number;
+  sources: { id: string; name: string; amount: number; amountFull: number; discount: number }[];
+  no: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

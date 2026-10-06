@@ -5,6 +5,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 type Section =
   | "payment"
   | "invoice"
+  | "refund"
   | "stamp"
   | "openas"
   | "saving"
@@ -21,6 +22,7 @@ interface NavigationProps {
 const allItems: { key: Section; label: string }[] = [
   { key: "payment", label: "Bayar" },
   { key: "invoice", label: "Tagihan" },
+  { key: "refund", label: "Refund" },
   { key: "outstanding", label: "Tunggakan" },
   { key: "saving", label: "Tabungan" },
   { key: "infaq", label: "Infaq" },

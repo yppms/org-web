@@ -1,5 +1,5 @@
 // API utility functions for Kindy Student portal
-import type { FacilityInfo, HarianDay, HarianIndexEntry } from './types';
+import type { AdminRefund, FacilityInfo, HarianDay, HarianIndexEntry, StudentInvoices } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -199,8 +199,6 @@ export const kindyAdminApi = {
     discount: number;
     startDate: string;
     dueDate: string;
-    isRefund: boolean;
-    description: string | null;
   }) =>
     apiCall('/kindy/admin/invoice', {
       method: 'POST',
@@ -212,8 +210,6 @@ export const kindyAdminApi = {
     discount: number;
     startDate: string;
     dueDate: string;
-    isRefund: boolean;
-    description: string | null;
   }) =>
     apiCall(`/kindy/admin/invoice/${id}`, {
       method: 'PUT',
@@ -259,6 +255,43 @@ export const kindyAdminApi = {
   // Get unpaid invoices for a student
   getStudentUnpaidInvoices: (studentId: string) => 
     apiCall(`/kindy/admin/invoice/student/${studentId}`),
+  // Every bill of a student with what is paid on it, for the refund form
+  getStudentInvoices: (studentId: string) =>
+    apiCall<StudentInvoices>(`/kindy/admin/invoice/student/${studentId}/all`),
+
+  // Refund endpoints — a refund replaces bills with the school's share
+  getRefunds: () => apiCall<AdminRefund[]>('/kindy/admin/refund'),
+  addRefund: (data: {
+    studentId: string;
+    sourceIds: string[];
+    share: number;
+    description: string | null;
+    dueDate: string;
+  }) =>
+    apiCall('/kindy/admin/refund', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateRefund: (id: string, data: {
+    sourceIds: string[];
+    share: number;
+    description: string | null;
+    dueDate: string;
+  }) =>
+    apiCall(`/kindy/admin/refund/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteRefund: (id: string) =>
+    apiCall(`/kindy/admin/refund/${id}`, {
+      method: 'DELETE',
+    }),
+  /** The school paying the refund back; `amount` is positive. */
+  transferRefund: (id: string, data: { amount: number; date: string; reference: string }) =>
+    apiCall(`/kindy/admin/refund/${id}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // Setor endpoints
   getSetor: () => apiCall('/kindy/admin/setor'),

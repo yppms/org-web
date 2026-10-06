@@ -171,13 +171,3 @@ export const addressOf = (student: {
  */
 export const capitalizeWords = (value: string): string =>
   value.replace(/\S+/g, (word) => word[0].toUpperCase() + word.slice(1));
-
-/**
- * The figure to show for an invoice. A refund's stored `amount` is a ledger
- * adjustment (the school's share minus the student's other bills); a refund
- * is shown as its total cost (the school's share), minus.
- */
-export const invoiceAmount = (invoice: {
-  amount: number;
-  refund?: { schoolShare: number };
-}): number => (invoice.refund ? -invoice.refund.schoolShare : invoice.amount);

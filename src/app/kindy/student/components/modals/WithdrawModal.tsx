@@ -64,11 +64,19 @@ export default function WithdrawModal({
   const amountNum = Number(amount) || 0;
   // What the quota alone allows; `available` is this unless the balance
   // cannot cover it.
+  // The quota's headroom before rounding; `available` is it rounded down to
+  // whole thousands, or less when the balance cannot cover it.
   const headroom = quota ? Math.max(0, quota.quota - quota.withdrawn) : balance;
+  const rounded = Math.floor(headroom / 1000) * 1000;
   // The fee rides on top of the amount, so the most one can ask for also
   // leaves the fee in the balance, and nothing can be asked for at all until
   // the allowance covers the fee.
-  const max = Math.max(0, Math.min(available, balance - fee));
+  // Rounded down to whole thousands, like the server's `available`, so the
+  // balance-limited case is round too.
+  const max = Math.max(
+    0,
+    Math.floor(Math.min(available, balance - fee) / 1000) * 1000,
+  );
   const formOpen = available >= fee && max >= fee;
   const tooSmall = amountNum > 0 && amountNum < fee;
   const tooLarge = amountNum > max;
@@ -98,12 +106,13 @@ export default function WithdrawModal({
       });
     }
     calcRows.push({
-      label: "Bisa ditarik hari ini",
-      value: formatCurrency(headroom),
+      label:
+        rounded < headroom ? "Bisa ditarik hari ini" : "Bisa ditarik hari ini",
+      value: formatCurrency(rounded),
       className: "text-primary",
       strong: true,
     });
-    if (available < headroom) {
+    if (available < rounded) {
       calcRows.push({
         label: "Dibatasi saldo",
         value: formatCurrency(available),
@@ -226,9 +235,9 @@ export default function WithdrawModal({
               <Info className="h-3.5 w-3.5" />
             </span>
             <p className="prose min-w-0 text-[11px] leading-relaxed text-muted-foreground">
-              Program tabungan mengasah aspek emosional Ananda lewat{" "}
+              Program tabungan mengasah aspek emosional santri melalui{" "}
               <em>delayed gratification</em>, penarikan tabungan oleh wali
-              santri dibuka bertahap mengikuti masa sekolah. Pembatasan
+              santri dibatasi bertahap mengikuti masa sekolah. Pembatasan
               berdasarkan konsep <em>commitment device</em> (Ashraf, Karlan
               &amp; Yin, 2006) dan <em>earmarking</em> (Soman &amp; Cheema,
               2011).
@@ -285,9 +294,10 @@ export default function WithdrawModal({
               value={formatCurrency(amountNum + fee)}
               strong
             />
+            <Line label="Waktu proses" value="3 hari kerja" />
             {!formOpen ? (
               <p className="text-[12px] text-muted-foreground">
-                Jatah hari ini belum menutup biaya admin{" "}
+                Penarikan hari ini belum menutup biaya admin{" "}
                 <span className="font-mono text-foreground">
                   {formatCurrency(fee)}
                 </span>

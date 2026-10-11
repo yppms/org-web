@@ -85,7 +85,8 @@ export interface AdmissionInfo {
  * expected graduation (`graduationDate`, 13 July of the class's final year):
  * `quota = progress × totalSave`, counted against everything already withdrawn
  * (`withdrawn`, pending requests included). `available` is what a request may
- * ask for: the quota's headroom within the balance. The flat `fee` booked
+ * ask for: the quota's headroom within the balance, rounded down to Rp1.000.
+ * The flat `fee` booked
  * beside every transfer withdrawal rides on top of the amount, so a request
  * needs `available` ≥ `fee` and the balance to cover amount + fee.
  */

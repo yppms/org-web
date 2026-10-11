@@ -13,7 +13,10 @@ interface SavingsSectionProps {
   onStatsUpdate: (stats: StudentStats) => void;
 }
 
-const statusMap: Record<string, { text: string; variant: BadgeProps["variant"] }> = {
+const statusMap: Record<
+  string,
+  { text: string; variant: BadgeProps["variant"] }
+> = {
   SUCCESS: { text: "Sukses", variant: "default" },
   REQUEST: { text: "Diproses", variant: "warning" },
   FAIL: { text: "Gagal", variant: "destructive" },
@@ -22,7 +25,7 @@ const statusMap: Record<string, { text: string; variant: BadgeProps["variant"] }
 export default function SavingsSection(_props: SavingsSectionProps) {
   const { data, isLoading, error } = useApi<Saving[]>(
     () => kindyStudentApi.getSavings(),
-    { fallbackMessage: "Gagal memuat tabungan" }
+    { fallbackMessage: "Gagal memuat tabungan" },
   );
   const savings = data ?? [];
 
@@ -50,7 +53,7 @@ export default function SavingsSection(_props: SavingsSectionProps) {
           return (
             <ActivityRow
               key={saving.id}
-              title={isWithdraw ? "Narik" : isFee ? "Biaya admin" : "Nabung"}
+              title={isWithdraw ? "Narik" : isFee ? "Admin narik" : "Nabung"}
               date={formatDate(saving.date)}
               // The bank transaction id of the transfer that drew on the
               // savings — it answers "which transfer was this?", the same

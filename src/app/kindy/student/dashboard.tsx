@@ -347,15 +347,10 @@ export default function Dashboard() {
       await kindyStudentApi.withdrawSaving(amount);
       const statsResponse = await kindyStudentApi.getStats();
       setStats(statsResponse.data);
-      const fee = stats?.withdraw?.fee ?? 0;
       setWithdrawSuccess(
         `Penarikan ${formatCurrency(
           amount,
-        )} akan dikirim ke rekening penerimaan setelah pengecekan berhasil.${
-          fee > 0
-            ? ` Biaya admin ${formatCurrency(fee)} dipotong dari tabungan.`
-            : ""
-        }`,
+        )} akan dikirim ke rekening penerimaan dalam 3 hari kerja setelah pengecekan berhasil.`,
       );
       setWithdrawAmount("");
     } catch (err) {

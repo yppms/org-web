@@ -46,10 +46,11 @@ export default function SavingsSection(_props: SavingsSectionProps) {
             variant: "secondary" as const,
           };
           const isWithdraw = saving.type === "WITHDRAW";
+          const isFee = saving.type === "WITHDRAW_FEE";
           return (
             <ActivityRow
               key={saving.id}
-              title={isWithdraw ? "Narik" : "Nabung"}
+              title={isWithdraw ? "Narik" : isFee ? "Biaya admin" : "Nabung"}
               date={formatDate(saving.date)}
               // The bank transaction id of the transfer that drew on the
               // savings — it answers "which transfer was this?", the same
@@ -59,7 +60,7 @@ export default function SavingsSection(_props: SavingsSectionProps) {
               // has to read without it — a withdrawal the parent requested
               // themselves has no reference until an admin settles it.
               sub={isWithdraw ? (saving.reference ?? undefined) : undefined}
-              amount={`${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`}
+              amount={`${isWithdraw || isFee ? "−" : ""}${formatCurrency(saving.amount)}`}
               badge={status.text}
               badgeVariant={status.variant}
             />

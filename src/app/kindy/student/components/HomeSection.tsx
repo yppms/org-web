@@ -197,6 +197,7 @@ export default function HomeSection({
           variant: "secondary" as const,
         };
         const isWithdraw = saving.type === "WITHDRAW";
+        const isFee = saving.type === "WITHDRAW_FEE";
         rows.push({
           key: `saving-${saving.id}`,
           type: "Tabungan",
@@ -205,10 +206,12 @@ export default function HomeSection({
           // settles it, so the row has to read without it too.
           name: isWithdraw
             ? ["Narik", saving.reference].filter(Boolean).join(" · ")
-            : "Nabung",
+            : isFee
+              ? "Biaya admin"
+              : "Nabung",
           date: formatDate(saving.date),
           at: new Date(saving.date).getTime(),
-          amount: `${isWithdraw ? "−" : ""}${formatCurrency(saving.amount)}`,
+          amount: `${isWithdraw || isFee ? "−" : ""}${formatCurrency(saving.amount)}`,
           badge: status.text,
           badgeVariant: status.variant,
         });

@@ -78,6 +78,33 @@ export interface AdmissionInfo {
   minimum: number;
 }
 
+/**
+ * What the parent may withdraw from the savings right now, and why. The
+ * savings are meant for the child at graduation, so withdrawals are capped by
+ * a quota that grows linearly from the first deposit (`startDate`) to the
+ * expected graduation (`graduationDate`, 13 July of the class's final year):
+ * `quota = progress × totalSave`, counted against everything already withdrawn
+ * (`withdrawn`, pending requests included). `available` is what a request may
+ * ask for: the quota's headroom within the balance. The flat `fee` booked
+ * beside every transfer withdrawal rides on top of the amount, so a request
+ * needs `available` ≥ `fee` and the balance to cover amount + fee.
+ */
+export interface WithdrawQuota {
+  balance: number;
+  totalSave: number;
+  withdrawn: number;
+  startDate: string | null;
+  graduationDate: string | null;
+  /** Whole days from the first deposit: elapsed so far, and until graduation. */
+  daysElapsed: number;
+  daysTotal: number;
+  /** daysElapsed ÷ daysTotal, 0..1. */
+  progress: number;
+  quota: number;
+  fee: number;
+  available: number;
+}
+
 export interface StudentStats {
   outstanding: number;
   totalInvoice: number;
@@ -85,6 +112,7 @@ export interface StudentStats {
   totalPayment: number;
   countPayment: number;
   saving: number;
+  withdraw?: WithdrawQuota;
   infaq: number;
   outstandingInvoice?: OutstandingInvoice[];
   admission?: AdmissionInfo;
@@ -93,7 +121,8 @@ export interface StudentStats {
 export interface Saving {
   id: string;
   amount: number;
-  type: 'SAVE' | 'WITHDRAW';
+  /** WITHDRAW_FEE is the flat admin fee booked beside a transfer withdrawal. */
+  type: 'SAVE' | 'WITHDRAW' | 'WITHDRAW_FEE';
   reference: string | null;
   date: string;
   status: 'SUCCESS' | 'REQUEST' | 'FAIL';

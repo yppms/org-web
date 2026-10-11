@@ -325,16 +325,37 @@ export default function Dashboard() {
       showGlobalError("Saldo tidak mencukupi");
       return;
     }
+    if (stats?.withdraw && amount > stats.withdraw.available) {
+      showGlobalError(
+        `Penarikan saat ini maksimal ${formatCurrency(stats.withdraw.available)}`,
+      );
+      return;
+    }
+    if (stats?.withdraw && amount < stats.withdraw.fee) {
+      showGlobalError(
+        `Penarikan minimal ${formatCurrency(stats.withdraw.fee)} agar menutup biaya admin`,
+      );
+      return;
+    }
+    if (stats?.withdraw && amount + stats.withdraw.fee > stats.saving) {
+      showGlobalError("Saldo tidak cukup untuk biaya admin");
+      return;
+    }
     setIsWithdrawing(true);
     setWithdrawSuccess(null);
     try {
       await kindyStudentApi.withdrawSaving(amount);
       const statsResponse = await kindyStudentApi.getStats();
       setStats(statsResponse.data);
+      const fee = stats?.withdraw?.fee ?? 0;
       setWithdrawSuccess(
         `Penarikan ${formatCurrency(
           amount,
-        )} akan dikirim ke rekening penerimaan setelah pengecekan berhasil.`,
+        )} akan dikirim ke rekening penerimaan setelah pengecekan berhasil.${
+          fee > 0
+            ? ` Biaya admin ${formatCurrency(fee)} dipotong dari tabungan.`
+            : ""
+        }`,
       );
       setWithdrawAmount("");
     } catch (err) {
@@ -754,6 +775,7 @@ export default function Dashboard() {
       <WithdrawModal
         open={modal === "withdraw"}
         balance={stats.saving}
+        quota={stats.withdraw}
         amount={withdrawAmount}
         onAmountChange={handleWithdrawAmountChange}
         onSetAmount={setWithdrawAmount}

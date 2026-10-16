@@ -52,6 +52,9 @@ import WithdrawModal from "./components/modals/WithdrawModal";
 import GlobalErrorModal from "./components/modals/GlobalErrorModal";
 
 type GraphTone = "primary" | "info";
+
+/** Cells per contribution-graph block (11 × 3); records past it start a new block. */
+const GRAPH_BLOCK = 33;
 type ModalKind = null | "pay" | "withdraw" | "bank_required";
 
 const RAMP: Record<GraphTone, string[]> = {
@@ -419,8 +422,6 @@ export default function Dashboard() {
 
   const outstandingRows = stats.outstandingInvoice ?? [];
   const isLunas = stats.outstanding <= 0;
-  const savingPct = Math.round((savingData.length / 40) * 100);
-  const infaqPct = Math.round((infaqData.length / 40) * 100);
 
   const renderDashboard = () => (
     <div className="flex flex-col gap-4">
@@ -598,9 +599,6 @@ export default function Dashboard() {
                 date: s.date,
               }))}
             />
-            <p className="text-[11px] text-muted-foreground">
-              {savingData.length} dari 40 · {savingPct}%
-            </p>
             <Button
               variant="outline"
               size="sm"
@@ -628,9 +626,6 @@ export default function Dashboard() {
               tone="info"
               items={infaqData.map((i) => ({ amount: i.amount, date: i.date }))}
             />
-            <p className="text-[11px] text-muted-foreground">
-              {infaqData.length} dari 40 · {infaqPct}%
-            </p>
             <div className="h-8" />
           </CardContent>
         </Card>
@@ -792,7 +787,11 @@ export default function Dashboard() {
   );
 }
 
-/** 40-cell contribution graph shared by the savings and infaq stat cards. */
+/**
+ * Contribution graph shared by the savings and infaq stat cards: blocks of
+ * GRAPH_BLOCK cells, stacked, with a new block added once the previous fills.
+ * Each block carries its own "n dari 33 · pct%" caption.
+ */
 function ContributionGraph({
   items,
   tone,
@@ -801,23 +800,43 @@ function ContributionGraph({
   tone: GraphTone;
 }) {
   const max = items.length ? Math.max(...items.map((i) => i.amount)) : 0;
+  const blocks = Math.max(1, Math.ceil(items.length / GRAPH_BLOCK));
   return (
-    <div className="grid grid-cols-10 gap-[3px]">
-      {Array.from({ length: 40 }).map((_, index) => {
-        const item = items[index];
-        const colorClass = item
-          ? cellColor(item.amount, max, tone)
-          : "bg-border/60";
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: blocks }).map((_, block) => {
+        const filled = Math.min(
+          GRAPH_BLOCK,
+          items.length - block * GRAPH_BLOCK,
+        );
         return (
           <div
-            key={index}
-            className={`aspect-square rounded-sm ${colorClass}`}
-            title={
-              item
-                ? `${formatDate(item.date)}: ${formatCurrency(item.amount)}`
-                : `${index + 1}/40`
-            }
-          />
+            key={block}
+            className={`flex flex-col gap-1.5 ${block > 0 ? "border-t border-border pt-3" : ""}`}
+          >
+            <div className="grid grid-cols-11 gap-[3px]">
+              {Array.from({ length: GRAPH_BLOCK }).map((_, cell) => {
+                const item = items[block * GRAPH_BLOCK + cell];
+                const colorClass = item
+                  ? cellColor(item.amount, max, tone)
+                  : "bg-border/60";
+                return (
+                  <div
+                    key={cell}
+                    className={`aspect-square rounded-sm ${colorClass}`}
+                    title={
+                      item
+                        ? `${formatDate(item.date)}: ${formatCurrency(item.amount)}`
+                        : `${cell + 1}/${GRAPH_BLOCK}`
+                    }
+                  />
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {filled} dari {GRAPH_BLOCK} ·{" "}
+              {Math.round((filled / GRAPH_BLOCK) * 100)}%
+            </p>
+          </div>
         );
       })}
     </div>

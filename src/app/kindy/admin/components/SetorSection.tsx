@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import { formatCurrency, formatAmountInput, formatDateTime } from "@/lib/utils";
 import { useApi } from "@/hooks/useApi";
@@ -24,6 +24,10 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import ListControls, { useSort } from "@/components/ListControls";
+
+type SetorFilter = "all" | "bank" | "amil";
+type SetorSortKey = "createdAt" | "amount";
 
 interface Setor {
   id: string;
@@ -63,8 +67,31 @@ export default function SetorSection() {
     { fallbackMessage: "Gagal memuat data setoran" },
   );
 
-  const setorData = data?.setor ?? [];
+  const setorData = useMemo(() => data?.setor ?? [], [data]);
   const deltaData = data?.delta ?? null;
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<SetorFilter>("all");
+  const { sortBy, order, toggle, signed } = useSort<SetorSortKey>("createdAt");
+
+  // Setoran have no text of their own: the search matches the amount's
+  // digits or the row number.
+  const visible = useMemo(() => {
+    let list = setorData;
+    if (filter !== "all") list = list.filter((s) => s.type === filter);
+    const q = searchQuery.replace(/\D/g, "");
+    if (q) {
+      list = list.filter(
+        (s) => String(s.amount).includes(q) || String(s.no) === q,
+      );
+    }
+    return [...list].sort((a, b) =>
+      sortBy === "amount"
+        ? signed(a.amount - b.amount)
+        : signed(new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setorData, filter, searchQuery, sortBy, order]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,11 +171,39 @@ export default function SetorSection() {
         </>
       )}
 
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari jumlah atau nomor setoran…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "bank", label: "Bank" },
+            { key: "amil", label: "Amil" },
+          ],
+          value: filter,
+          onChange: setFilter,
+        }}
+        sort={{
+          options: [
+            { key: "createdAt", label: "Tanggal" },
+            { key: "amount", label: "Jumlah" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
+      />
+
       {setorData.length === 0 ? (
         <EmptyState message="Belum ada catatan setoran" />
+      ) : visible.length === 0 ? (
+        <EmptyState message="Tidak ada setoran yang cocok" />
       ) : (
         <Card className="px-4">
-          {setorData.map((setor) => (
+          {visible.map((setor) => (
             <div
               key={setor.id}
               className="flex justify-between items-center gap-3 py-3 border-b border-border last:border-b-0"

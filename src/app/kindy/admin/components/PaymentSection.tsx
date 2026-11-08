@@ -10,8 +10,6 @@ import {
   ErrorAlert,
   EmptyState,
   Button,
-  Input,
-  Chip,
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
@@ -23,7 +21,11 @@ import {
   SectionHeader,
   Card,
 } from "@/components/ui";
-import PaymentFormModal from "./PaymentFormModal";
+import PaymentFormModal, { type PaymentFormMode } from "./PaymentFormModal";
+import ListControls, { useSort, ViewControls } from "@/components/ListControls";
+
+type PaymentFilter = "all" | "transfer" | "saving" | "payout";
+type PaymentSortKey = "date" | "createdAt" | "updatedAt";
 
 export default function PaymentSection() {
   const {
@@ -41,7 +43,7 @@ export default function PaymentSection() {
   const payments = useMemo(() => paymentsData ?? [], [paymentsData]);
   const students = studentsData ?? [];
 
-  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
+  const [formMode, setFormMode] = useState<PaymentFormMode | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(
     null,
@@ -49,10 +51,10 @@ export default function PaymentSection() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
-  const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "date">(
-    "date",
-  );
+  const [compact, setCompact] = useState(false);
+  const { sortBy, order, toggle, signed } = useSort<PaymentSortKey>("date");
   const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<PaymentFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleFormSubmit = async (formData: PaymentFormData) => {
@@ -60,13 +62,13 @@ export default function PaymentSection() {
     // A refund payout is the school paying out, so it is stored negative.
     const amount = parseFloat(formData.amount) * (formData.isPayout ? -1 : 1);
     try {
-      if (formMode === "add") {
+      if (formMode === "add" || formMode === "saving") {
         await kindyAdminApi.addPayment({
           studentId: formData.studentId,
           amount,
           date: formData.date,
           reference: formData.reference,
-          invoiceId: formData.invoiceId || null,
+          invoiceIds: formData.invoiceIds,
           isSaving: formData.isSaving || false,
         });
       } else if (formMode === "edit" && selectedPayment) {
@@ -74,7 +76,7 @@ export default function PaymentSection() {
           amount,
           date: formData.date,
           reference: formData.reference,
-          invoiceId: formData.invoiceId || null,
+          invoiceIds: formData.invoiceIds,
         });
       }
       await refetch();
@@ -127,14 +129,20 @@ export default function PaymentSection() {
   };
 
   const filteredPayments = useMemo(() => {
-    if (!searchQuery.trim()) return payments;
+    let list = payments;
+    if (filter === "transfer")
+      list = list.filter((p) => p.source === "TRANSFER" && p.amount > 0);
+    else if (filter === "saving") list = list.filter((p) => p.source === "SAVING");
+    else if (filter === "payout") list = list.filter((p) => p.amount < 0);
+    if (!searchQuery.trim()) return list;
     const query = searchQuery.toLowerCase();
-    return payments.filter(
+    return list.filter(
       (payment) =>
         payment.kindyStudentName.toLowerCase().includes(query) ||
-        payment.reference.toLowerCase().includes(query),
+        payment.reference.toLowerCase().includes(query) ||
+        payment.invoiceNames.some((name) => name.toLowerCase().includes(query)),
     );
-  }, [payments, searchQuery]);
+  }, [payments, searchQuery, filter]);
 
   const groupedPayments = useMemo(() => {
     return filteredPayments.reduce(
@@ -159,20 +167,16 @@ export default function PaymentSection() {
 
   const sortedDates = useMemo(
     () =>
-      Object.keys(groupedPayments).sort(
-        (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+      Object.keys(groupedPayments).sort((a, b) =>
+        signed(new Date(a).getTime() - new Date(b).getTime()),
       ),
-    [groupedPayments],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groupedPayments, order],
   );
 
-  const sortOptions: {
-    key: "createdAt" | "updatedAt" | "date";
-    label: string;
-  }[] = [
-    { key: "createdAt", label: "Dibuat" },
-    { key: "updatedAt", label: "Diperbarui" },
-    { key: "date", label: "Tgl bayar" },
-  ];
+  const allOpen = sortedDates.every((date) => !collapsedGroups.has(date));
+  const toggleAll = () =>
+    setCollapsedGroups(allOpen ? new Set(sortedDates) : new Set());
 
   if (isLoading) return <Spinner label="Memuat..." />;
   if (error) return <ErrorAlert message={error} />;
@@ -183,40 +187,70 @@ export default function PaymentSection() {
         title="Pembayaran"
         subtitle="Catat semua transaksi pembayaran siswa"
         actions={
-          <Button size="sm" onClick={() => setFormMode("add")}>
-            + Tambah
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFormMode("saving")}
+            >
+              Dari tabungan
+            </Button>
+            <Button size="sm" onClick={() => setFormMode("add")}>
+              + Tambah
+            </Button>
+          </div>
         }
       />
 
       {actionError && <ErrorAlert message={actionError} />}
 
-      <Input
-        type="text"
-        placeholder="Cari nama siswa atau referensi…"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari nama siswa, referensi, atau tagihan…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "transfer", label: "Transfer" },
+            { key: "saving", label: "Dari tabungan" },
+            { key: "payout", label: "Transfer refund" },
+          ],
+          value: filter,
+          onChange: setFilter,
+        }}
+        sort={{
+          options: [
+            { key: "date", label: "Tgl bayar" },
+            { key: "createdAt", label: "Dibuat" },
+            { key: "updatedAt", label: "Diperbarui" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
       />
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-xs text-muted-foreground">Urutkan</span>
-        {sortOptions.map((option) => (
-          <Chip
-            key={option.key}
-            active={sortBy === option.key}
-            onClick={() => setSortBy(option.key)}
-          >
-            {option.label}
-          </Chip>
-        ))}
-      </div>
+      {filteredPayments.length > 0 && (
+        <ViewControls
+          allOpen={allOpen}
+          onToggleAll={toggleAll}
+          compact={compact}
+          onToggleCompact={() => setCompact(!compact)}
+        />
+      )}
 
       <div className="flex flex-col gap-4">
         {payments.length === 0 ? (
           <EmptyState message="Belum ada pembayaran" />
         ) : filteredPayments.length === 0 ? (
           <EmptyState
-            message={`Tidak ada pembayaran dengan kata kunci "${searchQuery}"`}
+            message={
+              searchQuery
+                ? `Tidak ada pembayaran dengan kata kunci "${searchQuery}"`
+                : "Tidak ada pembayaran untuk filter ini"
+            }
           />
         ) : (
           sortedDates.map((date) => {
@@ -245,6 +279,7 @@ export default function PaymentSection() {
                 </button>
 
                 {isOpen &&
+                  !compact &&
                   groupedPayments[date].map((payment) => (
                     <Card key={payment.id} className="px-4 py-3.5">
                       <div className="flex justify-between gap-3">
@@ -256,19 +291,29 @@ export default function PaymentSection() {
                             {payment.reference} · dicatat{" "}
                             {formatDate(payment.createdAt)}
                           </p>
-                          {payment.invoiceName && (
-                            <span
-                              className={cn(
-                                "mt-1.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium",
-                                // Negative = the school paying out a refund.
-                                payment.amount < 0
-                                  ? "bg-info-soft text-info"
-                                  : "bg-muted text-muted-foreground",
-                              )}
-                            >
-                              {payment.amount < 0 && "Transfer "}
-                              {payment.invoiceName}
+                          {payment.source === "SAVING" && (
+                            <span className="mt-1.5 inline-block rounded-md bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary">
+                              Dari tabungan
                             </span>
+                          )}
+                          {payment.invoiceNames.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {payment.invoiceNames.map((name) => (
+                                <span
+                                  key={name}
+                                  className={cn(
+                                    "inline-block rounded-md px-2 py-0.5 text-xs font-medium",
+                                    // Negative = the school paying out a refund.
+                                    payment.amount < 0
+                                      ? "bg-info-soft text-info"
+                                      : "bg-muted text-muted-foreground",
+                                  )}
+                                >
+                                  {payment.amount < 0 && "Transfer "}
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
 
@@ -296,6 +341,50 @@ export default function PaymentSection() {
                       </div>
                     </Card>
                   ))}
+
+                {isOpen && compact && (
+                  <Card className="px-4">
+                    {groupedPayments[date].map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-b-0"
+                      >
+                        <p className="min-w-0 pt-1 text-sm font-medium">
+                          {payment.kindyStudentName}
+                          {payment.source === "SAVING" && (
+                            <span className="ml-1.5 text-xs font-normal text-primary">
+                              tabungan
+                            </span>
+                          )}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <span
+                            className={cn(
+                              "font-mono text-sm font-semibold",
+                              payment.amount < 0 && "text-info",
+                            )}
+                          >
+                            {formatCurrency(payment.amount)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => openEditModal(payment)}
+                          >
+                            Ubah
+                          </Button>
+                          <Button
+                            variant="ghost-destructive"
+                            size="xs"
+                            onClick={() => openDeleteModal(payment)}
+                          >
+                            Hapus
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                )}
               </div>
             );
           })

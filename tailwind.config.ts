@@ -55,6 +55,11 @@ const config: Config = {
           foreground: "rgb(var(--info-foreground) / <alpha-value>)",
           soft: "var(--info-soft)",
         },
+        accent: {
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
+          soft: "var(--accent-soft)",
+        },
       },
       borderRadius: {
         xl: "12px",

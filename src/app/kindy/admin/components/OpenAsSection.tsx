@@ -1,23 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { kindyAdminApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import {
   Spinner,
   ErrorAlert,
   EmptyState,
-  Input,
   Button,
   SectionHeader,
   Card,
 } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
+import ListControls, { useSort } from "@/components/ListControls";
+
+type MealFilter = "all" | "meal" | "noMeal";
 
 interface OpenAsStudent {
   id: string;
   name: string;
   phone: string | null;
+  isMeal: boolean;
   openas: string;
 }
 
@@ -26,27 +29,32 @@ export default function OpenAsSection() {
     () => kindyAdminApi.getAllStudents(),
     { fallbackMessage: "Gagal memuat data siswa" },
   );
-  const students = data ?? [];
+  const students = useMemo(() => data ?? [], [data]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [mealFilter, setMealFilter] = useState<MealFilter>("all");
+  const { sortBy, order, toggle, signed } = useSort<"name">("name", "asc");
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (student.phone && student.phone.includes(searchQuery)),
-  );
+  const filteredStudents = useMemo(() => {
+    let list = students;
+    if (mealFilter === "meal") list = list.filter((s) => s.isMeal);
+    else if (mealFilter === "noMeal") list = list.filter((s) => !s.isMeal);
+    const q = searchQuery.toLowerCase();
+    if (q) {
+      list = list.filter(
+        (student) =>
+          student.name.toLowerCase().includes(q) ||
+          (student.phone && student.phone.includes(q)),
+      );
+    }
+    return [...list].sort((a, b) => signed(a.name.localeCompare(b.name)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [students, mealFilter, searchQuery, sortBy, order]);
 
-  const handleCopyForIncognito = (openas: string, studentId: string) => {
-    navigator.clipboard
-      .writeText(openas)
-      .then(() => {
-        setCopiedId(studentId);
-        setTimeout(() => setCopiedId(null), 2000);
-      })
-      .catch(() => {
-        console.error("Failed to copy to clipboard");
-      });
+  // The student portal keeps its own cookie (kindy_token), apart from the
+  // admin's, so it can open in a plain new tab without ending this session.
+  const handleOpen = (openas: string) => {
+    window.open(openas, "_blank", "noopener");
   };
 
   if (isLoading) return <Spinner label="Memuat..." />;
@@ -56,19 +64,38 @@ export default function OpenAsSection() {
     <div className="flex flex-col gap-4">
       <SectionHeader
         title="Buka Sebagai Siswa"
-        subtitle="Buka dashboard siswa untuk melihat portal mereka"
+        subtitle="Buka portal siswa di tab baru tanpa keluar dari sesi admin"
       />
 
-      <Input
-        placeholder="Cari nama atau telepon…"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari nama siswa…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "meal", label: "Ikut katering" },
+            { key: "noMeal", label: "Tanpa katering" },
+          ],
+          value: mealFilter,
+          onChange: setMealFilter,
+        }}
+        sort={{
+          options: [{ key: "name", label: "Nama" }],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
       />
 
       {filteredStudents.length === 0 ? (
         <EmptyState
           message={
-            searchQuery ? "Tidak ada siswa ditemukan" : "Tidak ada siswa"
+            searchQuery || mealFilter !== "all"
+              ? "Tidak ada siswa ditemukan"
+              : "Tidak ada siswa"
           }
         />
       ) : (
@@ -89,15 +116,10 @@ export default function OpenAsSection() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  handleCopyForIncognito(student.openas, student.id)
-                }
-                className={cn(
-                  copiedId === student.id &&
-                    "bg-primary-soft text-primary border-transparent",
-                )}
+                onClick={() => handleOpen(student.openas)}
               >
-                {copiedId === student.id ? "Tersalin" : "Salin tautan"}
+                <ExternalLink className="h-3.5 w-3.5" />
+                Buka
               </Button>
             </div>
           ))}

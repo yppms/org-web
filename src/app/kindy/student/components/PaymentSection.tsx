@@ -73,7 +73,13 @@ export default function PaymentSection() {
           return (
             <ActivityRow
               key={payment.id}
-              title={`${isPayout ? "Refund" : "Bayar"} #${payment.no}`}
+              title={`${
+                isPayout
+                  ? "Refund"
+                  : payment.source === "SAVING"
+                    ? "Bayar dari tabungan"
+                    : "Bayar"
+              } #${payment.no}`}
               date={formatDate(payment.date)}
               sub={payment.reference ?? undefined}
               amount={formatCurrency(payment.amount)}

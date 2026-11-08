@@ -152,7 +152,11 @@ export default function InvoiceFormModal({
               {mode === "add" ? "Tambah Tagihan" : "Ubah Tagihan"}
             </DialogTitle>
             <DialogDescription>
-              Buat tagihan khusus untuk seorang siswa.
+              {mode === "add"
+                ? "Buat tagihan khusus untuk seorang siswa."
+                : invoice?.isCustom
+                  ? "Ubah tagihan khusus ini."
+                  : "Tagihan ini dibuat sistem; nama, jumlah dan tanggalnya tetap bisa diubah."}
             </DialogDescription>
           </DialogHeader>
 

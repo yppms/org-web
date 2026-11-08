@@ -8,12 +8,12 @@ import type {
   AdminPayment,
   AdminStudent,
   PaymentFormData,
+  StudentInvoices,
 } from "@/lib/types";
 import {
   Button,
   Input,
   Label,
-  Switch,
   Badge,
   Dialog,
   DialogContent,
@@ -25,8 +25,15 @@ import {
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
+/**
+ * "add" records a transfer, "saving" pays a bill out of the student's savings
+ * (its own action in the admin UI, never a switch inside a transfer), "edit"
+ * changes either.
+ */
+export type PaymentFormMode = "add" | "edit" | "saving";
+
 interface PaymentFormModalProps {
-  mode: "add" | "edit" | null;
+  mode: PaymentFormMode | null;
   payment: AdminPayment | null;
   students: AdminStudent[];
   onClose: () => void;
@@ -40,22 +47,26 @@ export default function PaymentFormModal({
   onClose,
   onSubmit,
 }: PaymentFormModalProps) {
+  const isAdd = mode === "add" || mode === "saving";
+  const fromSaving = mode === "saving";
   const [formData, setFormData] = useState<PaymentFormData>({
     studentId: "",
     amount: "",
     date: new Date().toISOString().split("T")[0],
     reference: "",
-    invoiceId: "",
+    invoiceIds: [],
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<AdminStudent[]>([]);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
+  // Every ordinary bill of the student, paid or not: a payment may be moved
+  // to a bill that is already covered by the FIFO fill.
+  const [allInvoices, setAllInvoices] = useState<StudentInvoices["invoices"]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [editModeStudentId, setEditModeStudentId] = useState<string>("");
   const [shouldFetchInvoices, setShouldFetchInvoices] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   // Editing a refund transfer (a negative payment, attached to a refund) —
   // new transfers are recorded from the Refund tab. Keeps the sign through an
   // edit, since the amount input only takes digits.
@@ -77,70 +88,77 @@ export default function PaymentFormModal({
         amount: Math.abs(payment.amount).toString(),
         date: payment.date.split("T")[0],
         reference: payment.reference,
-        invoiceId: payment.invoiceId || "",
+        invoiceIds: payment.invoiceIds,
       });
       setShouldFetchInvoices(false); // Don't auto-fetch in edit mode
       setIsPayout(payment.amount < 0);
-    } else if (mode === "add") {
+    } else if (isAdd) {
       setFormData({
         studentId: "",
         amount: "",
         date: new Date().toISOString().split("T")[0],
         reference: "",
-        invoiceId: "",
+        invoiceIds: [],
       });
       setStudentSearch("");
       setUnpaidInvoices([]);
+      setAllInvoices([]);
       setEditModeStudentId("");
       setShouldFetchInvoices(false);
-      setIsSaving(false);
       setIsPayout(false);
       setSavingBalance(null);
     }
     setFilteredStudents(students);
-  }, [mode, payment, students]);
+  }, [mode, isAdd, payment, students]);
 
-  // Fetch unpaid invoices when student is selected (add mode) or when explicitly requested (edit mode)
+  // Fetch the student's bills when a student is selected (add mode) or when
+  // explicitly requested (edit mode): the unpaid list carries payout offers,
+  // the full list is what a payment can be attached to.
   useEffect(() => {
-    const fetchUnpaidInvoices = async () => {
+    const fetchInvoices = async () => {
       const studentIdToUse =
         mode === "edit" ? editModeStudentId : formData.studentId;
 
       // For add mode: fetch when student is selected
       // For edit mode: only fetch when explicitly requested
       const shouldFetch =
-        mode === "add"
+        isAdd
           ? !!studentIdToUse
           : !!studentIdToUse && shouldFetchInvoices;
 
       if (shouldFetch) {
         setLoadingInvoices(true);
         try {
-          const response =
-            await kindyAdminApi.getStudentUnpaidInvoices(studentIdToUse);
-          if (response.status === "success" && response.data) {
-            setUnpaidInvoices(response.data);
-          } else {
-            setUnpaidInvoices([]);
-          }
+          const [unpaid, all] = await Promise.all([
+            kindyAdminApi.getStudentUnpaidInvoices(studentIdToUse),
+            kindyAdminApi.getStudentInvoices(studentIdToUse),
+          ]);
+          setUnpaidInvoices(
+            unpaid.status === "success" && unpaid.data ? unpaid.data : [],
+          );
+          setAllInvoices(
+            all.status === "success" && all.data ? all.data.invoices : [],
+          );
         } catch (error) {
-          console.error("Failed to fetch unpaid invoices:", error);
+          console.error("Failed to fetch invoices:", error);
           setUnpaidInvoices([]);
+          setAllInvoices([]);
         } finally {
           setLoadingInvoices(false);
         }
-      } else if (mode === "add" && !studentIdToUse) {
+      } else if (isAdd && !studentIdToUse) {
         setUnpaidInvoices([]);
-        setFormData((prev) => ({ ...prev, invoiceId: "" }));
+        setAllInvoices([]);
+        setFormData((prev) => ({ ...prev, invoiceIds: [] }));
       }
     };
 
-    fetchUnpaidInvoices();
-  }, [mode, formData.studentId, editModeStudentId, shouldFetchInvoices]);
+    fetchInvoices();
+  }, [mode, isAdd, formData.studentId, editModeStudentId, shouldFetchInvoices]);
 
-  // Fetch saving balance whenever a student is selected (add mode)
+  // Fetch the saving balance when paying from savings
   useEffect(() => {
-    const studentId = mode === "add" ? formData.studentId : editModeStudentId;
+    const studentId = fromSaving ? formData.studentId : "";
     if (!studentId) {
       setSavingBalance(null);
       return;
@@ -157,7 +175,7 @@ export default function PaymentFormModal({
       }
     };
     fetchBalance();
-  }, [formData.studentId, editModeStudentId, mode]);
+  }, [formData.studentId, fromSaving]);
 
   const handleStudentSearch = (searchValue: string) => {
     setStudentSearch(searchValue);
@@ -183,7 +201,7 @@ export default function PaymentFormModal({
   const openConfirmModal = () => {
     // Validate all required fields
     if (
-      mode === "add" &&
+      isAdd &&
       (!formData.studentId ||
         !formData.amount ||
         !formData.date ||
@@ -201,8 +219,13 @@ export default function PaymentFormModal({
       return;
     }
 
-    if (isPayout && !formData.invoiceId) {
+    if (isPayout && formData.invoiceIds.length === 0) {
       alert("Pilih refund yang ditransfer");
+      return;
+    }
+
+    if (insufficientBalance) {
+      alert("Saldo tabungan tidak cukup");
       return;
     }
 
@@ -210,20 +233,69 @@ export default function PaymentFormModal({
   };
 
   const handleSubmit = async () => {
-    await onSubmit({ ...formData, isSaving: isSaving, isPayout: isPayout });
+    await onSubmit({ ...formData, isSaving: fromSaving, isPayout: isPayout });
     setShowConfirmModal(false);
   };
 
-  // Payout offers only in payout mode, bills only otherwise. Filter on the
-  // status, not isRefund: a refund the parent still owes on is an ordinary
-  // bill, paid with a positive amount.
-  const invoiceOptions = unpaidInvoices.filter(
-    (invoice) => (invoice.status === "refund") === isPayout,
+  // Payout offers, for payout mode: refunds the school still owes on.
+  const payoutOptions = unpaidInvoices.filter(
+    (invoice) => invoice.status === "refund",
   );
+  // Bills a payment can be attached to: every ordinary bill of the student,
+  // the ones still owing first, the paid ones after, each group newest due
+  // date first. `capacity` is what this payment could put on the bill: what
+  // it still owes, or — for a paid bill the payment is being moved to — the
+  // whole bill, since an attached payment fills before the loose ones.
+  // A refund the parent still owes on is on the unpaid list but not here, so
+  // it is added from there.
+  const billOf = (inv: { id: string; name: string; amount: number; dueDate: string }, outstanding: number) => ({
+    id: inv.id,
+    name: inv.name,
+    outstanding,
+    capacity: outstanding > 0 ? outstanding : inv.amount,
+    dueDate: inv.dueDate,
+  });
+  const billOptions = [
+    ...allInvoices.map((inv) => billOf(inv, Math.max(0, inv.amount - inv.paid))),
+    ...unpaidInvoices
+      .filter(
+        (inv) =>
+          inv.status !== "refund" && !allInvoices.some((b) => b.id === inv.id),
+      )
+      .map((inv) => billOf(inv, inv.outstanding)),
+  ].sort(
+    (a, b) =>
+      Number(b.outstanding > 0) - Number(a.outstanding > 0) ||
+      new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime(),
+  );
+  // Once the ticked bills can absorb the whole amount, ticking more would
+  // attach the payment to bills it cannot reach.
+  const amountNumber = parseFloat(formData.amount || "0");
+  const tickedCapacity = billOptions
+    .filter((bill) => formData.invoiceIds.includes(bill.id))
+    .reduce((sum, bill) => sum + bill.capacity, 0);
+  const covered = !isPayout && amountNumber > 0 && tickedCapacity >= amountNumber;
+  // Attached bills not on either list (e.g. a refund since paid), so an edit
+  // can still see and untick them.
+  const missingAttached =
+    mode === "edit" && payment
+      ? payment.invoiceIds
+          .map((id, i) => ({ id, name: payment.invoiceNames[i] }))
+          .filter((bill) => !billOptions.some((b) => b.id === bill.id))
+      : [];
+  const invoiceOptions = isPayout ? payoutOptions : billOptions;
+  const firstPaidIndex = billOptions.findIndex((b) => b.outstanding === 0);
+  const toggleInvoice = (id: string) =>
+    setFormData((prev) => ({
+      ...prev,
+      invoiceIds: prev.invoiceIds.includes(id)
+        ? prev.invoiceIds.filter((x) => x !== id)
+        : [...prev.invoiceIds, id],
+    }));
   const signedAmount = parseFloat(formData.amount || "0") * (isPayout ? -1 : 1);
 
   const insufficientBalance =
-    isSaving &&
+    fromSaving &&
     savingBalance !== null &&
     !!formData.amount &&
     parseFloat(formData.amount) > savingBalance;
@@ -240,10 +312,16 @@ export default function PaymentFormModal({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {mode === "add" ? "Tambah Pembayaran" : "Ubah Pembayaran"}
+              {fromSaving
+                ? "Bayar dari Tabungan"
+                : isAdd
+                  ? "Tambah Pembayaran"
+                  : "Ubah Pembayaran"}
             </DialogTitle>
             <DialogDescription>
-              Catat pembayaran baru dari siswa.
+              {fromSaving
+                ? "Potong saldo tabungan siswa untuk membayar tagihan."
+                : "Catat pembayaran baru dari siswa."}
             </DialogDescription>
           </DialogHeader>
 
@@ -252,10 +330,16 @@ export default function PaymentFormModal({
               <div className="rounded-lg bg-info-soft px-3 py-2 text-[13px] text-info">
                 Mengubah pembayaran untuk:{" "}
                 <strong>{payment.kindyStudentName}</strong>
+                {payment.source === "SAVING" && (
+                  <>
+                    {" "}
+                    · dari tabungan, jumlah tidak bisa diubah
+                  </>
+                )}
               </div>
             )}
 
-            {mode === "add" && (
+            {isAdd && (
               <div className="relative flex flex-col gap-1.5">
                 <Label>Nama siswa</Label>
                 <Input
@@ -297,9 +381,22 @@ export default function PaymentFormModal({
               </div>
             )}
 
+            {fromSaving && formData.studentId && (
+              <div className="rounded-lg bg-primary-soft px-3 py-2 text-[13px] text-primary">
+                Saldo tabungan:{" "}
+                <strong>
+                  {loadingSavingBalance
+                    ? "memuat…"
+                    : savingBalance !== null
+                      ? formatCurrency(savingBalance)
+                      : "gagal dimuat"}
+                </strong>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <Label>{isPayout ? "Jumlah ditransfer" : "Jumlah"}</Label>
-              {!isPayout && (
+              {!isPayout && !(mode === "edit" && payment?.source === "SAVING") && (
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -335,6 +432,7 @@ export default function PaymentFormModal({
                 type="text"
                 placeholder="40.000"
                 className="font-mono"
+                disabled={mode === "edit" && payment?.source === "SAVING"}
                 value={formatAmountInput(formData.amount)}
                 onChange={(e) => {
                   const numericValue = e.target.value.replace(/\D/g, "");
@@ -374,17 +472,21 @@ export default function PaymentFormModal({
                 </Label>
 
                 {mode === "edit" &&
-                payment?.invoiceName &&
+                payment &&
+                payment.invoiceNames.length > 0 &&
                 !shouldFetchInvoices ? (
-                  // In edit mode, show current invoice with option to change
+                  // In edit mode, show current bills with option to change
                   <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-muted p-3">
-                      <Badge variant={isPayout ? "info" : "default"}>
+                    <div className="flex items-start gap-2 rounded-lg bg-muted p-3">
+                      <Badge
+                        className="mt-0.5"
+                        variant={isPayout ? "info" : "default"}
+                      >
                         {isPayout ? "Refund" : "Tagihan"}
                       </Badge>
                       <div className="flex-1">
                         <div className="text-sm font-semibold">
-                          {payment.invoiceName}
+                          {payment.invoiceNames.join(", ")}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Tagihan terlampir saat ini
@@ -408,40 +510,109 @@ export default function PaymentFormModal({
                       Memuat tagihan…
                     </span>
                   </div>
-                ) : (mode === "add" || shouldFetchInvoices) &&
-                  invoiceOptions.length > 0 ? (
+                ) : (isAdd || shouldFetchInvoices) &&
+                  (invoiceOptions.length > 0 || missingAttached.length > 0) ? (
                   <div className="flex flex-col gap-2">
-                    <select
-                      className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                      value={formData.invoiceId || ""}
-                      onChange={(e) => {
-                        const picked = invoiceOptions.find(
-                          (invoice) => invoice.id === e.target.value,
-                        );
-                        setFormData({
-                          ...formData,
-                          invoiceId: e.target.value,
-                          // A payout usually settles the whole remaining credit.
-                          ...(isPayout &&
-                            picked && {
+                    {isPayout ? (
+                      <select
+                        className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                        value={formData.invoiceIds[0] || ""}
+                        onChange={(e) => {
+                          const picked = payoutOptions.find(
+                            (invoice) => invoice.id === e.target.value,
+                          );
+                          setFormData({
+                            ...formData,
+                            invoiceIds: e.target.value ? [e.target.value] : [],
+                            // A payout usually settles the whole remaining credit.
+                            ...(picked && {
                               amount: picked.outstanding.toString(),
                             }),
-                        });
-                      }}
-                    >
-                      <option value="">
-                        {isPayout
-                          ? "-- Pilih refund --"
-                          : "-- Tanpa tagihan --"}
-                      </option>
-                      {invoiceOptions.map((invoice) => (
-                        <option key={invoice.id} value={invoice.id}>
-                          {invoice.status === "refund"
-                            ? `${invoice.name} | sisa ${formatCurrency(invoice.outstanding)}`
-                            : `${invoice.name} | ${formatCurrency(invoice.outstanding)} | ${invoice.daysLate} hari`}
-                        </option>
-                      ))}
-                    </select>
+                          });
+                        }}
+                      >
+                        <option value="">-- Pilih refund --</option>
+                        {payoutOptions.map((invoice) => (
+                          <option key={invoice.id} value={invoice.id}>
+                            {`${invoice.name} | sisa ${formatCurrency(invoice.outstanding)}`}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex max-h-64 flex-col gap-1 overflow-auto rounded-lg border border-input bg-card p-2">
+                        {missingAttached.map((bill) => (
+                          <label
+                            key={bill.id}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={formData.invoiceIds.includes(bill.id)}
+                              onChange={() => toggleInvoice(bill.id)}
+                            />
+                            <span className="flex-1">{bill.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              lunas
+                            </span>
+                          </label>
+                        ))}
+                        {billOptions.map((bill, i) => (
+                          <div key={bill.id}>
+                            {i === firstPaidIndex && (
+                              <div className="mt-1 border-t border-border px-2 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Sudah lunas
+                              </div>
+                            )}
+                            <label
+                              className={cn(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
+                                covered && !formData.invoiceIds.includes(bill.id)
+                                  ? "cursor-not-allowed opacity-50"
+                                  : "cursor-pointer hover:bg-muted",
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                className="accent-primary"
+                                checked={formData.invoiceIds.includes(bill.id)}
+                                disabled={
+                                  covered && !formData.invoiceIds.includes(bill.id)
+                                }
+                                onChange={() => toggleInvoice(bill.id)}
+                              />
+                              <span className="flex-1">{bill.name}</span>
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {bill.outstanding > 0
+                                  ? `sisa ${formatCurrency(bill.outstanding)}`
+                                  : "lunas"}
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!isPayout && formData.invoiceIds.length > 0 && amountNumber > 0 && (
+                      <p
+                        className={cn(
+                          "text-xs",
+                          covered ? "text-primary" : "text-warning",
+                        )}
+                      >
+                        {covered
+                          ? `Tagihan yang dicentang menampung ${formatCurrency(tickedCapacity)}; pembayaran ${formatCurrency(amountNumber)} tertutup.`
+                          : `Tagihan yang dicentang hanya menampung ${formatCurrency(tickedCapacity)}; sisa ${formatCurrency(amountNumber - tickedCapacity)} mengalir ke tagihan lain yang belum lunas.`}
+                      </p>
+                    )}
+                    {!isPayout && (
+                      <p className="text-xs text-muted-foreground">
+                        Tanpa centang, pembayaran mengisi tagihan terlama dulu.
+                        Yang dicentang diisi lebih dulu; kelebihannya mengalir
+                        ke tagihan lain yang belum lunas. Tagihan yang sudah
+                        lunas boleh dicentang untuk memindahkan pembayaran ini
+                        ke sana; tagihan yang tadinya terisi akan terbuka lagi.
+                      </p>
+                    )}
                     {mode === "edit" && (
                       <Button
                         type="button"
@@ -451,7 +622,7 @@ export default function PaymentFormModal({
                           setShouldFetchInvoices(false);
                           setFormData({
                             ...formData,
-                            invoiceId: payment?.invoiceId || "",
+                            invoiceIds: payment?.invoiceIds ?? [],
                           });
                         }}
                       >
@@ -459,12 +630,12 @@ export default function PaymentFormModal({
                       </Button>
                     )}
                   </div>
-                ) : mode === "add" || shouldFetchInvoices ? (
+                ) : isAdd || shouldFetchInvoices ? (
                   <div className="flex flex-col gap-2">
                     <div className="rounded-lg bg-info-soft px-3 py-2 text-xs text-info">
                       {isPayout
                         ? "Tidak ada refund yang perlu ditransfer untuk siswa ini"
-                        : "Tidak ada tagihan belum lunas untuk siswa ini"}
+                        : "Tidak ada tagihan untuk siswa ini"}
                     </div>
                     {mode === "edit" && (
                       <Button
@@ -475,7 +646,7 @@ export default function PaymentFormModal({
                           setShouldFetchInvoices(false);
                           setFormData({
                             ...formData,
-                            invoiceId: payment?.invoiceId || "",
+                            invoiceIds: payment?.invoiceIds ?? [],
                           });
                         }}
                       >
@@ -483,7 +654,7 @@ export default function PaymentFormModal({
                       </Button>
                     )}
                   </div>
-                ) : mode === "edit" && !payment?.invoiceName ? (
+                ) : mode === "edit" && !payment?.invoiceNames.length ? (
                   // Edit mode, no current invoice, not fetching yet
                   <Button
                     type="button"
@@ -495,39 +666,6 @@ export default function PaymentFormModal({
                     + Lampirkan ke Tagihan
                   </Button>
                 ) : null}
-              </div>
-            )}
-
-            {/* Pay from savings toggle — add mode only, never for a payout */}
-            {mode === "add" && !isPayout && (
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors",
-                  isSaving ? "border-primary bg-primary-soft" : "border-border",
-                )}
-              >
-                <div>
-                  <p className="text-[13px] font-medium">Bayar dari tabungan</p>
-                  {formData.studentId ? (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {loadingSavingBalance ? (
-                        "Memuat saldo…"
-                      ) : savingBalance !== null ? (
-                        <>
-                          Saldo:{" "}
-                          <strong>{formatCurrency(savingBalance)}</strong>
-                        </>
-                      ) : (
-                        "Gagal memuat saldo"
-                      )}
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Saldo dipotong otomatis
-                    </p>
-                  )}
-                </div>
-                <Switch checked={isSaving} onCheckedChange={setIsSaving} />
               </div>
             )}
 
@@ -561,7 +699,12 @@ export default function PaymentFormModal({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Konfirmasi {mode === "add" ? "Pembayaran Baru" : "Perubahan"}
+              Konfirmasi{" "}
+              {fromSaving
+                ? "Pembayaran dari Tabungan"
+                : isAdd
+                  ? "Pembayaran Baru"
+                  : "Perubahan"}
             </DialogTitle>
             <DialogDescription>
               Periksa kembali informasi dengan teliti sebelum melanjutkan.
@@ -570,7 +713,7 @@ export default function PaymentFormModal({
 
           <div className="flex flex-col gap-3 rounded-lg bg-muted p-4">
             {/* Student Name */}
-            {mode === "add" && (
+            {isAdd && (
               <div>
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                   Siswa
@@ -621,46 +764,47 @@ export default function PaymentFormModal({
               <div className="font-mono text-sm">{formData.reference}</div>
             </div>
 
-            {/* Attached Invoice (if selected) */}
-            {formData.invoiceId && (
+            {/* Attached bills (if any) */}
+            {formData.invoiceIds.length > 0 && (
               <div className="border-t border-border pt-3">
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                   Dilampirkan ke Tagihan
                 </div>
-                <div className="flex items-start gap-2">
-                  <Badge
-                    className="mt-0.5"
-                    variant={isPayout ? "info" : "default"}
-                  >
-                    {isPayout ? "Refund" : "Tagihan"}
-                  </Badge>
-                  <div>
-                    <div className="text-sm font-semibold">
-                      {unpaidInvoices.find(
-                        (inv) => inv.id === formData.invoiceId,
-                      )?.name ||
-                        payment?.invoiceName ||
-                        "Tagihan tidak diketahui"}
-                    </div>
-                    {unpaidInvoices.find(
-                      (inv) => inv.id === formData.invoiceId,
-                    ) && (
-                      <div className="text-xs text-muted-foreground">
-                        {isPayout ? "Sisa refund:" : "Tunggakan:"}{" "}
-                        {formatCurrency(
-                          unpaidInvoices.find(
-                            (inv) => inv.id === formData.invoiceId,
-                          )?.outstanding || 0,
-                        )}
+                <div className="flex flex-col gap-1.5">
+                  {formData.invoiceIds.map((id) => {
+                    const picked = (isPayout ? payoutOptions : billOptions).find(
+                      (inv) => inv.id === id,
+                    );
+                    const name =
+                      picked?.name ??
+                      payment?.invoiceNames[payment.invoiceIds.indexOf(id)] ??
+                      "Tagihan tidak diketahui";
+                    return (
+                      <div key={id} className="flex items-start gap-2">
+                        <Badge
+                          className="mt-0.5"
+                          variant={isPayout ? "info" : "default"}
+                        >
+                          {isPayout ? "Refund" : "Tagihan"}
+                        </Badge>
+                        <div>
+                          <div className="text-sm font-semibold">{name}</div>
+                          {picked && (
+                            <div className="text-xs text-muted-foreground">
+                              {isPayout ? "Sisa refund:" : "Tunggakan:"}{" "}
+                              {formatCurrency(picked.outstanding)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Savings deduction notice */}
-            {isSaving && (
+            {fromSaving && (
               <div className="border-t border-border pt-3">
                 <div className="rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning">
                   Pembayaran akan dipotong dari <strong>tabungan siswa</strong>
@@ -682,7 +826,7 @@ export default function PaymentFormModal({
               ← Kembali
             </Button>
             <Button size="sm" onClick={handleSubmit}>
-              {mode === "add" ? "Konfirmasi & Tambah" : "Konfirmasi & Simpan"}
+              {isAdd ? "Konfirmasi & Tambah" : "Konfirmasi & Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>

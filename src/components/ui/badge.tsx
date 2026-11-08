@@ -14,6 +14,8 @@ const badgeVariants = cva(
         destructive: "bg-destructive-soft text-destructive",
         warning: "bg-warning-soft text-warning",
         info: "bg-info-soft text-info",
+        // A kind of record rather than a state: hand-made (tagihan khusus).
+        accent: "bg-accent-soft text-accent",
         outline: "border border-border text-foreground",
       },
     },

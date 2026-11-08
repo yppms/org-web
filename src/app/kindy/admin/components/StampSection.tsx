@@ -7,13 +7,15 @@ import {
   Spinner,
   ErrorAlert,
   EmptyState,
-  Input,
-  Chip,
   Badge,
   Button,
   SectionHeader,
   Card,
 } from "@/components/ui";
+import ListControls, { useSort } from "@/components/ListControls";
+
+type SentFilter = "all" | "unsent" | "sent";
+type TaskSortKey = "name" | "no";
 
 interface WhatsAppTask {
   id: string;
@@ -33,7 +35,9 @@ export default function StampSection() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sentMessages, setSentMessages] = useState<Set<string>>(new Set());
-  const [showSent, setShowSent] = useState(false);
+  // Hide the ones already sent by default, as before.
+  const [sentFilter, setSentFilter] = useState<SentFilter>("unsent");
+  const { sortBy, order, toggle, signed } = useSort<TaskSortKey>("name", "asc");
 
   // Load sent messages from localStorage on mount
   useEffect(() => {
@@ -66,11 +70,17 @@ export default function StampSection() {
           task.id.toLowerCase().includes(term),
       );
     }
-    if (!showSent) {
+    if (sentFilter === "unsent")
       filtered = filtered.filter((task) => !sentMessages.has(task.id));
-    }
-    return filtered;
-  }, [tasks, searchTerm, sentMessages, showSent]);
+    else if (sentFilter === "sent")
+      filtered = filtered.filter((task) => sentMessages.has(task.id));
+    return [...filtered].sort((a, b) =>
+      sortBy === "name"
+        ? signed(a.name.localeCompare(b.name))
+        : signed(a.no - b.no),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, searchTerm, sentMessages, sentFilter, sortBy, order]);
 
   const handleOpenWhatsApp = (waLink: string, taskId: string) => {
     const next = new Set(sentMessages);
@@ -91,18 +101,31 @@ export default function StampSection() {
         subtitle="Kirim tautan akses ke orang tua siswa"
       />
 
-      {/* Search + filter */}
-      <div className="flex gap-3 items-center">
-        <Input
-          className="flex-1"
-          placeholder="Cari nama, telepon, atau ID…"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <Chip active={showSent} onClick={() => setShowSent((prev) => !prev)}>
-          Terkirim
-        </Chip>
-      </div>
+      <ListControls
+        search={{
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: "Cari nama, telepon, atau ID…",
+        }}
+        filter={{
+          options: [
+            { key: "unsent", label: "Belum terkirim" },
+            { key: "sent", label: "Terkirim" },
+            { key: "all", label: "Semua" },
+          ],
+          value: sentFilter,
+          onChange: setSentFilter,
+        }}
+        sort={{
+          options: [
+            { key: "name", label: "Nama" },
+            { key: "no", label: "Nomor urut" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
+      />
 
       {/* Rows */}
       {filteredTasks.length === 0 ? (
@@ -110,9 +133,11 @@ export default function StampSection() {
           message={
             searchTerm
               ? "Tidak ada siswa yang cocok."
-              : !showSent
-                ? 'Semua pesan sudah terkirim! Aktifkan "Terkirim" untuk melihatnya.'
-                : "Tidak ada tugas WhatsApp."
+              : sentFilter === "unsent"
+                ? 'Semua pesan sudah terkirim! Pilih "Terkirim" untuk melihatnya.'
+                : sentFilter === "sent"
+                  ? "Belum ada pesan yang terkirim."
+                  : "Tidak ada tugas WhatsApp."
           }
         />
       ) : (

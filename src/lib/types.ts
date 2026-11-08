@@ -204,11 +204,15 @@ export interface Infaq {
   updatedAt: string;
 }
 
+/** Where a payment's money came from: a transfer, or the student's savings. */
+export type PaymentSource = 'TRANSFER' | 'SAVING';
+
 export interface Payment {
   id: string;
   amount: number;
   reference: string | null;
   date: string;
+  source: PaymentSource;
   kindyStudentName: string;
   no: number;
   invoiceId?: string | null;
@@ -254,12 +258,14 @@ export interface StudentOutstanding {
 }
 
 /**
- * Invoice as shown in the admin invoice list. Distinct from the student-facing
- * `Invoice` above (which carries status/paid/outstanding); the admin shape is
- * the raw billing record.
+ * A bill as the admin's invoice list shows it: the billing record plus what
+ * the walk has paid on it, the same reading the parent gets. The list holds
+ * every student's ordinary bills (system-generated and custom); refunds live
+ * in the refund tab.
  */
 export interface AdminInvoice {
   id: string;
+  kindyStudentId: string;
   kindyStudentName: string;
   name: string;
   amountFull: number;
@@ -269,6 +275,15 @@ export interface AdminInvoice {
   dueDate: string;
   createdAt: string;
   updatedAt: string;
+  /** Made by the admin; only these can be deleted. */
+  isCustom: boolean;
+  /** Set when the student's refund replaced this bill. */
+  supersededById: string | null;
+  paid: number;
+  outstanding: number;
+  status: 'issued' | 'paid' | 'partial' | 'overdue';
+  /** Days past due while still owing; 0 once settled. */
+  daysLate: number;
 }
 
 /**
@@ -330,7 +345,7 @@ export interface AdminRefund extends RefundBreakdown {
 /**
  * Payment as shown in the admin payment list. Distinct from the student-facing
  * `Payment` above (which carries appliedInvoices/savingsAmount); the admin shape
- * carries a single attached invoiceId/invoiceName.
+ * carries the bills the payment is attached to.
  */
 export interface AdminPayment {
   id: string;
@@ -338,6 +353,16 @@ export interface AdminPayment {
   amount: number;
   date: string;
   reference: string;
+  /** SAVING = taken from the student's savings; its amount cannot be edited. */
+  source: PaymentSource;
+  /**
+   * The bills this payment is attached to — an override of the FIFO order,
+   * not a split of the amount: the payment fills these oldest due date first
+   * and whatever is left flows on to the student's other bills.
+   */
+  invoiceIds: string[];
+  invoiceNames: string[];
+  /** The first attached bill, for older readers. */
   invoiceId?: string;
   invoiceName?: string;
   createdAt: string;
@@ -351,7 +376,8 @@ export interface PaymentFormData {
   amount: string;
   date: string;
   reference: string;
-  invoiceId?: string | null;
+  /** Bills to attach to; a payout names exactly one refund. */
+  invoiceIds: string[];
   isSaving?: boolean;
   /** The school paying a refund back to the parent (sent as a negative amount). */
   isPayout?: boolean;

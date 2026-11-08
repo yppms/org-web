@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { kindyAdminApi, ApiError } from "@/lib/api";
 import type { AdminRefund, AdminStudent } from "@/lib/types";
 import { formatAmountInput, formatCurrency, formatDate } from "@/lib/utils";
@@ -32,6 +32,10 @@ import {
 } from "@/components/ui";
 import type { BadgeProps } from "@/components/ui/badge";
 import RefundFormModal, { type RefundFormData } from "./RefundFormModal";
+import ListControls, { useSort } from "@/components/ListControls";
+
+type RefundFilter = "all" | "toTransfer" | "owed" | "done";
+type RefundSortKey = "dueDate" | "refundable" | "name";
 
 const statusMap: Record<
   AdminRefund["status"],
@@ -57,8 +61,38 @@ export default function RefundSection() {
   const { data: studentsData } = useApi<AdminStudent[]>(() =>
     kindyAdminApi.getAllStudents(),
   );
-  const refunds = refundsData ?? [];
+  const refunds = useMemo(() => refundsData ?? [], [refundsData]);
   const students = studentsData ?? [];
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<RefundFilter>("all");
+  const { sortBy, order, toggle, signed } = useSort<RefundSortKey>("dueDate");
+
+  const visible = useMemo(() => {
+    let list = refunds;
+    if (filter === "toTransfer") list = list.filter((r) => r.toTransfer > 0);
+    else if (filter === "owed") list = list.filter((r) => r.owed > 0);
+    else if (filter === "done") list = list.filter((r) => r.status === "paid");
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (r) =>
+          r.kindyStudentName.toLowerCase().includes(q) ||
+          r.sources.some((s) => s.name.toLowerCase().includes(q)),
+      );
+    }
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case "dueDate":
+          return signed(new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        case "refundable":
+          return signed(a.refundable - b.refundable);
+        case "name":
+          return signed(a.kindyStudentName.localeCompare(b.kindyStudentName));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refunds, filter, searchQuery, sortBy, order]);
 
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [selected, setSelected] = useState<AdminRefund | null>(null);
@@ -156,10 +190,46 @@ export default function RefundSection() {
 
       {actionError && <ErrorAlert message={actionError} />}
 
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari nama siswa atau tagihan asal…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "toTransfer", label: "Perlu transfer" },
+            { key: "owed", label: "Kurang bayar" },
+            { key: "done", label: "Selesai" },
+          ],
+          value: filter,
+          onChange: setFilter,
+        }}
+        sort={{
+          options: [
+            { key: "dueDate", label: "Rencana transfer" },
+            { key: "refundable", label: "Dikembalikan" },
+            { key: "name", label: "Nama" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
+      />
+
       {refunds.length === 0 ? (
         <EmptyState message="Belum ada refund" />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          message={
+            searchQuery
+              ? `Tidak ada refund dengan kata kunci "${searchQuery}"`
+              : "Tidak ada refund untuk filter ini"
+          }
+        />
       ) : (
-        refunds.map((refund) => {
+        visible.map((refund) => {
           const status = statusMap[refund.status];
           return (
             <Card key={refund.id} className="px-4 py-3.5">

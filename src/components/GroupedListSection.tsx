@@ -12,7 +12,10 @@ import {
   Card,
 } from "@/components/ui";
 import { Chip } from "@/components/ui/chip";
-import { Input } from "@/components/ui/input";
+import ListControls, { useSort } from "@/components/ListControls";
+
+type ActivityFilter = "all" | "active" | "none";
+type GroupedSortKey = "last" | "total" | "name";
 
 /** Normalised row shape every grouped list works with. */
 export interface GroupedListItem {
@@ -43,14 +46,12 @@ interface GroupedListSectionProps<T> {
   mapItem: (raw: T) => GroupedListItem;
   fallbackMessage: string;
   labels: GroupedListLabels;
-  /** Hide the search box (e.g. the Infaq view in the mockup). */
-  showSearch?: boolean;
 }
 
 /**
  * Per-class grouped student list with overall stats, class filter chips,
- * optional search, and a single card of rows. Shared by the admin Savings and
- * Infaq sections.
+ * search, activity filter and sort, and a single card of rows. Shared by the
+ * admin Savings and Infaq sections.
  */
 export default function GroupedListSection<T>({
   title,
@@ -59,13 +60,14 @@ export default function GroupedListSection<T>({
   mapItem,
   fallbackMessage,
   labels,
-  showSearch = true,
 }: GroupedListSectionProps<T>) {
   const { data, isLoading, error } = useApi<T[]>(fetcher, { fallbackMessage });
   const items = useMemo(() => (data ?? []).map(mapItem), [data, mapItem]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ActivityFilter>("all");
+  const { sortBy, order, toggle, signed } = useSort<GroupedSortKey>("last");
 
   const classes = useMemo(() => {
     const set = new Set<string>();
@@ -78,20 +80,25 @@ export default function GroupedListSection<T>({
   const filtered = useMemo(() => {
     let list = items;
     if (selectedClass) list = list.filter((s) => s.class === selectedClass);
+    if (activity === "active") list = list.filter((s) => s.total > 0);
+    else if (activity === "none") list = list.filter((s) => s.total === 0);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((s) => s.name.toLowerCase().includes(q));
     }
-    // Contributors first, then most-recent, then name.
+    const time = (s: GroupedListItem) => (s.last ? new Date(s.last).getTime() : 0);
     return [...list].sort((a, b) => {
-      if (a.total === 0 && b.total > 0) return 1;
-      if (a.total > 0 && b.total === 0) return -1;
-      const at = a.last ? new Date(a.last).getTime() : 0;
-      const bt = b.last ? new Date(b.last).getTime() : 0;
-      if (bt !== at) return bt - at;
-      return a.name.localeCompare(b.name);
+      switch (sortBy) {
+        case "last":
+          return signed(time(a) - time(b)) || a.name.localeCompare(b.name);
+        case "total":
+          return signed(a.total - b.total) || a.name.localeCompare(b.name);
+        case "name":
+          return signed(a.name.localeCompare(b.name));
+      }
     });
-  }, [items, searchQuery, selectedClass]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, searchQuery, selectedClass, activity, sortBy, order]);
 
   const total = items.reduce((sum, s) => sum + s.total, 0);
   const activeCount = items.filter((s) => s.total > 0).length;
@@ -140,22 +147,41 @@ export default function GroupedListSection<T>({
         </div>
       )}
 
-      {/* Search */}
-      {showSearch && (
-        <Input
-          type="text"
-          placeholder="Cari nama siswa…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      )}
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari nama siswa…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "active", label: labels.activeStat },
+            { key: "none", label: labels.emptyItem },
+          ],
+          value: activity,
+          onChange: setActivity,
+        }}
+        sort={{
+          options: [
+            { key: "last", label: labels.lastSort },
+            { key: "total", label: labels.amountSort },
+            { key: "name", label: "Nama" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
+      />
 
       {/* Student list */}
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-[13px] text-muted-foreground">
           {searchQuery
             ? `Tidak ada siswa dengan nama "${searchQuery}"`
-            : labels.noData}
+            : activity !== "all" || selectedClass
+              ? "Tidak ada siswa untuk filter ini"
+              : labels.noData}
         </div>
       ) : (
         <Card className="px-4">

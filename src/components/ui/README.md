@@ -64,10 +64,12 @@ All color comes from CSS variables defined on `:root` / `.dark` in
 | unpaid / destructive | `text-destructive`, `bg-destructive-soft` |
 | pending / needs attention | `text-warning`, `bg-warning-soft` |
 | informational / overpaid | `text-info`, `bg-info-soft` |
+| hand-made record (tagihan khusus) | `text-accent`, `bg-accent-soft` |
 
 **Color = meaning.** Status is always a **soft badge** (`<Badge variant="…">`):
 soft-tint background + strong-color text. Variants: `default` (primary-soft),
-`secondary` (muted), `destructive`, `warning`, `info`, `outline`.
+`secondary` (muted), `destructive`, `warning`, `info`, `accent` (purple, a kind
+of record rather than a state), `outline`.
 
 ### Typography
 

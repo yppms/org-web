@@ -9,14 +9,14 @@ import {
   Spinner,
   ErrorAlert,
   StatCard,
-  Input,
-  Chip,
   Badge,
   SectionHeader,
   Card,
 } from "@/components/ui";
+import ListControls, { useSort } from "@/components/ListControls";
 
-type SortKey = "no" | "name" | "outstanding" | "totalInvoice";
+type SortKey = "name" | "outstanding" | "totalInvoice";
+type FilterType = "all" | "outstanding" | "overpaid" | "settled";
 
 export default function OutstandingSection() {
   const { data, isLoading, error } = useApi<StudentOutstanding[]>(
@@ -26,11 +26,8 @@ export default function OutstandingSection() {
   const outstandingData = useMemo(() => data ?? [], [data]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortKey>("outstanding");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [filterType, setFilterType] = useState<
-    "all" | "outstanding" | "overpaid"
-  >("all");
+  const { sortBy, order, toggle, signed } = useSort<SortKey>("outstanding");
+  const [filterType, setFilterType] = useState<FilterType>("all");
 
   const filteredAndSorted = useMemo(() => {
     let filtered = outstandingData;
@@ -46,37 +43,21 @@ export default function OutstandingSection() {
       filtered = filtered.filter((s) => s.outstanding > 0);
     else if (filterType === "overpaid")
       filtered = filtered.filter((s) => s.outstanding < 0);
+    else if (filterType === "settled")
+      filtered = filtered.filter((s) => s.outstanding === 0);
 
     return [...filtered].sort((a, b) => {
-      let comparison = 0;
       switch (sortBy) {
-        case "no":
-          comparison = a.no - b.no;
-          break;
         case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
+          return signed(a.name.localeCompare(b.name));
         case "outstanding":
-          comparison = a.outstanding - b.outstanding;
-          break;
+          return signed(a.outstanding - b.outstanding);
         case "totalInvoice":
-          comparison = a.totalInvoice - b.totalInvoice;
-          break;
+          return signed(a.totalInvoice - b.totalInvoice);
       }
-      return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [outstandingData, searchQuery, sortBy, sortOrder, filterType]);
-
-  const toggleSort = (field: SortKey) => {
-    if (sortBy === field) setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    else {
-      setSortBy(field);
-      setSortOrder("desc");
-    }
-  };
-
-  const arrow = (key: SortKey) =>
-    sortBy === key ? (sortOrder === "desc" ? " ↓" : " ↑") : "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outstandingData, searchQuery, sortBy, order, filterType]);
 
   const totalOutstanding = outstandingData.reduce(
     (sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0),
@@ -120,33 +101,33 @@ export default function OutstandingSection() {
         />
       </div>
 
-      <Input
-        type="text"
-        placeholder="Cari nama siswa…"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+      <ListControls
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Cari nama siswa…",
+        }}
+        filter={{
+          options: [
+            { key: "all", label: "Semua" },
+            { key: "outstanding", label: "Tunggakan" },
+            { key: "overpaid", label: "Lebih bayar" },
+            { key: "settled", label: "Lunas" },
+          ],
+          value: filterType,
+          onChange: setFilterType,
+        }}
+        sort={{
+          options: [
+            { key: "outstanding", label: "Selisih" },
+            { key: "totalInvoice", label: "Tagihan" },
+            { key: "name", label: "Nama" },
+          ],
+          value: sortBy,
+          order,
+          onChange: toggle,
+        }}
       />
-
-      <div className="flex gap-1.5 flex-wrap">
-        <Chip
-          active={filterType === "all"}
-          onClick={() => setFilterType("all")}
-        >
-          Semua
-        </Chip>
-        <Chip
-          active={filterType === "outstanding"}
-          onClick={() => setFilterType("outstanding")}
-        >
-          Tunggakan
-        </Chip>
-        <Chip
-          active={filterType === "overpaid"}
-          onClick={() => setFilterType("overpaid")}
-        >
-          Lebih bayar
-        </Chip>
-      </div>
 
       <div className="flex flex-col gap-2">
         {filteredAndSorted.length === 0 ? (

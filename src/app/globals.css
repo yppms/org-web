@@ -33,6 +33,11 @@
     --info-foreground: 255 255 255;
     --info-soft: rgba(2, 132, 199, 0.1);
 
+    /* Kind, not state: marks a record the admin made by hand (tagihan khusus). */
+    --accent: 124 58 237;
+    --accent-foreground: 255 255 255;
+    --accent-soft: rgba(124, 58, 237, 0.12);
+
     --overlay: rgba(0, 0, 0, 0.5);
     --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
@@ -64,6 +69,10 @@
     --info: 56 189 248;
     --info-foreground: 9 9 11;
     --info-soft: rgba(56, 189, 248, 0.16);
+
+    --accent: 167 139 250;
+    --accent-foreground: 9 9 11;
+    --accent-soft: rgba(167, 139, 250, 0.16);
 
     --overlay: rgba(0, 0, 0, 0.75);
     --shadow-card: none;

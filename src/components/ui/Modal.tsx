@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  type DialogPlacement,
 } from "./dialog";
 
 interface ModalProps {
@@ -18,6 +19,12 @@ interface ModalProps {
   actions?: ReactNode;
   /** Set false to prevent closing on overlay click / Esc (e.g. while submitting). */
   dismissable?: boolean;
+  /**
+   * `bottom` slides the dialog up as a sheet from the bottom edge instead of
+   * centring it: for the details of something just tapped on a grid or
+   * list, which a centred card would cover. Default `center`.
+   */
+  placement?: DialogPlacement;
   className?: string;
 }
 
@@ -33,6 +40,7 @@ export default function Modal({
   children,
   actions,
   dismissable = true,
+  placement = "center",
   className = "",
 }: ModalProps) {
   return (
@@ -44,6 +52,7 @@ export default function Modal({
     >
       <DialogContent
         showClose={dismissable}
+        placement={placement}
         onEscapeKeyDown={(e) => {
           if (!dismissable) e.preventDefault();
         }}

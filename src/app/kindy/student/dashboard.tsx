@@ -40,6 +40,7 @@ import {
 import Navigation, { type StudentSection } from "./components/Navigation";
 import HomeSection from "./components/HomeSection";
 import HarianSection from "./components/harian/HarianSection";
+import CalendarSection from "./components/calendar/CalendarSection";
 import MediaViewer from "./components/harian/MediaViewer";
 import ProfileSection from "./components/ProfileSection";
 import InvoicesSection from "./components/InvoicesSection";
@@ -691,7 +692,10 @@ export default function Dashboard() {
           />
         )}
         {activeSection === "harian" && (
-          <HarianSection
+          <HarianSection onOpenMedia={openMedia} address={addressOf(profile)} />
+        )}
+        {activeSection === "kalender" && (
+          <CalendarSection
             onOpenMedia={openMedia}
             address={addressOf(profile)}
           />

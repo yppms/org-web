@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import kindyStudentApi from "@/lib/api";
+import { useApi } from "@/hooks/useApi";
 import {
+  CalendarEvent,
   HarianDay,
   HarianIndexEntry,
   HarianMedia,
@@ -14,7 +16,13 @@ import {
   StudentStats,
 } from "@/lib/types";
 import { addressOf, formatCurrency, formatDate } from "@/lib/utils";
-import { relativeDayLabel, weekdayName } from "@/lib/harian";
+import {
+  daysBetween,
+  relativeDayLabel,
+  todayYmd,
+  weekdayName,
+} from "@/lib/harian";
+import { countdownLabel, upcoming } from "@/lib/calendar";
 import {
   Badge,
   Card,
@@ -32,7 +40,8 @@ import {
 } from "@/components/ui";
 import type { BadgeProps } from "@/components/ui/badge";
 import ActivityRow from "./ActivityRow";
-import ReportEntries from "./harian/ReportEntries";
+import { DayGroups } from "./harian/DayCard";
+import UpcomingEventRow, { isNow } from "./calendar/UpcomingEventRow";
 import type { StudentSection } from "./Navigation";
 
 interface HomeSectionProps {
@@ -86,13 +95,28 @@ const invoicesPaidBy = (payment: Payment): string | null => {
 
 /**
  * The newest day in the harian index, plus its content. `day` is null when the
- * index lists the date with no report behind it — which is how an absence
- * arrives, since the class report is withheld on a day the child missed.
+ * index lists the date with nothing behind it — no report and no meal — which
+ * is how an absence arrives, since the class report is withheld on a day the
+ * child missed.
  */
 interface LatestHarian {
   entry: HarianIndexEntry;
   day: HarianDay | null;
 }
+
+const isAway = (status: HarianIndexEntry["attendance"]) =>
+  status === "ABSENT" || status === "SICK";
+
+/**
+ * Same line as the feed's no-report row: "Mas Barra sakit: demam", "Mas Barra
+ * tidak masuk: acara keluarga", with "belum ada info" when the teacher left
+ * the reason blank.
+ */
+const awayLabel = (entry: HarianIndexEntry, who: string) => {
+  if (!isAway(entry.attendance)) return "Belum ada catatan.";
+  const what = entry.attendance === "SICK" ? "sakit" : "tidak masuk";
+  return `${who} ${what}: ${entry.attendanceNote ?? "belum ada info"}`;
+};
 
 const INVOICE_STATUS: Record<
   string,
@@ -113,6 +137,12 @@ const SAVING_STATUS: Record<
   FAIL: { text: "Gagal", variant: "destructive" },
 };
 
+/**
+ * An event this close jumps to the top of Beranda: a holiday or a first day
+ * a week out is something to plan around, further off it is just news.
+ */
+const SOON_DAYS = 7;
+
 /** Newest first by the backend's running number. */
 const newest = <T extends { no: number }>(rows: T[]): T | undefined =>
   [...rows].sort((a, b) => b.no - a.no)[0];
@@ -124,7 +154,8 @@ const newest = <T extends { no: number }>(rows: T[]): T | undefined =>
  * Card order is driven by urgency rather than a fixed layout: an overdue bill
  * jumps to the top, and when nothing is overdue the bill sinks below the
  * report, because on a normal day the thing a parent opens this for is what
- * their child did today.
+ * their child did today. The next calendar event sits under the report, and
+ * jumps above everything once it is a week away or already under way.
  */
 export default function HomeSection({
   profile,
@@ -135,6 +166,18 @@ export default function HomeSection({
   const [activity, setActivity] = useState<LatestActivity[] | null>(null);
   const [latest, setLatest] = useState<LatestHarian | null>(null);
   const [harianLoading, setHarianLoading] = useState(true);
+
+  // The single next event on the school calendar.
+  const today = useMemo(() => todayYmd(), []);
+  const calendar = useApi<CalendarEvent[]>(() => kindyStudentApi.getCalendar());
+  const nextEvent = useMemo(
+    () => upcoming(calendar.data ?? [], today)[0] ?? null,
+    [calendar.data, today],
+  );
+  const eventSoon =
+    !!nextEvent &&
+    (isNow(countdownLabel(nextEvent, today)) ||
+      daysBetween(today, nextEvent.startDate) <= SOON_DAYS);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,8 +294,9 @@ export default function HomeSection({
         const entry = response.data?.[0];
         if (!entry) return null;
         // A day the child missed is listed with no report — the class report is
-        // withheld on those days — so there is nothing to fetch for it.
-        if (!entry.hasClassReport && !entry.hasIndividual) {
+        // withheld on those days — so there is nothing to fetch for it. A meal
+        // record alone is worth a fetch: the card shows it under "Nutrisi".
+        if (!entry.hasClassReport && !entry.hasIndividual && !entry.hasMeal) {
           return { entry, day: null };
         }
         return kindyStudentApi
@@ -358,20 +402,18 @@ export default function HomeSection({
                 </span>
               </span>
               {latest.day ? (
-                <ReportEntries day={latest.day} onOpenMedia={onOpenMedia} />
+                <DayGroups day={latest.day} onOpenMedia={onOpenMedia} />
               ) : (
                 // Same wording and warning tone as the Harian tab: without it
                 // the empty card reads as a report that failed to load.
                 <p
                   className={`text-[13px] leading-relaxed ${
-                    latest.entry.attendance === "ABSENT"
+                    isAway(latest.entry.attendance)
                       ? "font-medium text-warning"
                       : "text-muted-foreground"
                   }`}
                 >
-                  {latest.entry.attendance === "ABSENT"
-                    ? `${addressOf(profile)} tidak masuk`
-                    : "Belum ada catatan."}
+                  {awayLabel(latest.entry, addressOf(profile))}
                 </p>
               )}
             </>
@@ -381,7 +423,28 @@ export default function HomeSection({
         </CardContent>
       </Card>
 
-      <Card style={{ order: 2 }}>
+      <Card style={{ order: eventSoon ? -1 : 2 }}>
+        <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border">
+          <CardTitle>Agenda</CardTitle>
+          <CardLink
+            label="Lihat kalender"
+            onClick={() => onNavigate("kalender")}
+          />
+        </CardHeader>
+        <CardContent className="flex flex-col pt-1">
+          {calendar.isLoading ? (
+            <div className="py-2">
+              <Spinner />
+            </div>
+          ) : nextEvent ? (
+            <UpcomingEventRow event={nextEvent} today={today} />
+          ) : (
+            <EmptyState message="Belum ada agenda mendatang." />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card style={{ order: 3 }}>
         <CardHeader className="flex-row items-center justify-between gap-3 border-b border-border">
           <CardTitle>Keuangan</CardTitle>
           <CardLink

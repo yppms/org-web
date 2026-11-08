@@ -6,6 +6,7 @@ export { default as SectionHeader } from "./SectionHeader";
 export { default as StatCard } from "./StatCard";
 export type { StatTone } from "./StatCard";
 export { default as Modal } from "./Modal";
+export { default as StepButton } from "./StepButton";
 
 // shadcn/ui primitives
 export { Button, buttonVariants } from "./button";

@@ -3,7 +3,8 @@
 import ThemeToggle from "@/components/ThemeToggle";
 import StudentAvatar from "./StudentAvatar";
 
-export type StudentSection = "home" | "harian" | "keuangan" | "profile";
+export type StudentSection =
+  "home" | "harian" | "kalender" | "keuangan" | "profile";
 
 interface NavigationProps {
   activeSection: StudentSection;
@@ -18,6 +19,7 @@ interface NavigationProps {
 const navItems: { key: StudentSection; label: string }[] = [
   { key: "home", label: "Beranda" },
   { key: "harian", label: "Harian" },
+  { key: "kalender", label: "Kalender" },
   { key: "keuangan", label: "Keuangan" },
   { key: "profile", label: "Profil" },
 ];

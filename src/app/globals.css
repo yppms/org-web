@@ -33,6 +33,16 @@
     --info-foreground: 255 255 255;
     --info-soft: rgba(2, 132, 199, 0.1);
 
+    /* `-strong`: the 700 shade of each status colour, for small text (≤ 10px)
+       on a `-soft` tint and for the solid category chips on the calendar,
+       where the base shade is too light to pass 4.5:1. `--strong-foreground`
+       is the text colour on a `-strong` fill. */
+    --primary-strong: 21 128 61;
+    --destructive-strong: 185 28 28;
+    --info-strong: 3 105 161;
+    --warning-strong: 180 83 9;
+    --strong-foreground: 255 255 255;
+
     /* Kind, not state: marks a record the admin made by hand (tagihan khusus). */
     --accent: 124 58 237;
     --accent-foreground: 255 255 255;
@@ -69,6 +79,13 @@
     --info: 56 189 248;
     --info-foreground: 9 9 11;
     --info-soft: rgba(56, 189, 248, 0.16);
+
+    /* In the dark theme the "strong" shade is the light 300 tint, with dark text on it. */
+    --primary-strong: 134 239 172;
+    --destructive-strong: 252 165 165;
+    --info-strong: 125 211 252;
+    --warning-strong: 252 211 77;
+    --strong-foreground: 9 9 11;
 
     --accent: 167 139 250;
     --accent-foreground: 9 9 11;

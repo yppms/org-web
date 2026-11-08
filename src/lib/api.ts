@@ -1,5 +1,5 @@
 // API utility functions for Kindy Student portal
-import type { AdminRefund, FacilityInfo, HarianDay, HarianIndexEntry, StudentInvoices } from './types';
+import type { AdminRefund, CalendarEvent, CalendarEventInput, FacilityInfo, HarianDay, HarianIndexEntry, StudentAttendance, StudentInvoices } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -135,6 +135,11 @@ export const kindyStudentApi = {
   /** One day's reports. `date` is `YYYY-MM-DD`. */
   getHarianDay: (date: string) =>
     apiCall<HarianDay>(`/kindy/student/harian?date=${encodeURIComponent(date)}`),
+
+  // Kalender akademik: the current academic year's events, earliest first.
+  getCalendar: () => apiCall<CalendarEvent[]>('/kindy/student/calendar'),
+  // Absensi (attendance): every registered day, oldest first, for the calendar.
+  getAttendance: () => apiCall<StudentAttendance[]>('/kindy/student/attendance'),
 };
 
 // Kindy Admin API endpoints
@@ -286,6 +291,23 @@ export const kindyAdminApi = {
     apiCall(`/kindy/admin/refund/${id}`, {
       method: 'DELETE',
     }),
+  // Kalender akademik
+  getCalendarEvents: () => apiCall<CalendarEvent[]>('/kindy/admin/calendar'),
+  addCalendarEvent: (data: CalendarEventInput) =>
+    apiCall<CalendarEvent>('/kindy/admin/calendar', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateCalendarEvent: (id: string, data: CalendarEventInput) =>
+    apiCall<CalendarEvent>(`/kindy/admin/calendar/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteCalendarEvent: (id: string) =>
+    apiCall(`/kindy/admin/calendar/${id}`, {
+      method: 'DELETE',
+    }),
+
   /** The school paying the refund back; `amount` is positive. */
   transferRefund: (id: string, data: { amount: number; date: string; reference: string }) =>
     apiCall(`/kindy/admin/refund/${id}/transfer`, {

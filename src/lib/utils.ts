@@ -60,6 +60,24 @@ export const formatDate = (dateString: string): string => {
  * year gives both in full. Takes plain `YYYY-MM-DD` strings and reads them as
  * calendar dates — no timezone conversion.
  */
+/** "Desember 2026" from a `YYYY-MM` (or `YYYY-MM-DD`) string. */
+export const formatMonthYear = (ym: string): string => {
+  const [y, m] = ym.split('-').map(Number);
+  return `${MONTHS_ID_FULL[m - 1]} ${y}`;
+};
+
+/** "Des" from `YYYY-MM-DD` (or `YYYY-MM`) — the compact month on its own, for a date leaf. */
+export const formatMonthShort = (ymd: string): string => {
+  const m = Number(ymd.split('-')[1]);
+  return MONTHS_ID[m - 1];
+};
+
+/** "18 Des 2026" from `YYYY-MM-DD` — the compact month, with the year. */
+export const formatDayMonthYear = (ymd: string): string => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return `${d} ${MONTHS_ID[m - 1]} ${y}`;
+};
+
 export const formatDateRange = (fromYmd: string, toYmd: string): string => {
   const [fy, fm, fd] = fromYmd.split('-').map(Number);
   const [ty, tm, td] = toYmd.split('-').map(Number);

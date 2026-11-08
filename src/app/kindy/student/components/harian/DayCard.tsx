@@ -11,6 +11,7 @@ import { HarianDay, HarianMedia } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { relativeDayLabel, weekdayName } from "@/lib/harian";
 import ReportEntries from "./ReportEntries";
+import MealEntries from "./MealEntries";
 
 interface DayCardProps {
   /** `YYYY-MM-DD`. */
@@ -21,7 +22,13 @@ interface DayCardProps {
   onOpenMedia: (items: HarianMedia[], index: number) => void;
 }
 
-/** One school day in the feed: the header, then the day's reports. */
+/**
+ * One school day in the feed: the header, then the day's content in up to two
+ * titled groups — "Pendidikan" (the teacher's reports) and "Nutrisi" (what the
+ * child was served and ate). Each group appears only when it has something;
+ * a child off catering never sees a meal block, and a day with meals but no
+ * report still gets a card.
+ */
 export default function DayCard({
   date,
   day,
@@ -43,7 +50,7 @@ export default function DayCard({
         {loading || !day ? (
           <Spinner />
         ) : (
-          <ReportEntries day={day} onOpenMedia={onOpenMedia} />
+          <DayGroups day={day} onOpenMedia={onOpenMedia} />
         )}
       </CardContent>
     </Card>
@@ -51,23 +58,84 @@ export default function DayCard({
 }
 
 /**
+ * The day's content in its titled groups. Exported so the Beranda card shows
+ * the latest day exactly as the feed does.
+ */
+export function DayGroups({
+  day,
+  onOpenMedia,
+}: {
+  day: HarianDay;
+  onOpenMedia: (items: HarianMedia[], index: number) => void;
+}) {
+  const hasReport = Boolean(day.classReport || day.individualReport);
+  const meals = day.meals ?? [];
+  return (
+    <div className="flex flex-col gap-5">
+      {hasReport && (
+        <DayGroup title="Pendidikan">
+          <ReportEntries day={day} onOpenMedia={onOpenMedia} />
+        </DayGroup>
+      )}
+      {meals.length > 0 && (
+        <DayGroup title="Nutrisi">
+          <MealEntries meals={meals} onOpenMedia={onOpenMedia} />
+        </DayGroup>
+      )}
+    </div>
+  );
+}
+
+/** A titled block inside the day card. */
+function DayGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+/**
  * A school day with nothing to show.
  *
  * Two different reasons land here and a parent should be able to tell them
- * apart: the teacher wrote nothing, or their child wasn't in. On an absent day
- * the class report is deliberately withheld — it describes activities the child
- * had no part in — so without saying so this would read as a missing report.
+ * apart: the teacher wrote nothing, or their child wasn't in. On an absent or
+ * sick day the class report is deliberately withheld — it describes activities
+ * the child had no part in — so without saying so this would read as a missing
+ * report.
  */
+/** Why the child wasn't in: the status and the teacher's note, if any. */
+export interface AwayInfo {
+  status: "ABSENT" | "SICK";
+  note: string | null;
+}
+
 export function NoReportRow({
   date,
-  absent = false,
+  away,
   address,
 }: {
   date: string;
-  absent?: boolean;
+  /** Why the child wasn't in, when they weren't. */
+  away?: AwayInfo;
   /** How to refer to the child, e.g. "Mas Zaki". */
   address?: string;
 }) {
+  const who = address ?? "Ananda";
+  // "Mas Barra sakit: sakit perut" / "Mas Barra tidak masuk: acara keluarga";
+  // a blank note still gets a tail so the parent knows none was given.
+  const label = away
+    ? `${who} ${away.status === "SICK" ? "sakit" : "tidak masuk"}: ${away.note ?? "belum ada info"}`
+    : "Belum ada catatan";
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-5 py-3.5">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -80,9 +148,9 @@ export function NoReportRow({
         </span>
       </div>
       <span
-        className={`shrink-0 text-xs ${absent ? "font-medium text-warning" : "text-muted-foreground"}`}
+        className={`shrink-0 text-xs ${away ? "font-medium text-warning" : "text-muted-foreground"}`}
       >
-        {absent ? `${address ?? "Ananda"} tidak masuk` : "Belum ada catatan"}
+        {label}
       </span>
     </div>
   );

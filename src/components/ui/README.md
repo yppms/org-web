@@ -109,7 +109,9 @@ set `lang` per element.
 
 Cards `rounded-xl` (12px) + `border border-border` + `shadow-card` (light only);
 buttons/inputs `rounded-lg`; badges/chips `rounded-md`; filter chips are the
-fully-rounded `<Chip>`. Dialogs are centered, `max-w-[400px]`, `p-6`.
+fully-rounded `<Chip>`. Dialogs are centered, `max-w-[400px]`, `p-6`; a
+bottom sheet (`placement="bottom"`) is full width to 425px with only its top
+corners rounded.
 
 ### Layout
 
@@ -165,9 +167,23 @@ The audience is Indonesian; an `en-GB` locale slipping in is a bug.
 
 Every rendered amount, account number, phone and ID also gets `font-mono`.
 
+## Steppers
+
+Every previous/next pager — months on the calendar, weeks on the daily report,
+photos in the media viewer — uses `<StepButton direction="prev" | "next" label
+onClick disabled />`: a 32px square outlined button with a lucide chevron, or
+`variant="overlay"` for the round translucent one over media. Never hand-roll
+one with `‹`/`›` text glyphs; the chevrons, sizes and states must match
+everywhere.
+
 ## Dialogs
 
 All modals are React-state-controlled shadcn `Dialog` / `AlertDialog` (drive with
 `open` / `onOpenChange`) — no native `<dialog>`/`showModal()`/`getElementById`.
 `Modal` is a thin wrapper over `Dialog` with the legacy
 `open` / `onClose` / `title` / `actions` API.
+
+Both take `placement`: `center` (default) or `bottom`, a sheet that slides up
+from the bottom edge. Use `bottom` for the details of something the user just
+tapped on a grid or list (a calendar date, a row), where a centered card would
+cover the thing they tapped; keep forms and confirmations centered.

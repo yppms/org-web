@@ -3,17 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import kindyStudentApi, { ApiError } from "@/lib/api";
 import { HarianDay, HarianIndexEntry, HarianMedia } from "@/lib/types";
-import { ErrorAlert, Input, Spinner } from "@/components/ui";
-import { Info } from "lucide-react";
+import { ErrorAlert, Spinner, StepButton } from "@/components/ui";
+import { Info, X } from "lucide-react";
 import { formatDateRange } from "@/lib/utils";
 import {
   addDays,
+  daysBetween,
   isWithin,
   mondayOf,
   schoolDaysOf,
   todayYmd,
 } from "@/lib/harian";
-import DayCard, { NoReportRow } from "./DayCard";
+import { eventDateLabel } from "@/lib/calendar";
+import DayCard, { NoReportRow, type AwayInfo } from "./DayCard";
+import DateRangeSheet from "../calendar/DateRangeSheet";
 
 interface HarianSectionProps {
   onOpenMedia: (items: HarianMedia[], index: number) => void;
@@ -41,6 +44,9 @@ export default function HarianSection({
   const [rangeMode, setRangeMode] = useState(false);
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
+  // The date picker: the school calendar in a sheet, where the parent taps a
+  // day or a span. Applying it switches the feed to range mode.
+  const [picking, setPicking] = useState(false);
 
   const today = useMemo(() => todayYmd(), []);
   const currentMonday = useMemo(() => mondayOf(today), [today]);
@@ -74,26 +80,41 @@ export default function HarianSection({
   }, []);
 
   /**
-   * Days that actually have something to read. The index also lists days the
-   * child was absent — those carry no report by design, so they must not be
-   * mistaken for one.
+   * Days that actually have something to read: a report, or a meal record.
+   * The index also lists days the child was absent — those carry neither by
+   * design, so they must not be mistaken for one.
    */
   const reportDates = useMemo(
     () =>
       new Set(
         (index ?? [])
-          .filter((entry) => entry.hasClassReport || entry.hasIndividual)
+          .filter(
+            (entry) =>
+              entry.hasClassReport || entry.hasIndividual || entry.hasMeal,
+          )
           .map((entry) => entry.date),
       ),
     [index],
   );
 
-  const absentDates = useMemo(
+  // Days the child stayed home, with why: absent or sick, plus the teacher's
+  // note when there is one. The class report is withheld on these, so the row
+  // has to say so.
+  const awayDates = useMemo(
     () =>
-      new Set(
+      new Map<string, AwayInfo>(
         (index ?? [])
-          .filter((entry) => entry.attendance === "ABSENT")
-          .map((entry) => entry.date),
+          .filter(
+            (entry) =>
+              entry.attendance === "ABSENT" || entry.attendance === "SICK",
+          )
+          .map((entry) => [
+            entry.date,
+            {
+              status: entry.attendance as "ABSENT" | "SICK",
+              note: entry.attendanceNote ?? null,
+            },
+          ]),
       ),
     [index],
   );
@@ -143,8 +164,14 @@ export default function HarianSection({
     };
   }, [visibleDates, reportDates, days]);
 
-  const openRange = useCallback(() => setRangeMode(true), []);
+  const openPicker = useCallback(() => setPicking(true), []);
   const closeRange = useCallback(() => setRangeMode(false), []);
+  const applyRange = useCallback((from: string, to: string) => {
+    setRangeFrom(from);
+    setRangeTo(to);
+    setRangeMode(true);
+    setPicking(false);
+  }, []);
 
   if (error) return <ErrorAlert message={error} />;
   if (!index || !monday) return <Spinner label="Memuat catatan..." />;
@@ -158,37 +185,35 @@ export default function HarianSection({
   return (
     <div className="flex flex-col gap-3">
       {rangeMode ? (
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={rangeFrom}
-            onChange={(event) => setRangeFrom(event.target.value)}
-            aria-label="Dari tanggal"
-            className="h-9 min-w-0 flex-1 text-[13px]"
-          />
-          <span className="shrink-0 text-[13px] text-muted-foreground">–</span>
-          <Input
-            type="date"
-            value={rangeTo}
-            onChange={(event) => setRangeTo(event.target.value)}
-            aria-label="Sampai tanggal"
-            className="h-9 min-w-0 flex-1 text-[13px]"
-          />
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={openPicker}
+            aria-label="Ubah rentang tanggal"
+            className="flex min-w-0 flex-1 flex-col items-start rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="text-sm font-semibold">
+              {eventDateLabel({ startDate: rangeFrom, endDate: rangeTo })}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {daysBetween(rangeFrom, rangeTo) + 1} hari · ketuk untuk mengubah
+            </span>
+          </button>
           <button
             type="button"
             onClick={closeRange}
             title="Kembali ke mingguan"
             aria-label="Kembali ke tampilan mingguan"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-input bg-card text-[15px] text-muted-foreground transition-colors hover:bg-muted"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            ×
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
       ) : (
         <>
           <div className="flex items-center justify-between gap-2">
             <StepButton
-              glyph="‹"
+              direction="prev"
               label="Minggu sebelumnya"
               disabled={!canGoOlder}
               onClick={() => setMonday(addDays(monday, -7))}
@@ -204,7 +229,7 @@ export default function HarianSection({
               )}
             </div>
             <StepButton
-              glyph="›"
+              direction="next"
               label="Minggu berikutnya"
               disabled={!canGoNewer}
               onClick={() => setMonday(addDays(monday, 7))}
@@ -212,7 +237,7 @@ export default function HarianSection({
           </div>
           <button
             type="button"
-            onClick={openRange}
+            onClick={openPicker}
             className="-mt-1 self-center px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             Pilih rentang tanggal
@@ -241,13 +266,23 @@ export default function HarianSection({
           <NoReportRow
             key={date}
             date={date}
-            absent={absentDates.has(date)}
+            away={awayDates.get(date)}
             address={address}
           />
         ),
       )}
 
       <Disclaimer />
+
+      {picking && (
+        <DateRangeSheet
+          from={rangeMode ? rangeFrom : null}
+          to={rangeMode ? rangeTo : null}
+          lastPickable={today}
+          onApply={applyRange}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </div>
   );
 }
@@ -272,30 +307,5 @@ function Disclaimer() {
         </p>
       </div>
     </div>
-  );
-}
-
-function StepButton({
-  glyph,
-  label,
-  disabled,
-  onClick,
-}: {
-  glyph: string;
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input bg-card text-sm transition-colors hover:bg-muted disabled:opacity-40 disabled:hover:bg-card"
-    >
-      {glyph}
-    </button>
   );
 }

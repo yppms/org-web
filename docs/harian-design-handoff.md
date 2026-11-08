@@ -6,7 +6,10 @@ has to survive. Sample payloads: [harian-sample-data.json](harian-sample-data.js
 
 **Scope: the teacher's note and its media, nothing else.** Attendance and meal data exist
 and are populated, and report entries carry an unused development-tag field — all out of
-this phase. See [Deferred](#deferred-not-this-phase) at the end.
+this phase. See [Deferred](#deferred-not-this-phase) at the end. *(Since 2026-11 both have
+shipped: an away day shows its status and the teacher's note, and a day card carries two
+titled groups — "Pendidikan" for the reports and "Nutrisi" for the meals the child has an
+intake record for. The sections below describe the original phase.)*
 
 ## Status: the data exists, the API does not
 

@@ -6,6 +6,8 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // Category colour classes for the calendar live in lib/calendar.ts.
+    "./src/lib/**/*.{js,ts}",
   ],
   theme: {
     extend: {
@@ -39,22 +41,28 @@ const config: Config = {
           DEFAULT: "rgb(var(--primary) / <alpha-value>)",
           foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
           soft: "var(--primary-soft)",
+          strong: "rgb(var(--primary-strong) / <alpha-value>)",
         },
         destructive: {
           DEFAULT: "rgb(var(--destructive) / <alpha-value>)",
           foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
           soft: "var(--destructive-soft)",
+          strong: "rgb(var(--destructive-strong) / <alpha-value>)",
         },
         warning: {
           DEFAULT: "rgb(var(--warning) / <alpha-value>)",
           foreground: "rgb(var(--warning-foreground) / <alpha-value>)",
           soft: "var(--warning-soft)",
+          strong: "rgb(var(--warning-strong) / <alpha-value>)",
         },
         info: {
           DEFAULT: "rgb(var(--info) / <alpha-value>)",
           foreground: "rgb(var(--info-foreground) / <alpha-value>)",
           soft: "var(--info-soft)",
+          strong: "rgb(var(--info-strong) / <alpha-value>)",
         },
+        // Text on a `-strong` fill (white in light, near-black in dark).
+        "strong-foreground": "rgb(var(--strong-foreground) / <alpha-value>)",
         accent: {
           DEFAULT: "rgb(var(--accent) / <alpha-value>)",
           foreground: "rgb(var(--accent-foreground) / <alpha-value>)",

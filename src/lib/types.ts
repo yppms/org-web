@@ -443,28 +443,100 @@ export interface HarianReport {
   entries: HarianEntry[];
 }
 
+/**
+ * One meal the child was served: the school-wide menu with the child's own
+ * intake. Only meals with an intake record reach the portal.
+ */
+export interface HarianMeal {
+  /** 1, 2 or 3 — the order served that day. */
+  number: number;
+  /** Menu text as the teacher wrote it; may be empty. */
+  description: string;
+  /** School kitchen or outside vendor. */
+  type: 'INTERNAL' | 'EXTERNAL';
+  /** The teacher who checked and tasted an outside vendor's food; null for the school kitchen. */
+  checkedBy?: string | null;
+  /** How much the child ate: 0, 25, 50, 75 or 100. */
+  pct: number;
+  /** Tray photos. Same signed-URL shape as report media. */
+  photos: HarianMedia[];
+}
+
+/** PRESENT, or away: SICK (ill) or ABSENT (any other reason). */
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'SICK';
+
+/** One day the register was taken for the child. */
+export interface StudentAttendance {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  status: AttendanceStatus;
+  /** The teacher's note on an away day (what the child has, or why they stayed home); null when blank, always null on PRESENT. */
+  note: string | null;
+}
+
 /** One day. `classReport` is the spine — an individual never exists without it. */
 export interface HarianDay {
   /** `YYYY-MM-DD`. */
   date: string;
   /** Null when the register wasn't taken that day. */
-  attendance?: 'PRESENT' | 'ABSENT' | 'LATE' | null;
+  attendance?: 'PRESENT' | 'ABSENT' | 'SICK' | null;
+  /** The teacher's note on an away day (what the child has, or why they stayed home). */
+  attendanceNote?: string | null;
   classReport: HarianReport | null;
   individualReport: HarianReport | null;
+  /** Meals with an intake record, by number. Absent on older responses. */
+  meals?: HarianMeal[];
 }
 
-/** A row of the day index. Only days that have a report are listed. */
+/** A row of the day index: days that have a report, a meal record, or an away mark. */
 export interface HarianIndexEntry {
   /** `YYYY-MM-DD`. */
   date: string;
   /**
-   * Null when the register wasn't taken. An `ABSENT` day is listed even with
-   * no visible report, so the feed can distinguish "wasn't in" from "the
-   * teacher wrote nothing" — the class report is withheld on those days.
+   * Null when the register wasn't taken. An `ABSENT` or `SICK` day is listed
+   * even with no visible report, so the feed can distinguish "wasn't in" from
+   * "the teacher wrote nothing" — the class report is withheld on those days.
    */
-  attendance?: 'PRESENT' | 'ABSENT' | 'LATE' | null;
+  attendance?: 'PRESENT' | 'ABSENT' | 'SICK' | null;
+  /** The teacher's note on an away day; null when left blank. */
+  attendanceNote?: string | null;
   hasClassReport: boolean;
   hasIndividual: boolean;
+  /** The child has meal intake recorded that day. Absent on older responses. */
+  hasMeal?: boolean;
   mediaCount: number;
   videoCount: number;
+}
+
+// ---------------------------------------------------------------------------
+// Kalender akademik (academic calendar)
+// ---------------------------------------------------------------------------
+
+/**
+ * Holidays (no school), academic milestones (first day, report cards) and
+ * school events (outings).
+ */
+export type CalendarCategory = 'HOLIDAY' | 'ACADEMIC';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  category: CalendarCategory;
+  /** Inclusive `YYYY-MM-DD`; a single-day event has startDate === endDate. */
+  startDate: string;
+  endDate: string;
+  /** From the education office's calendar rather than added by the school. */
+  official: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** What the admin sends to create or update an event. */
+export interface CalendarEventInput {
+  title: string;
+  description: string | null;
+  category: CalendarCategory;
+  startDate: string;
+  endDate: string;
 }

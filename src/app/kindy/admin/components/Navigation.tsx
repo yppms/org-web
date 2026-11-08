@@ -11,7 +11,8 @@ type Section =
   | "saving"
   | "infaq"
   | "outstanding"
-  | "setor";
+  | "setor"
+  | "calendar";
 
 interface NavigationProps {
   activeSection: Section;
@@ -27,6 +28,7 @@ const allItems: { key: Section; label: string }[] = [
   { key: "saving", label: "Tabungan" },
   { key: "infaq", label: "Infaq" },
   { key: "setor", label: "Setor" },
+  { key: "calendar", label: "Kalender" },
   { key: "stamp", label: "Stamp" },
   { key: "openas", label: "Buka" },
 ];

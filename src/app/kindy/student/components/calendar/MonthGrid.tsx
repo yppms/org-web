@@ -87,7 +87,9 @@ interface MonthGridProps {
  * dimmed: looking back over them is what a parent opens this for.
  *
  * Every week row is as tall as the tallest one, so the grid stays even
- * however the titles wrap.
+ * however the titles wrap. The small texts are sized from the grid's own
+ * width (`.cal-text` / `.cal-chip` in globals.css), so they fit their cell
+ * from a 320px phone up.
  *
  * The same grid serves two jobs: browsing (tap an event to open it) and
  * picking dates for the daily report (tap days to choose a span).
@@ -106,7 +108,7 @@ export default function MonthGrid({
 }: MonthGridProps) {
   const weeks = useMemo(() => monthGrid(month), [month]);
   return (
-    <div>
+    <div className="cal-grid">
       <div className="grid grid-cols-7" aria-hidden>
         {WEEKDAY_HEADERS.map((name, index) => (
           <div
@@ -265,7 +267,7 @@ function WeekRow({
             style={{ gridColumn: todayCol + 1, gridRow: "1 / -1" }}
           />
           <span
-            className="pointer-events-none self-start px-0.5 pb-[5px] pt-[3px] text-center text-[9.5px] font-semibold leading-3 text-primary-foreground"
+            className="cal-text pointer-events-none self-start px-0.5 pb-[5px] pt-[3px] text-center font-semibold text-primary-foreground"
             style={{ gridColumn: todayCol + 1, gridRow: todayLane + 1 }}
           >
             Hari ini
@@ -380,7 +382,7 @@ function AttendanceMark({
       role="img"
       aria-label={record.note ? `${meta.label}: ${record.note}` : meta.label}
       className={cn(
-        "pointer-events-none flex flex-col items-center self-start break-words px-0.5 pb-[5px] pt-[3px] text-center text-[9.5px] font-medium leading-3",
+        "cal-text pointer-events-none flex flex-col items-center self-start break-words px-0.5 pb-[5px] pt-[3px] text-center font-medium",
         onToday ? "text-primary-foreground" : meta.text,
       )}
       style={{ gridColumn: col + 1, gridRow: 2 }}
@@ -535,7 +537,7 @@ function EventLabel({
   return (
     <span
       className={cn(
-        "pointer-events-none self-start break-words px-0.5 pb-[5px] pt-[3px] text-center text-[9.5px] font-semibold leading-3",
+        "cal-text pointer-events-none self-start break-words px-0.5 pb-[5px] pt-[3px] text-center font-semibold",
         onToday ? "text-primary-foreground" : meta.text,
         !withCategory && "font-medium",
       )}
@@ -547,11 +549,11 @@ function EventLabel({
       {withCategory && (
         <span
           className={cn(
-            "mx-auto mb-[3px] block w-fit max-w-full leading-[13px] text-[9px] font-semibold",
+            "cal-chip mx-auto mb-[3px] block w-fit max-w-full font-semibold",
             onToday
               ? "bg-primary-foreground/25 text-primary-foreground"
               : cn("text-strong-foreground", meta.chip),
-            startCol === endCol ? "px-1" : "px-1.5",
+            startCol !== endCol && "cal-chip-wide",
           )}
         >
           {meta.label}

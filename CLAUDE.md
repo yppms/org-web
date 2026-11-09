@@ -31,7 +31,11 @@ There is no test suite. Verify changes by running `npm run dev` and exercising t
   not in server components. Route entry pages (`page.tsx`) wrap a `PageContent` component in
   `<Suspense>`; that content component handles auth, then renders a `dashboard.tsx`.
 - **Mobile-first**: the root layout ([src/app/layout.tsx](src/app/layout.tsx)) constrains all
-  content to `max-w-[425px]`. Design for a phone-width column.
+  content to `max-w-[425px]`. Design for a phone-width column, **from 320px up**: build and
+  check at 320px first (the narrowest phone still in use); what fits there fits everything
+  wider. Nothing may scroll sideways or break mid-word at 320px. Fixed-size pieces that
+  cannot wrap (the month grid's cell texts) size themselves from their container
+  (`.cal-text` / `.cal-chip` in globals.css use `cqw`) rather than from the viewport.
 - Path alias `@/*` → `src/*`.
 
 ### API layer — [src/lib/api.ts](src/lib/api.ts)

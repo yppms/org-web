@@ -185,50 +185,54 @@ export default function CalendarSection() {
                 return (
                   <div
                     key={event.id}
-                    className={`flex items-start gap-3 py-3 border-b border-border last:border-b-0 ${
+                    className={`border-b border-border py-3 last:border-b-0 ${
                       past ? "opacity-60" : ""
                     }`}
                   >
-                    <span
-                      className={`mt-1 h-10 w-1 shrink-0 rounded-full ${meta.dot}`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{event.title}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {eventDateLabel(event)}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <Badge variant={meta.badge}>{meta.label}</Badge>
-                        {event.official && (
-                          <Badge variant="outline">Dinas</Badge>
-                        )}
-                      </div>
-                      {event.description && (
-                        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-                          {event.description}
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={`mt-1 h-10 w-1 shrink-0 rounded-full ${meta.dot}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{event.title}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {eventDateLabel(event)}
                         </p>
-                      )}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge variant={meta.badge}>{meta.label}</Badge>
+                          {event.official && (
+                            <Badge variant="outline">Dinas</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-1.5">
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => {
+                            setSelected(event);
+                            setFormMode("edit");
+                          }}
+                        >
+                          Ubah
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          className="text-destructive"
+                          onClick={() => setDeleting(event)}
+                        >
+                          Hapus
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 flex-col gap-1.5">
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => {
-                          setSelected(event);
-                          setFormMode("edit");
-                        }}
-                      >
-                        Ubah
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        className="text-destructive"
-                        onClick={() => setDeleting(event)}
-                      >
-                        Hapus
-                      </Button>
-                    </div>
+                    {/* Under the row, not beside the buttons: on a 320px phone
+                      the buttons would otherwise squeeze it to three words a line. */}
+                    {event.description && (
+                      <p className="mt-1.5 pl-4 text-[13px] leading-relaxed text-muted-foreground">
+                        {event.description}
+                      </p>
+                    )}
                   </div>
                 );
               })}

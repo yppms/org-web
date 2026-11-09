@@ -19,7 +19,11 @@ interface WithdrawModalProps {
   onClose: () => void;
 }
 
-/** One label/value line of the breakdown. */
+/**
+ * One label/value line of the breakdown. When the two don't fit one line (a
+ * date range on a 320px phone) the value drops under the label, right-aligned,
+ * rather than squeezing the label into a column of single words.
+ */
 function Line({
   label,
   value,
@@ -30,10 +34,10 @@ function Line({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 text-[13px]">
-      <span className="min-w-0 text-muted-foreground">{label}</span>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
+      <span className="text-muted-foreground">{label}</span>
       <span
-        className={`shrink-0 font-mono ${
+        className={`ml-auto text-right font-mono ${
           strong ? "font-semibold text-foreground" : "text-foreground"
         }`}
       >
@@ -188,11 +192,9 @@ export default function WithdrawModal({
                     )}`}
                   />
                 )}
-                <div className="flex items-start justify-between gap-3 text-[13px]">
-                  <span className="min-w-0 text-muted-foreground">
-                    Masa berjalan
-                  </span>
-                  <span className="shrink-0 font-mono text-foreground">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
+                  <span className="text-muted-foreground">Masa berjalan</span>
+                  <span className="ml-auto text-right font-mono text-foreground">
                     {quota.daysElapsed} dari {quota.daysTotal} hari ={" "}
                     <strong className="font-semibold">{pct}%</strong>
                   </span>

@@ -136,6 +136,21 @@
    a cell is a seventh of it. Each rule states the 425px size first as the
    fallback for browsers without container units. */
 @layer components {
+  /* Money figure in a stat tile: 18px, or as large as lets the whole figure
+     fit the tile. --stat-chars is the figure's length and a monospace glyph
+     is 0.6em wide; 100cqw is the tile's content box, padding already out. */
+  .stat-box {
+    container-type: inline-size;
+  }
+  .stat-value {
+    font-size: 15px;
+    font-size: clamp(
+      11px,
+      calc(100cqw / (var(--stat-chars, 12) * 0.6)),
+      18px
+    );
+    line-height: 1.75rem;
+  }
   .cal-grid {
     container-type: inline-size;
   }

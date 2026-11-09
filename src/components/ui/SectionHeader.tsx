@@ -17,6 +17,11 @@ interface SectionHeaderProps {
  * Standard section heading — title (18/600) + optional subtitle, count badge
  * and actions. Use this for every section heading so the portal stays uniform;
  * don't hand-roll an `<h2>`.
+ *
+ * The title takes whatever room the actions leave and never goes narrower than
+ * its longest word; when both no longer fit (two buttons on a 320px phone) the
+ * actions wrap onto rows of their own, right-aligned, instead of leaving the
+ * screen.
  */
 export default function SectionHeader({
   title,
@@ -29,14 +34,14 @@ export default function SectionHeader({
 
   return (
     <div className="flex items-start justify-between gap-3">
-      <div>
+      <div className="flex-1">
         <h2 className="text-lg font-semibold">{title}</h2>
         {subtitle && (
           <p className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {hasTrailing && (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {count !== undefined && (
             <Badge variant="outline" className="rounded-full">
               {count}

@@ -34,8 +34,10 @@ There is no test suite. Verify changes by running `npm run dev` and exercising t
   content to `max-w-[425px]`. Design for a phone-width column, **from 320px up**: build and
   check at 320px first (the narrowest phone still in use); what fits there fits everything
   wider. Nothing may scroll sideways or break mid-word at 320px. Fixed-size pieces that
-  cannot wrap (the month grid's cell texts) size themselves from their container
-  (`.cal-text` / `.cal-chip` in globals.css use `cqw`) rather than from the viewport.
+  cannot wrap (the month grid's cell texts, a stat tile's money figure) size themselves
+  from their container (`.cal-text` / `.cal-chip` / `.stat-value` in globals.css use `cqw`)
+  rather than from the viewport. A label/value row that may not fit wraps the value under
+  the label (`flex-wrap` + `ml-auto`) instead of squeezing the label.
 - Path alias `@/*` → `src/*`.
 
 ### API layer — [src/lib/api.ts](src/lib/api.ts)

@@ -168,7 +168,8 @@ export default function MediaViewer({
             <Download className="h-5 w-5" aria-hidden />
           </ActionButton>
 
-          <div className="flex items-center gap-4">
+          {/* gap-2 below 360px: at 320 the three groups are 4px too wide otherwise. */}
+          <div className="flex items-center gap-2 min-[360px]:gap-4">
             {items.length > 1 && (
               <>
                 <StepButton

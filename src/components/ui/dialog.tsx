@@ -93,7 +93,9 @@ function DialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex justify-end gap-2 pt-2", className)}
+      // flex-wrap: "Kembali" + "Konfirmasi & Simpan" are wider than a dialog
+      // on a 320px phone; they stack rather than scroll the dialog sideways.
+      className={cn("flex flex-wrap justify-end gap-2 pt-2", className)}
       {...props}
     />
   );

@@ -36,6 +36,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  statChars,
 } from "@/components/ui";
 import Navigation, { type StudentSection } from "./components/Navigation";
 import HomeSection from "./components/HomeSection";
@@ -500,19 +501,19 @@ export default function Dashboard() {
           )}
 
           <div className="flex flex-col gap-1.5 text-[13px]">
-            <div className="flex justify-between">
+            <div className="flex flex-wrap justify-between gap-x-1">
               <span className="text-muted-foreground">
                 Semua tagihan ({stats.countInvoice ?? 0})
               </span>
-              <span className="font-mono">
+              <span className="ml-auto font-mono tracking-tight">
                 {formatCurrency(stats.totalInvoice)}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-wrap justify-between gap-x-1">
               <span className="text-muted-foreground">
                 Semua pembayaran ({stats.countPayment ?? 0})
               </span>
-              <span className="font-mono">
+              <span className="ml-auto font-mono tracking-tight">
                 {formatCurrency(stats.totalPayment)}
               </span>
             </div>
@@ -586,9 +587,10 @@ export default function Dashboard() {
           <CardHeader className="border-b border-border p-4">
             <CardTitle>Tabungan</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2.5 p-4">
+          <CardContent className="stat-box flex flex-col gap-2.5 p-4">
             <p
-              className="font-mono text-lg font-bold tracking-[-0.02em]"
+              className="stat-value font-mono font-bold tracking-[-0.02em]"
+              style={statChars(formatCurrency(stats.saving))}
               suppressHydrationWarning
             >
               {formatCurrency(stats.saving)}
@@ -616,9 +618,10 @@ export default function Dashboard() {
           <CardHeader className="border-b border-border p-4">
             <CardTitle>Infaq</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2.5 p-4">
+          <CardContent className="stat-box flex flex-col gap-2.5 p-4">
             <p
-              className="font-mono text-lg font-bold tracking-[-0.02em]"
+              className="stat-value font-mono font-bold tracking-[-0.02em]"
+              style={statChars(formatCurrency(stats.infaq))}
               suppressHydrationWarning
             >
               {formatCurrency(stats.infaq)}

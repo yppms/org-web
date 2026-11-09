@@ -187,7 +187,8 @@ export default function PaymentSection() {
         title="Pembayaran"
         subtitle="Catat semua transaksi pembayaran siswa"
         actions={
-          <div className="flex gap-2">
+          // Stacked below 400px, so the title keeps room beside them.
+          <div className="flex flex-col items-end gap-2 min-[400px]:flex-row">
             <Button
               size="sm"
               variant="outline"
@@ -347,9 +348,11 @@ export default function PaymentSection() {
                     {groupedPayments[date].map((payment) => (
                       <div
                         key={payment.id}
-                        className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-b-0"
+                        className="flex flex-wrap items-center justify-between gap-x-3 border-b border-border py-2 last:border-b-0"
                       >
-                        <p className="min-w-0 pt-1 text-sm font-medium">
+                        {/* basis-32: below ~360px the name takes the row and
+                            the amount + actions wrap under it, right-aligned. */}
+                        <p className="min-w-0 flex-1 basis-32 text-sm font-medium">
                           {payment.kindyStudentName}
                           {payment.source === "SAVING" && (
                             <span className="ml-1.5 text-xs font-normal text-primary">
@@ -357,7 +360,7 @@ export default function PaymentSection() {
                             </span>
                           )}
                         </p>
-                        <div className="flex shrink-0 items-center gap-1">
+                        <div className="ml-auto flex shrink-0 items-center gap-1">
                           <span
                             className={cn(
                               "font-mono text-sm font-semibold",

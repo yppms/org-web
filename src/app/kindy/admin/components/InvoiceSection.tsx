@@ -340,16 +340,18 @@ export default function InvoiceSection() {
                       return (
                         <div
                           key={invoice.id}
-                          className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-b-0"
+                          className="flex flex-wrap items-center justify-between gap-x-3 border-b border-border py-2 last:border-b-0"
                         >
-                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+                          {/* basis-32: below ~360px the name takes the row and
+                              the amount + actions wrap under it, right-aligned. */}
+                          <div className="flex min-w-0 flex-1 basis-32 flex-wrap items-center gap-x-2 gap-y-1">
                             <p className="text-sm font-medium">{invoice.name}</p>
                             <Badge variant={status.variant}>{status.text}</Badge>
                             {invoice.isCustom && (
                               <Badge variant="accent">Khusus</Badge>
                             )}
                           </div>
-                          <div className="flex shrink-0 items-center gap-1">
+                          <div className="ml-auto flex shrink-0 items-center gap-1">
                             <span className="font-mono text-sm font-semibold">
                               {formatCurrency(invoice.amount)}
                             </span>

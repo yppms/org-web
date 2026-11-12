@@ -462,8 +462,12 @@ export interface HarianMeal {
   photos: HarianMedia[];
 }
 
-/** PRESENT, or away: SICK (ill) or ABSENT (any other reason). */
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'SICK';
+/**
+ * PRESENT, or away for the reason the teacher picked: SICK, EXCUSED (outside
+ * the child's control — family event, competition), REFUSED (didn't want to
+ * come). ABSENT is away with no reason recorded (older days).
+ */
+export type AttendanceStatus = 'PRESENT' | 'SICK' | 'EXCUSED' | 'REFUSED' | 'ABSENT';
 
 /** One day the register was taken for the child. */
 export interface StudentAttendance {
@@ -479,7 +483,7 @@ export interface HarianDay {
   /** `YYYY-MM-DD`. */
   date: string;
   /** Null when the register wasn't taken that day. */
-  attendance?: 'PRESENT' | 'ABSENT' | 'SICK' | null;
+  attendance?: AttendanceStatus | null;
   /** The teacher's note on an away day (what the child has, or why they stayed home). */
   attendanceNote?: string | null;
   classReport: HarianReport | null;
@@ -493,11 +497,12 @@ export interface HarianIndexEntry {
   /** `YYYY-MM-DD`. */
   date: string;
   /**
-   * Null when the register wasn't taken. An `ABSENT` or `SICK` day is listed
-   * even with no visible report, so the feed can distinguish "wasn't in" from
-   * "the teacher wrote nothing" — the class report is withheld on those days.
+   * Null when the register wasn't taken. An away day (anything but
+   * `PRESENT`) is listed even with no visible report, so the feed can
+   * distinguish "wasn't in" from "the teacher wrote nothing" — the class
+   * report is withheld on those days.
    */
-  attendance?: 'PRESENT' | 'ABSENT' | 'SICK' | null;
+  attendance?: AttendanceStatus | null;
   /** The teacher's note on an away day; null when left blank. */
   attendanceNote?: string | null;
   hasClassReport: boolean;

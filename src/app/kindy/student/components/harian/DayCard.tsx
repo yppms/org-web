@@ -10,6 +10,7 @@ import {
 import { HarianDay, HarianMedia } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { relativeDayLabel, weekdayName } from "@/lib/harian";
+import { awayLine, type AwayStatus } from "@/lib/attendance";
 import ReportEntries from "./ReportEntries";
 import MealEntries from "./MealEntries";
 
@@ -115,7 +116,7 @@ function DayGroup({
  */
 /** Why the child wasn't in: the status and the teacher's note, if any. */
 export interface AwayInfo {
-  status: "ABSENT" | "SICK";
+  status: AwayStatus;
   note: string | null;
 }
 
@@ -131,10 +132,9 @@ export function NoReportRow({
   address?: string;
 }) {
   const who = address ?? "Ananda";
-  // "Mas Barra sakit: sakit perut" / "Mas Barra tidak masuk: acara keluarga";
-  // a blank note still gets a tail so the parent knows none was given.
+  // "Mas Barra sakit: sakit perut" / "Mas Barra izin: acara keluarga".
   const label = away
-    ? `${who} ${away.status === "SICK" ? "sakit" : "tidak masuk"}: ${away.note ?? "belum ada info"}`
+    ? awayLine(who, away.status, away.note)
     : "Belum ada catatan";
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-5 py-3.5">

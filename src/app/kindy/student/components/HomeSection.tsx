@@ -41,6 +41,7 @@ import {
 import type { BadgeProps } from "@/components/ui/badge";
 import ActivityRow from "./ActivityRow";
 import { DayGroups } from "./harian/DayCard";
+import { awayLine, isAway } from "@/lib/attendance";
 import UpcomingEventRow, { isNow } from "./calendar/UpcomingEventRow";
 import type { StudentSection } from "./Navigation";
 
@@ -104,19 +105,15 @@ interface LatestHarian {
   day: HarianDay | null;
 }
 
-const isAway = (status: HarianIndexEntry["attendance"]) =>
-  status === "ABSENT" || status === "SICK";
-
 /**
  * Same line as the feed's no-report row: "Mas Barra sakit: demam", "Mas Barra
- * tidak masuk: acara keluarga", with "belum ada info" when the teacher left
- * the reason blank.
+ * izin: acara keluarga", with "belum ada info" when the teacher left the note
+ * blank.
  */
-const awayLabel = (entry: HarianIndexEntry, who: string) => {
-  if (!isAway(entry.attendance)) return "Belum ada catatan.";
-  const what = entry.attendance === "SICK" ? "sakit" : "tidak masuk";
-  return `${who} ${what}: ${entry.attendanceNote ?? "belum ada info"}`;
-};
+const awayLabel = (entry: HarianIndexEntry, who: string) =>
+  isAway(entry.attendance)
+    ? awayLine(who, entry.attendance, entry.attendanceNote)
+    : "Belum ada catatan.";
 
 const INVOICE_STATUS: Record<
   string,

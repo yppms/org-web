@@ -16,6 +16,7 @@ import {
 } from "@/lib/harian";
 import { eventDateLabel } from "@/lib/calendar";
 import DayCard, { NoReportRow, type AwayInfo } from "./DayCard";
+import { isAway } from "@/lib/attendance";
 import DateRangeSheet from "../calendar/DateRangeSheet";
 
 interface HarianSectionProps {
@@ -97,27 +98,21 @@ export default function HarianSection({
     [index],
   );
 
-  // Days the child stayed home, with why: absent or sick, plus the teacher's
-  // note when there is one. The class report is withheld on these, so the row
-  // has to say so.
-  const awayDates = useMemo(
-    () =>
-      new Map<string, AwayInfo>(
-        (index ?? [])
-          .filter(
-            (entry) =>
-              entry.attendance === "ABSENT" || entry.attendance === "SICK",
-          )
-          .map((entry) => [
-            entry.date,
-            {
-              status: entry.attendance as "ABSENT" | "SICK",
-              note: entry.attendanceNote ?? null,
-            },
-          ]),
-      ),
-    [index],
-  );
+  // Days the child stayed home, with why: the reason, plus the teacher's note
+  // when there is one. The class report is withheld on these, so the row has
+  // to say so.
+  const awayDates = useMemo(() => {
+    const map = new Map<string, AwayInfo>();
+    for (const entry of index ?? []) {
+      if (isAway(entry.attendance)) {
+        map.set(entry.date, {
+          status: entry.attendance,
+          note: entry.attendanceNote ?? null,
+        });
+      }
+    }
+    return map;
+  }, [index]);
 
   /** The dates on screen right now, newest first. */
   const visibleDates = useMemo(() => {

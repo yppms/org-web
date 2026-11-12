@@ -1,7 +1,14 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
-import { Check, Thermometer, X, type LucideIcon } from "lucide-react";
+import {
+  CalendarCheck,
+  Check,
+  Frown,
+  Thermometer,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type {
   AttendanceStatus,
   CalendarEvent,
@@ -9,6 +16,7 @@ import type {
 } from "@/lib/types";
 import type { WeekBlock, WeekLabel } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
+import { ATTENDANCE_LABEL } from "@/lib/attendance";
 import { isWithin, weekdayName } from "@/lib/harian";
 import {
   CATEGORY_META,
@@ -23,21 +31,48 @@ import {
 
 /**
  * How each attendance status is drawn in its date cell: a tick for a day at
- * school, a cross for a day away, a thermometer for a sick day, with the
- * teacher's note under the icon when there is one.
+ * school, a thermometer for a sick day, a calendar for an excused one (family
+ * event, competition), a frown for a day the child didn't want to come, and a
+ * plain cross for an older away day with no reason recorded — with the
+ * teacher's note under the icon when there is one. Same icons and colours as
+ * the teacher app.
  */
 export const ATTENDANCE_META: Record<
   AttendanceStatus,
   { label: string; icon: LucideIcon; text: string }
 > = {
-  PRESENT: { label: "Hadir", icon: Check, text: "text-primary-strong" },
-  ABSENT: { label: "Tidak masuk", icon: X, text: "text-destructive-strong" },
-  SICK: { label: "Sakit", icon: Thermometer, text: "text-warning-strong" },
+  PRESENT: {
+    label: ATTENDANCE_LABEL.PRESENT,
+    icon: Check,
+    text: "text-primary-strong",
+  },
+  SICK: {
+    label: ATTENDANCE_LABEL.SICK,
+    icon: Thermometer,
+    text: "text-warning-strong",
+  },
+  EXCUSED: {
+    label: ATTENDANCE_LABEL.EXCUSED,
+    icon: CalendarCheck,
+    text: "text-info-strong",
+  },
+  REFUSED: {
+    label: ATTENDANCE_LABEL.REFUSED,
+    icon: Frown,
+    text: "text-destructive-strong",
+  },
+  ABSENT: {
+    label: ATTENDANCE_LABEL.ABSENT,
+    icon: X,
+    text: "text-muted-foreground",
+  },
 };
 export const ATTENDANCE_STATUSES: AttendanceStatus[] = [
   "PRESENT",
-  "ABSENT",
   "SICK",
+  "EXCUSED",
+  "REFUSED",
+  "ABSENT",
 ];
 
 /** A span of days being picked: `to` is null while only the start is set. */

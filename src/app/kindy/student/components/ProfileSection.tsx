@@ -45,27 +45,37 @@ interface ProfileSectionProps {
   onAvatarClick?: () => void;
 }
 
-/** A label / value row with a bottom divider (last row can drop it). */
+/**
+ * A label / value row with a bottom divider (last row can drop it).
+ *
+ * `wrap` is for a value with no spaces to break at (an email address): it
+ * drops under the label when the two don't fit side by side, and only breaks
+ * inside the value when even a full line is too narrow for it.
+ */
 function Row({
   label,
   value,
   mono = false,
   last = false,
+  wrap = false,
 }: {
   label: string;
   value: React.ReactNode;
   mono?: boolean;
   last?: boolean;
+  wrap?: boolean;
 }) {
   return (
     <div
       className={`flex items-center justify-between gap-3 py-2.5 ${
-        last ? "" : "border-b border-border"
-      }`}
+        wrap ? "flex-wrap gap-y-0.5" : ""
+      } ${last ? "" : "border-b border-border"}`}
     >
       <span className="text-[13px] text-muted-foreground">{label}</span>
       <span
-        className={`text-sm font-medium text-right ${mono ? "font-mono" : ""}`}
+        className={`text-sm font-medium text-right ${mono ? "font-mono" : ""} ${
+          wrap ? "ml-auto min-w-0 break-words" : ""
+        }`}
       >
         {value}
       </span>
@@ -111,8 +121,19 @@ function FacilityItem({
   );
 }
 
-const MicroLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+/** `flush` drops the bottom margin, for a label sharing its line with a button. */
+const MicroLabel = ({
+  children,
+  flush = false,
+}: {
+  children: React.ReactNode;
+  flush?: boolean;
+}) => (
+  <p
+    className={`${
+      flush ? "" : "mb-1 "
+    }text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground`}
+  >
     {children}
   </p>
 );
@@ -255,6 +276,55 @@ export default function ProfileSection({
           </CardContent>
         </Card>
 
+        {/* Wali Santri — the guardian, then the account that savings withdrawals
+            and refunds are paid to. The name/email group is absent for a
+            student with no admission form on file; the account group is always
+            there, because the withdraw flow sends parents here to fill it. */}
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle>Wali Santri</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pt-3">
+            {(profile.guardianName || profile.email) && (
+              <div>
+                {profile.guardianName && (
+                  <Row
+                    label="Nama"
+                    value={profile.guardianName}
+                    last={!profile.email}
+                  />
+                )}
+                {profile.email && (
+                  <Row label="Email" value={profile.email} wrap last />
+                )}
+              </div>
+            )}
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <MicroLabel flush>Rekening penerimaan</MicroLabel>
+                <Button size="sm" variant="outline" onClick={openBankModal}>
+                  {hasBankInfo ? "Ubah" : "Tambah"}
+                </Button>
+              </div>
+              <p className="mb-2 mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                Digunakan untuk penarikan tabungan atau refund. Verifikasi
+                selalu dilakukan sebelum transfer.
+              </p>
+              {hasBankInfo ? (
+                <>
+                  <Row label="Bank / E-Wallet" value={profile.finEnt} />
+                  <Row label="Nomor" value={profile.finNum} mono />
+                  <Row label="Atas Nama" value={profile.finName} last />
+                </>
+              ) : (
+                <p className="py-4 text-center text-[13px] text-muted-foreground">
+                  Belum ada rekening penerimaan.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Skema Biaya */}
         <Card>
           <CardHeader className="border-b border-border">
@@ -367,32 +437,6 @@ export default function ProfileSection({
           </Card>
         )}
 
-        {/* Rekening Penerimaan */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between border-b border-border">
-            <CardTitle>Rekening Penerimaan</CardTitle>
-            <Button size="sm" variant="outline" onClick={openBankModal}>
-              {hasBankInfo ? "Ubah" : "Tambah"}
-            </Button>
-          </CardHeader>
-          <CardContent className="pt-3">
-            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-              Digunakan untuk penarikan tabungan atau refund. Verifikasi selalu
-              dilakukan sebelum transfer.
-            </p>
-            {hasBankInfo ? (
-              <>
-                <Row label="Bank / E-Wallet" value={profile.finEnt} />
-                <Row label="Nomor" value={profile.finNum} mono />
-                <Row label="Atas Nama" value={profile.finName} last />
-              </>
-            ) : (
-              <p className="py-4 text-center text-[13px] text-muted-foreground">
-                Belum ada rekening penerimaan.
-              </p>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Bank dialog */}

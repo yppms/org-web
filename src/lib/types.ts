@@ -5,6 +5,9 @@ export interface KindyStudent {
   name: string;
   nickname: string | null;
   phone: string | null;
+  /** The guardian (wali santri) and their email, as given on the admission form. */
+  guardianName: string | null;
+  email: string | null;
   lang: 'EN' | 'ID';
   finEnt: string | null;
   finNum: string | null;

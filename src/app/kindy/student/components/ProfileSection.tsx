@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { KindyStudent, FacilityInfo } from "@/lib/types";
 import {
   addressOf,
-  capitalizeWords,
   formatAge,
   formatCalendarDate,
   formatCurrency,
+  formatPhone,
 } from "@/lib/utils";
 import kindyStudentApi, { ApiError, orgApi } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
@@ -46,7 +46,9 @@ interface ProfileSectionProps {
 }
 
 /**
- * A label / value row with a bottom divider (last row can drop it).
+ * A label / value row with a bottom divider. The last row of its group drops
+ * the divider by itself (`last:`), so a group of optional rows never has to
+ * work out which of them ends up last.
  *
  * `wrap` is for a value with no spaces to break at (an email address): it
  * drops under the label when the two don't fit side by side, and only breaks
@@ -56,20 +58,18 @@ function Row({
   label,
   value,
   mono = false,
-  last = false,
   wrap = false,
 }: {
   label: string;
   value: React.ReactNode;
   mono?: boolean;
-  last?: boolean;
   wrap?: boolean;
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 py-2.5 ${
+      className={`flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-b-0 ${
         wrap ? "flex-wrap gap-y-0.5" : ""
-      } ${last ? "" : "border-b border-border"}`}
+      }`}
     >
       <span className="text-[13px] text-muted-foreground">{label}</span>
       <span
@@ -175,7 +175,6 @@ export default function ProfileSection({
   };
 
   const hasBankInfo = !!(profile.finEnt && profile.finNum && profile.finName);
-  const enrollment = profile.KindyEnrollment[0];
   const age = profile.birthDate ? formatAge(profile.birthDate) : null;
 
   const openBankModal = () => {
@@ -234,7 +233,9 @@ export default function ProfileSection({
   return (
     <>
       <div className="flex flex-col gap-4">
-        {/* Data Santri */}
+        {/* Data Santri — what stays true of the child. The class and academic
+            year change every year and already sit in the top bar under the
+            name, so they are not repeated here. */}
         <Card>
           <CardHeader className="border-b border-border">
             <CardTitle>Data Santri</CardTitle>
@@ -262,40 +263,34 @@ export default function ProfileSection({
                 {age && <Row label="Umur" value={age} />}
               </>
             )}
-            {enrollment && (
-              <Row
-                label="Kelompok"
-                value={capitalizeWords(enrollment.KindyGroup.name)}
-              />
-            )}
-            <Row
-              label="Tahun Ajaran"
-              value={enrollment ? enrollment.KindyGroup.kindyYearName : "—"}
-              last
-            />
           </CardContent>
         </Card>
 
         {/* Wali Santri — the guardian, then the account that savings withdrawals
-            and refunds are paid to. The name/email group is absent for a
-            student with no admission form on file; the account group is always
+            and refunds are paid to. Name and email come from the admission
+            form, so a student without one shows only the phone (the WhatsApp
+            number the portal link is sent to). The account group is always
             there, because the withdraw flow sends parents here to fill it. */}
         <Card>
           <CardHeader className="border-b border-border">
             <CardTitle>Wali Santri</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 pt-3">
-            {(profile.guardianName || profile.email) && (
+            {(profile.guardianName || profile.phone || profile.email) && (
               <div>
                 {profile.guardianName && (
+                  <Row label="Nama" value={profile.guardianName} />
+                )}
+                {profile.phone && (
                   <Row
-                    label="Nama"
-                    value={profile.guardianName}
-                    last={!profile.email}
+                    label="Nomor Telepon"
+                    value={formatPhone(profile.phone)}
+                    mono
+                    wrap
                   />
                 )}
                 {profile.email && (
-                  <Row label="Email" value={profile.email} wrap last />
+                  <Row label="Email" value={profile.email} wrap />
                 )}
               </div>
             )}
@@ -314,7 +309,7 @@ export default function ProfileSection({
                 <>
                   <Row label="Bank / E-Wallet" value={profile.finEnt} />
                   <Row label="Nomor" value={profile.finNum} mono />
-                  <Row label="Atas Nama" value={profile.finName} last />
+                  <Row label="Atas Nama" value={profile.finName} />
                 </>
               ) : (
                 <p className="py-4 text-center text-[13px] text-muted-foreground">
@@ -396,7 +391,6 @@ export default function ProfileSection({
                   <Row label="Jaringan" value={wifi.ssid} mono />
                   <Row
                     label="Kata Sandi"
-                    last
                     value={
                       <span className="inline-flex items-center gap-1">
                         <span className="font-mono">

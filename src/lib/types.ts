@@ -4,6 +4,7 @@ export interface KindyStudent {
   id: string;
   name: string;
   nickname: string | null;
+  /** The guardian's WhatsApp number, digits only with country code: `6281234567890`. */
   phone: string | null;
   /** The guardian (wali santri) and their email, as given on the admission form. */
   guardianName: string | null;

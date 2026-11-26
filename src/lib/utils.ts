@@ -163,6 +163,19 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 /**
+ * An Indonesian mobile number for display, e.g. "6281234567890" →
+ * "0812-3456-7890". The backend stores digits only with the country code (the
+ * `wa.me` form); parents read the local 08… form. Anything that is not a
+ * mobile number comes back unchanged.
+ */
+export const formatPhone = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  const local = digits.startsWith('62') ? `0${digits.slice(2)}` : digits;
+  if (!/^08\d{7,}$/.test(local)) return value;
+  return `${local.slice(0, 4)}-${local.slice(4, 8)}-${local.slice(8)}`;
+};
+
+/**
  * How the school addresses a child: "Mas Zaki", "Mba Naura".
  *
  * "Mba" (not "Mbak") is deliberate — it is the school's own usage. The

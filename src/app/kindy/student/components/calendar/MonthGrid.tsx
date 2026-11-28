@@ -440,9 +440,11 @@ const firstFreeLane = (used: number[]): number => {
  * runs into the weekend's tint as one piece, and the tap opens it (a
  * weekend tint has nothing to open). Tapped, it shows a rounded outline
  * 2px inside the tint — the same shape as an event outline, which sits 2px
- * inside its cells with rounded corners and continues flat into the next
- * or previous week. One that is only today's cell lies under the solid
- * green column, so an outline there is drawn in the green's foreground.
+ * inside its cells with rounded corners. A side that continues into the
+ * next or previous week has no line and no corners: top and bottom run to
+ * the row's edge, so the rows read as one event. One that is only today's
+ * cell lies under the solid green column, so an outline there is drawn in
+ * the green's foreground.
  * Without `onOpen` (while picking dates) it is just the drawing.
  */
 function Block({
@@ -467,24 +469,33 @@ function Block({
     );
   }
   const meta = CATEGORY_META[event.category];
+  // Drawn as a border, not a ring: a continuing side must have no line.
+  const openSides = cn(
+    !startsHere && "rounded-l-none border-l-0",
+    !endsHere && "rounded-r-none border-r-0",
+  );
   const className = cn(
-    "transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
     kind === "holiday"
       ? cn("relative", meta.soft)
       : cn(
           "m-0.5 rounded-lg ring-inset",
-          onToday ? "ring-primary-foreground/70" : meta.ring,
-          active ? cn("ring-2", meta.soft) : "ring-[1.5px]",
-          !startsHere && "ml-0 rounded-l-none",
-          !endsHere && "mr-0 rounded-r-none",
+          active ? cn("border-2", meta.soft) : "border-[1.5px]",
+          onToday ? "border-primary-foreground/70" : meta.border,
+          !startsHere && "ml-0",
+          !endsHere && "mr-0",
+          openSides,
         ),
   );
   const outline = kind === "holiday" && active && (
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-0.5 rounded-lg ring-2 ring-inset",
-        meta.ring,
+        "pointer-events-none absolute inset-0.5 rounded-lg border-2",
+        meta.border,
+        !startsHere && "left-0",
+        !endsHere && "right-0",
+        openSides,
       )}
     />
   );

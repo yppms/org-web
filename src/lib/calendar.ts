@@ -9,7 +9,7 @@ import { addDays, daysBetween, isWithin, mondayOf, todayYmd } from "./harian";
  * Label and colour tokens per category — the same two everywhere.
  *
  * On the parent's month grid a holiday fills its dates (`soft`), while an
- * academic event only outlines its own (`ring`): the child still comes to
+ * academic event only outlines its own (`border`): the child still comes to
  * school.
  * The small text on the grid uses the `-strong` shade (`text`, `chip`)
  * because the base shade is too light to read at 10px.
@@ -28,8 +28,8 @@ export const CATEGORY_META: Record<
     text: string;
     /** Solid fill of the category chip on the grid. */
     chip: string;
-    /** Outline colour on the grid (`ring-*`). */
-    ring: string;
+    /** Outline colour on the grid (`border-*`). */
+    border: string;
   }
 > = {
   HOLIDAY: {
@@ -39,7 +39,7 @@ export const CATEGORY_META: Record<
     soft: "bg-destructive-soft",
     text: "text-destructive-strong",
     chip: "bg-destructive-strong",
-    ring: "ring-destructive",
+    border: "border-destructive",
   },
   ACADEMIC: {
     label: "Akademik",
@@ -48,7 +48,7 @@ export const CATEGORY_META: Record<
     soft: "bg-primary-soft",
     text: "text-primary-strong",
     chip: "bg-primary-strong",
-    ring: "ring-primary",
+    border: "border-primary",
   },
 };
 
@@ -222,9 +222,9 @@ export interface WeekBlock {
   event: CalendarEvent | null;
   startCol: number;
   endCol: number;
-  /** False when the event began in an earlier week (flat left edge). */
+  /** False when it carries over from an earlier week (open left side). */
   startsHere: boolean;
-  /** False when the event goes on into the next week (flat right edge). */
+  /** False when it carries on into a later week (open right side). */
   endsHere: boolean;
 }
 
@@ -251,6 +251,14 @@ export interface WeekLayout {
   /** Label lanes the row needs (at least 1, so every row keeps its shape). */
   lanes: number;
 }
+
+/** Whether any Monday-to-Friday date lies in `from`..`to`, inclusive. */
+const hasWeekday = (from: string, to: string): boolean => {
+  for (let day = from; day <= to; day = addDays(day, 1)) {
+    if (!isWeekend(day)) return true;
+  }
+  return false;
+};
 
 /**
  * Lays one week of the month grid out. `days` is one row of `monthGrid`.
@@ -335,14 +343,23 @@ export const weekLayout = (
     if (weekendOnly) continue;
     const startCol = cols[0];
     const endCol = cols[cols.length - 1];
+    const first = days[startCol] as string;
+    const last = days[endCol] as string;
+    const holiday = event.category === "HOLIDAY";
+    // A holiday is only drawn on weekdays, so a weekend at either end of it
+    // does not carry it into another row.
     blocks.push({
       key: `e-${event.id}`,
-      kind: event.category === "HOLIDAY" ? "holiday" : "event",
+      kind: holiday ? "holiday" : "event",
       event,
       startCol,
       endCol,
-      startsHere: days[startCol] === event.startDate,
-      endsHere: days[endCol] === event.endDate,
+      startsHere: holiday
+        ? !hasWeekday(event.startDate, addDays(first, -1))
+        : first === event.startDate,
+      endsHere: holiday
+        ? !hasWeekday(addDays(last, 1), event.endDate)
+        : last === event.endDate,
     });
   }
 

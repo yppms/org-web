@@ -120,7 +120,7 @@ export default function CalendarSection({
                   "h-3 w-3 shrink-0",
                   holiday
                     ? cn(meta.soft, "border border-destructive/30")
-                    : cn("rounded ring-[1.5px] ring-inset", meta.ring),
+                    : cn("rounded border-[1.5px]", meta.border),
                 )}
               />
               {holiday ? "Libur" : meta.label}
